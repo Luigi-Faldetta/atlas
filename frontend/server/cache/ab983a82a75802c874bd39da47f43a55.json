@@ -1,0 +1,47 @@
+{
+  "data": {
+    "propertyDetails": {
+      "address": "Property in Madrid (ID: 107248967)",
+      "price": 320866,
+      "squareMeters": 86,
+      "pricePerSqm": 3731,
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "description": "Beautiful 3 bedroom property with 2 bathrooms and 86m² of living space in Madrid.",
+      "images": [],
+      "source": {
+        "platform": "idealista",
+        "url": "https://www.idealista.com/inmueble/107248967/",
+        "scrapedAt": "2025-03-22T09:17:02.948Z",
+        "synthetic": true
+      },
+      "financialMetrics": {
+        "purchasePrice": 320866,
+        "estimatedMonthlyRent": 1203,
+        "netOperatingIncome": 11548.800000000001,
+        "capRate": 3.5992595039673883,
+        "cashOnCashReturn": 1.9975316798912957,
+        "appreciationForecast": 3.2,
+        "rentalYield": 4.5
+      },
+      "marketTrends": {
+        "rentalYield": 4.5,
+        "areaGrowth": 3.5
+      },
+      "locationAnalysis": {
+        "walkScore": 78,
+        "transitScore": 82
+      },
+      "riskAssessment": {
+        "overall": "Low",
+        "score": 75
+      }
+    }
+  },
+  "meta": {
+    "url": "https://www.idealista.com/inmueble/107248967/",
+    "platform": "idealista",
+    "cachedAt": "2025-03-22T09:17:02.949Z",
+    "expiresAt": "2025-03-22T11:17:02.949Z"
+  }
+}

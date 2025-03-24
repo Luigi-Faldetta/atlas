@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "lucide-react": "^0.483.0",
+    "tw-animate-css": "^1.2.4"
+  }
+}

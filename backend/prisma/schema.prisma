@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String           @id @default(uuid())
+  email          String           @unique
+  password       String
+  name           String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  investments    Investment[]
+  walletAddress  String?          @unique
+}
+
+model Property {
+  id               String         @id @default(uuid())
+  title            String
+  description      String
+  location         String
+  totalValue       Float
+  monthlyRent      Float
+  annualAppreciation Float
+  riskScore        Int            // 0-100 score
+  aiScore          Int            // 0-100 score from Atlas AI
+  imageUrl         String
+  status           String         // Available, Funding, Funded
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  investments      Investment[]
+  tokenAddress     String?        // ERC-721 token address
+}
+
+model Investment {
+  id              String         @id @default(uuid())
+  userId          String
+  propertyId      String
+  amount          Float
+  percentage      Float          // Percentage of ownership
+  tokenId         String?        // ERC-721 token ID
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  user            User           @relation(fields: [userId], references: [id])
+  property        Property       @relation(fields: [propertyId], references: [id])
+}
+
+model PlatformStats {
+  id                String       @id @default(uuid())
+  activeInvestors   Int
+  totalInvested     Float
+  projectedRevenue  Float
+  operationalCosts  Float
+  availableProperties Int
+  updatedAt         DateTime     @updatedAt
+}
