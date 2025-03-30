@@ -12,6 +12,8 @@ import {
   calculateProjectedReturns,
 } from './mockApi';
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
 interface User {
   id: string;
   name: string;
@@ -45,7 +47,7 @@ const useMockApi = () => {
 
   // Authentication functions
   const login = async (email: string, password: string) => {
-    const response = await fetch('http://localhost:5000/api/auth/login', {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -66,7 +68,7 @@ const useMockApi = () => {
   };
 
   const register = async (email: string, password: string, name: string) => {
-    const response = await fetch('http://localhost:5000/api/auth/register', {
+    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, name }),
