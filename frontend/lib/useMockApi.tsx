@@ -1,7 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchProperties, fetchPropertyById, fetchUserInvestments, fetchPlatformStats, loginUser, registerUser, createInvestment, calculateProjectedReturns } from './mockApi';
+import {
+  fetchProperties,
+  fetchPropertyById,
+  fetchUserInvestments,
+  fetchPlatformStats,
+  loginUser,
+  registerUser,
+  createInvestment,
+  calculateProjectedReturns,
+} from './mockApi';
 
 interface User {
   id: string;
@@ -26,7 +35,7 @@ const useMockApi = () => {
   useEffect(() => {
     const storedToken = localStorage.getItem('atlas_token');
     const storedUser = localStorage.getItem('atlas_user');
-    
+
     if (storedToken && storedUser) {
       setToken(storedToken);
       setCurrentUser(JSON.parse(storedUser));
@@ -35,82 +44,92 @@ const useMockApi = () => {
   }, []);
 
   // Authentication functions
-  const login = async (email: string, password: string): Promise<AuthResult> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const result = await loginUser(email, password);
-      setCurrentUser(result.user);
-      setToken(result.token);
-      setIsAuthenticated(true);
-      
-      // Store in localStorage
-      localStorage.setItem('atlas_token', result.token);
-      localStorage.setItem('atlas_user', JSON.stringify(result.user));
-      
-      return result;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
+  const login = async (email: string, password: string) => {
+    const response = await fetch('http://localhost:5000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Login failed');
     }
+
+    const { token, user } = await response.json();
+    localStorage.setItem('atlas_token', token); // Store the valid JWT token
+    localStorage.setItem('atlas_user', JSON.stringify(user)); // Store the user data
+    setToken(token);
+    setCurrentUser(user);
+    // setIsAuthenticated(true); // Update authentication state
+    return user;
   };
 
-  const register = async (email: string, password: string, name: string): Promise<AuthResult> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const result = await registerUser(email, password, name);
-      setCurrentUser(result.user);
-      setToken(result.token);
-      setIsAuthenticated(true);
-      
-      // Store in localStorage
-      localStorage.setItem('atlas_token', result.token);
-      localStorage.setItem('atlas_user', JSON.stringify(result.user));
-      
-      return result;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
+  const register = async (email: string, password: string, name: string) => {
+    const response = await fetch('http://localhost:5000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, name }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Registration failed');
     }
+
+    const { token, user } = await response.json();
+    localStorage.setItem('atlas_token', token); // Store the JWT token
+    return user;
   };
 
-  const logout = (): void => {
-    setCurrentUser(null);
+  const logout = () => {
+    localStorage.removeItem('atlas_token'); // Remove the JWT token
+    localStorage.removeItem('atlas_user'); // Remove the user data
     setToken(null);
-    setIsAuthenticated(false);
-    
-    // Remove from localStorage
-    localStorage.removeItem('atlas_token');
-    localStorage.removeItem('atlas_user');
+    setCurrentUser(null);
+    setIsAuthenticated(false); // Update the state
   };
+
+  // const logout = () => {
+  //   localStorage.removeItem('atlas_token'); // Remove the JWT token
+  // };
+
+  // const isAuthenticated = (): boolean => {
+  //   if (typeof window === 'undefined') {
+  //     return false; // Return false during server-side rendering
+  //   }
+
+  //   const token = localStorage.getItem('atlas_token');
+  //   return !!token; // Return true if a token exists
+  // };
 
   // API functions
-  const getProperties = async (): Promise<any[]> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const properties = await fetchProperties();
-      return properties;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
+  const getProperties = async () => {
+    const token = localStorage.getItem('atlas_token');
+    if (!token) {
+      throw new Error('No authentication token found. Please log in.');
     }
+
+    const response = await fetch('/api/properties', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch properties');
+    }
+
+    return await response.json();
   };
 
   const getPropertyById = async (id: string): Promise<any> => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const property = await fetchPropertyById(id);
       return property;
@@ -127,10 +146,10 @@ const useMockApi = () => {
       setError('User not authenticated');
       throw new Error('User not authenticated');
     }
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const investments = await fetchUserInvestments(currentUser.id);
       return investments;
@@ -145,7 +164,7 @@ const useMockApi = () => {
   const getPlatformStats = async (): Promise<any> => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const stats = await fetchPlatformStats();
       return stats;
@@ -157,17 +176,24 @@ const useMockApi = () => {
     }
   };
 
-  const makeInvestment = async (propertyId: string, amount: number): Promise<any> => {
+  const makeInvestment = async (
+    propertyId: string,
+    amount: number
+  ): Promise<any> => {
     if (!isAuthenticated || !currentUser) {
       setError('User not authenticated');
       throw new Error('User not authenticated');
     }
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const investment = await createInvestment(currentUser.id, propertyId, amount);
+      const investment = await createInvestment(
+        currentUser.id,
+        propertyId,
+        amount
+      );
       return investment;
     } catch (err: any) {
       setError(err.message);
@@ -177,12 +203,20 @@ const useMockApi = () => {
     }
   };
 
-  const getProjectedReturns = async (propertyId: string, amount: number, years: number = 10): Promise<any> => {
+  const getProjectedReturns = async (
+    propertyId: string,
+    amount: number,
+    years: number = 10
+  ): Promise<any> => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const projections = await calculateProjectedReturns(propertyId, amount, years);
+      const projections = await calculateProjectedReturns(
+        propertyId,
+        amount,
+        years
+      );
       return projections;
     } catch (err: any) {
       setError(err.message);
@@ -193,7 +227,7 @@ const useMockApi = () => {
   };
 
   return {
-    isAuthenticated,
+    isAuthenticated, // Use the state
     currentUser,
     loading,
     error,
@@ -205,7 +239,7 @@ const useMockApi = () => {
     getUserInvestments,
     getPlatformStats,
     makeInvestment,
-    getProjectedReturns
+    getProjectedReturns,
   };
 };
 

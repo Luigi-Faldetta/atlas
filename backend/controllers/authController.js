@@ -5,6 +5,12 @@ const { User } = require('../models');
 // JWT secret key
 const JWT_SECRET = process.env.JWT_SECRET || 'atlas-secret-key';
 
+// Function to generate a JWT token
+const generateToken = (user) => {
+  const payload = { id: user.id, email: user.email };
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+};
+
 // Register new user
 exports.register = async (req, res) => {
   try {
@@ -13,7 +19,9 @@ exports.register = async (req, res) => {
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email' });
+      return res
+        .status(400)
+        .json({ message: 'User already exists with this email' });
     }
 
     // Hash password
@@ -24,15 +32,11 @@ exports.register = async (req, res) => {
     const user = await User.create({
       name,
       email,
-      password: hashedPassword
+      password: hashedPassword,
     });
 
     // Generate JWT token
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    const token = generateToken(user);
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -40,8 +44,8 @@ exports.register = async (req, res) => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
-      }
+        email: user.email,
+      },
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -67,11 +71,7 @@ exports.login = async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    const token = generateToken(user);
 
     res.status(200).json({
       message: 'Login successful',
@@ -79,8 +79,8 @@ exports.login = async (req, res) => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
-      }
+        email: user.email,
+      },
     });
   } catch (error) {
     console.error('Login error:', error);

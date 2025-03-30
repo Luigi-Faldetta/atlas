@@ -7,7 +7,7 @@ const routes = require('./routes');
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = 5000;
 
 // Middleware
 app.use(cors());
@@ -22,7 +22,7 @@ const sequelize = new Sequelize({
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'testing123',
   database: process.env.DB_NAME || 'atlas',
-  logging: false
+  logging: false,
 });
 
 // Test database connection
@@ -43,6 +43,18 @@ app.use('/api', routes);
 // Health check route
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
+
+app._router.stack.forEach((middleware) => {
+  if (middleware.route) {
+    console.log(`Route: ${middleware.route.path}`);
+  } else if (middleware.name === 'router') {
+    middleware.handle.stack.forEach((handler) => {
+      if (handler.route) {
+        console.log(`Route: ${handler.route.path}`);
+      }
+    });
+  }
 });
 
 // Start server
