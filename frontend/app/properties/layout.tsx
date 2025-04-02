@@ -1,5 +1,3 @@
-import { Header } from "@/components/layout/Header";
-
 export default function PropertiesLayout({
   children,
 }: {
@@ -7,7 +5,6 @@ export default function PropertiesLayout({
 }) {
   return (
     <>
-      <Header />
       {children}
     </>
   );

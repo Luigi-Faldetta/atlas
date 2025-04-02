@@ -1,0 +1,47 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Rules and best practices for the Atlas codebase
+globs: 
+alwaysApply: true
+---
+
+# Atlas Codebase Rules
+
+## Project Structure
+- **App Directory Organization**: "Maintain the Next.js app directory structure with clear separation between page components, layouts, and route handlers."
+- **Component Hierarchy**: "Organize components by feature or domain in the components directory, with shared components in a common subfolder."
+- **API Module Pattern**: "Keep API service logic in dedicated modules within lib/ApiContext to centralize data fetching and state management."
+
+## Frontend Architecture
+- **Single Header Pattern**: "Include the Header component only in the root layout to prevent duplication across pages."
+- **Layout Inheritance**: "Use nested layouts judiciously, with child layouts only adding functionality specific to their routes."
+- **Client/Server Separation**: "Clearly mark client components with 'use client' directive and minimize client-side code for better performance."
+
+## Styling Approach
+- **Tailwind Consistency**: "Utilize Tailwind CSS classes following the established color scheme (blue/amber gradient, slate backgrounds) for visual consistency."
+- **Component Styling**: "Prefer component-level Tailwind classes rather than global styles to maintain isolation and prevent style conflicts."
+- **Responsive Design**: "Implement mobile-first responsive design using Tailwind's responsive modifiers consistently across all components."
+
+## State Management
+- **Context API Usage**: "Use the ApiProvider and BlockchainProvider contexts for global state management rather than introducing additional libraries."
+- **Local State Handling**: "Keep component-specific state local using React hooks, lifted to the nearest common ancestor when sharing is necessary."
+- **Authentication Flow**: "Centralize authentication logic in the ApiContext to maintain consistent user session handling across the application."
+
+## Performance Optimization
+- **Server Components First**: "Default to using Server Components unless client-side interactivity is required, to reduce JavaScript sent to the client."
+- **Image Optimization**: "Always use Next.js Image component with appropriate sizing and loading strategies for property images and icons."
+- **Route Segmentation**: "Leverage Next.js route groups and parallel routes to optimize loading states and code splitting."
+
+## Blockchain Integration
+- **Web3 Abstraction**: "Abstract blockchain interactions through the BlockchainContext to isolate complexity and maintain a clean component layer."
+- **Property Tokenization**: "Follow established patterns for representing fractional ownership tokens consistently throughout the UI."
+- **Transaction Feedback**: "Provide clear visual feedback for blockchain transactions with appropriate loading, success, and error states."
+
+## Code Quality
+- **TypeScript Strictness**: "Enforce strict TypeScript typing for all components and functions to prevent runtime errors."
+- **Component Props**: "Define explicit interface or type definitions for all component props, avoiding 'any' types."
+- **Error Boundaries**: "Implement error boundaries around key application sections to prevent cascading failures."

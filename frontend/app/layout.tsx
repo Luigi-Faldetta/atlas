@@ -1,38 +1,27 @@
-import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import './globals.css';
 import { Providers } from './providers';
-import "./globals.css";
+import { Header } from "@/components/layout/Header";
 
-// Force dynamic rendering for all pages
-export const dynamic = 'force-dynamic';
-
-const geistSans = Inter({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = JetBrains_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "Project Atlas",
-  description: "Real Estate Investment Platform",
+export const metadata = {
+  title: 'Project Atlas - Fractional Real Estate Investment',
+  description: 'Invest in tokenized real estate with the trust of traditional wealth.',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" className="overflow-x-hidden">
+      <body className="bg-white dark:bg-slate-950 overflow-x-hidden">
         <Providers>
-          {children}
+          <Header />
+          <div className="md:pl-16">
+            {children}
+          </div>
         </Providers>
       </body>
     </html>
   );
-}
+} 
