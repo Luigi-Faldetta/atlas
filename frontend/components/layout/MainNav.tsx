@@ -11,7 +11,8 @@ import {
   Search, 
   Calculator,
   Menu,
-  X
+  X,
+  Building2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -24,7 +25,7 @@ const navItems = [
   {
     name: "Properties",
     href: "/properties",
-    icon: Home
+    icon: Building2
   },
   {
     name: "Analytics",

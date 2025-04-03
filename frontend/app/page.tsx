@@ -8,22 +8,83 @@ export default function Home() {
   return (
     <main className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center min-h-screen p-6 md:p-12 text-center bg-gradient-to-b from-blue-900 to-slate-900 text-white">
-        <div className="max-w-5xl mx-auto z-10">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">
-            Invest in tokenized real estate with the trust of traditional wealth.
+      <section className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden">
+        {/* Background layers */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-800 via-blue-900 to-slate-900"></div>
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)]" style={{ backgroundSize: '20px 20px' }}></div>
+        
+        {/* Animated background elements */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }}></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '1s' }}></div>
+        <div className="absolute top-2/3 left-1/3 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '7s', animationDelay: '2s' }}></div>
+        
+        {/* Content container */}
+        <div className="relative max-w-6xl mx-auto z-10 px-6 md:px-12 text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center px-4 py-2 mb-8 rounded-full bg-blue-900/50 backdrop-blur-md border border-blue-700/50 text-amber-400">
+            <span className="mr-2 h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span className="text-sm font-medium">Reimagining real estate investment</span>
+          </div>
+          
+          {/* Main heading with animated gradient */}
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            <span className="bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-clip-text text-transparent">
+              Invest in tokenized real estate
+            </span> 
+            <br className="hidden md:block" />
+            <span className="text-white">with the trust of traditional wealth.</span>
           </h1>
-          <p className="text-xl md:text-2xl mb-8 text-slate-200">
-            Fractionalized property investment, the easy way to invest in property.
+          
+          {/* Subheading with enhanced styling */}
+          <p className="text-xl md:text-2xl mb-10 text-blue-100 max-w-3xl mx-auto">
+            Fractionalized property investment, the <span className="font-semibold text-white">smarter way</span> to invest in property with lower barriers and higher flexibility.
           </p>
-          <Link href="/login">
-            <Button className="px-8 py-6 text-lg bg-amber-500 hover:bg-amber-600 text-slate-900">
-              Get Started
-            </Button>
-          </Link>
+          
+          {/* CTA section with dual buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-400 to-amber-600 rounded-xl blur-md opacity-75 group-hover:opacity-100 transition duration-300"></div>
+              <Link href="/login" className="relative block">
+                <Button className="relative px-8 py-6 text-lg bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-xl shadow-lg transform transition duration-300 group-hover:scale-105 group-hover:shadow-xl w-full">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
+            <Link href="#how-it-works">
+              <Button variant="outline" className="px-8 py-6 text-lg bg-transparent hover:bg-blue-800/30 text-white border-white/20 hover:border-white/40 rounded-xl transition duration-300 w-full sm:w-auto">
+                Learn More
+              </Button>
+            </Link>
+          </div>
+          
+          {/* Trust indicators */}
+          <div className="flex flex-wrap justify-center items-center gap-6 text-blue-200/70">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span>Bank-level security</span>
+            </div>
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <span>Regulated investment</span>
+            </div>
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              <span>5,000+ investors</span>
+            </div>
+          </div>
         </div>
-        <div className="absolute inset-0 bg-blue-950/50 backdrop-blur-sm">
-          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)]" style={{ backgroundSize: '30px 30px' }}></div>
+        
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
         </div>
       </section>
 
@@ -284,6 +345,7 @@ export default function Home() {
           <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center text-slate-900 dark:text-white">
               What you can do on Atlas
           </h2>
+          <div className="w-24 h-1 bg-blue-600 mx-auto mb-8 rounded-full"></div>
           <p className="text-xl text-slate-700 dark:text-slate-300 text-center mb-12 max-w-3xl mx-auto">
             Atlas gives you <span className="font-medium">fractional access</span> to high-quality properties. You invest only what you want — and get ownership in real estate that earns rental income, appreciates over time, and can be resold when you're ready.
           </p>
@@ -353,9 +415,10 @@ export default function Home() {
       {/* So What Powers It? */}
       <section className="py-20 px-6 bg-slate-50 dark:bg-slate-950">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center text-slate-900 dark:text-white">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-center text-slate-900 dark:text-white">
               So what powers it?
           </h2>
+          <div className="w-24 h-1 bg-amber-500 mx-auto mb-12 rounded-full"></div>
           
           <div className="flex flex-col md:flex-row gap-12 mb-16 items-center">
             <div className="md:w-1/2">
@@ -452,6 +515,7 @@ export default function Home() {
               Why Atlas is different?
             </h2>
           </div>
+          <div className="w-24 h-1 bg-blue-600 mx-auto mb-8 rounded-full"></div>
           
           <div className="relative mb-12 max-w-3xl mx-auto">
             <p className="text-xl text-center text-slate-700 dark:text-slate-300">
@@ -549,18 +613,33 @@ export default function Home() {
         </div>
       </section>
 
-
-
       {/* Final CTA */}
-      <section className="py-20 px-6 bg-gradient-to-r from-blue-800 to-blue-900 text-white text-center">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to transform how you invest in real estate?</h2>
-          <p className="text-xl mb-8">Join thousands of investors already building wealth through tokenized property investments.</p>
-          <Link href="/login">
-            <Button className="px-8 py-6 text-lg bg-amber-500 hover:bg-amber-600 text-slate-900">
-              Start Investing Today
-            </Button>
-          </Link>
+      <section className="relative py-24 px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-blue-800 to-blue-900"></div>
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)]" style={{ backgroundSize: '20px 20px' }}></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl"></div>
+
+        <div className="relative max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white leading-tight">
+              Ready to transform how you <span className="text-amber-400">invest</span> in real estate?
+            </h2>
+            <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto">
+              Join thousands of investors already building wealth through tokenized property investments.
+            </p>
+          </div>
+          
+          <div className="flex justify-center">
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-400 to-amber-600 rounded-xl blur-md opacity-75 group-hover:opacity-100 transition duration-300"></div>
+              <Link href="/login" className="relative block">
+                <Button className="relative px-10 py-6 text-lg bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-xl shadow-lg transform transition duration-300 group-hover:scale-105 group-hover:shadow-xl">
+                  Start Investing Today
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
