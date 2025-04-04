@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { BetaSignupModal } from '@/components/BetaSignupModal';
 
 export default function Home() {
   return (
@@ -44,17 +45,10 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <div className="relative group">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-400 to-amber-600 rounded-xl blur-md opacity-75 group-hover:opacity-100 transition duration-300"></div>
-              <Link href="/login" className="relative block">
-                <Button className="relative px-8 py-6 text-lg bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-xl shadow-lg transform transition duration-300 group-hover:scale-105 group-hover:shadow-xl w-full">
-                  Get Started
-                </Button>
-              </Link>
+              <div className="relative block">
+                <BetaSignupModal />
+              </div>
             </div>
-            <Link href="#how-it-works">
-              <Button variant="outline" className="px-8 py-6 text-lg bg-transparent hover:bg-blue-800/30 text-white border-white/20 hover:border-white/40 rounded-xl transition duration-300 w-full sm:w-auto">
-                Learn More
-              </Button>
-            </Link>
           </div>
           
           {/* Trust indicators */}
