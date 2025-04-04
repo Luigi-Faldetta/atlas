@@ -22,9 +22,7 @@ export function SignupForm() {
     priorExperience: '',
     painPoints: '',
     wishlist: '',
-    phone: '',
-    interests: '',
-    terms: false
+    phone: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
@@ -62,16 +60,16 @@ export function SignupForm() {
     // Note: column names in sheet must match these property names (case-sensitive)
     const sheetyData = {
       sheet1: {
+        // Make sure these exactly match your column headers (case sensitive)
+        // Note: Sheety often works better with lowercase column names
         name: formData.name || '',
         email: formData.email || '',
         phone: formData.phone || '',
         country: formData.country || '',
-        investmentAmount: formData.investmentAmount || '',
-        priorExperience: formData.priorExperience ? 'Yes' : 'No',
-        painPoints: formData.painPoints || '',
-        wishlist: formData.wishlist || '',
-        interests: formData.interests || '',
-        agreedToTerms: formData.terms ? 'Yes' : 'No'
+        investmentamount: formData.investmentAmount || '', // Try lowercase for compound names
+        priorexperience: formData.priorExperience || '', // Try lowercase for compound names
+        painpoints: formData.painPoints || '', // Try lowercase for compound names
+        wishlist: formData.wishlist || ''
       }
     };
     
@@ -92,6 +90,9 @@ export function SignupForm() {
       });
       
       if (!response.ok) {
+        // Get the response text to see the error details
+        const errorText = await response.text();
+        console.error(`HTTP error! status: ${response.status}, details:`, errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
@@ -109,9 +110,7 @@ export function SignupForm() {
         investmentAmount: '',
         priorExperience: '',
         painPoints: '',
-        wishlist: '',
-        interests: '',
-        terms: false
+        wishlist: ''
       });
 
     } catch (error) {
@@ -130,14 +129,14 @@ export function SignupForm() {
         
         <div className="space-y-2">
           <label htmlFor="name" className="block text-sm font-medium text-white">
-            Name
+            Full name
           </label>
           <Input
             id="name"
             name="name"
             value={formData.name || ''}
             onChange={handleChange}
-            placeholder="Enter your name"
+            placeholder="Enter your full name"
             className="w-full bg-blue-900/50 border-blue-700 text-white placeholder:text-blue-300/70"
             required
           />
@@ -225,7 +224,7 @@ export function SignupForm() {
         
         <div className="space-y-2">
           <label htmlFor="priorExperience" className="block text-sm font-medium text-white">
-            Any prior real estate investing experience?
+            Have you invested in real estate before?
           </label>
           <Select 
             onValueChange={(value) => handleSelectChange('priorExperience', value)}
@@ -243,63 +242,32 @@ export function SignupForm() {
         
         <div className="space-y-2">
           <label htmlFor="painPoints" className="block text-sm font-medium text-white">
-            Pain points with current real estate investing?
+            What frustrates you most about real estate investment?
           </label>
           <Input
             id="painPoints"
             name="painPoints"
             value={formData.painPoints || ''}
             onChange={handleChange}
-            placeholder="What frustrates you about real estate investing?"
+            placeholder="Your pain points, e.g., complexity, high costs, lack of access..."
             className="w-full bg-blue-900/50 border-blue-700 text-white placeholder:text-blue-300/70"
           />
         </div>
         
         <div className="space-y-2">
           <label htmlFor="wishlist" className="block text-sm font-medium text-white">
-            Wishlist features for real estate investing platform
+            What would make this platform a no-brainer for you?
           </label>
           <Input
             id="wishlist"
             name="wishlist"
             value={formData.wishlist || ''}
             onChange={handleChange}
-            placeholder="What would you like to see in our platform?"
+            placeholder="e.g., transparency, easy returns, lower barriers..."
             className="w-full bg-blue-900/50 border-blue-700 text-white placeholder:text-blue-300/70"
           />
         </div>
       </section>
-
-      <div className="flex items-center space-x-2 mt-4">
-        <Checkbox 
-          id="interests-investing" 
-          name="interests" 
-          checked={formData.interests === 'investing'} 
-          onCheckedChange={(checked) => {
-            setFormData(prev => ({
-              ...prev,
-              interests: checked ? 'investing' : ''
-            }));
-          }} 
-        />
-        <Label htmlFor="interests-investing" className="text-blue-100">I'm interested in real estate investing</Label>
-      </div>
-      
-      <div className="flex items-center space-x-2 mt-2">
-        <Checkbox 
-          id="terms" 
-          name="terms" 
-          required 
-          checked={Boolean(formData.terms)} 
-          onCheckedChange={(checked) => {
-            setFormData(prev => ({
-              ...prev,
-              terms: Boolean(checked)
-            }));
-          }} 
-        />
-        <Label htmlFor="terms" className="text-blue-100">I agree to the terms and conditions</Label>
-      </div>
 
       <Button
         type="submit"
