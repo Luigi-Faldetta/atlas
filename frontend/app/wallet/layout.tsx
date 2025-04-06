@@ -1,5 +1,3 @@
-import { Header } from "@/components/layout/Header";
-
 export default function WalletLayout({
   children,
 }: {
@@ -7,7 +5,6 @@ export default function WalletLayout({
 }) {
   return (
     <>
-      <Header />
       {children}
     </>
   );
