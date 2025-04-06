@@ -12,7 +12,10 @@ import {
   calculateProjectedReturns,
 } from './mockApi';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
+console.log('API_BASE_URL:', API_BASE_URL);
 
 interface User {
   id: string;
@@ -47,24 +50,48 @@ const useMockApi = () => {
 
   // Authentication functions
   const login = async (email: string, password: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Use window.location.origin to get the correct base URL
+      const baseUrl = window.location.origin;
+      const response = await fetch(`${baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Login failed');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Login failed');
+      }
+
+      const data = await response.json();
+      
+      // For mock data purposes, if no real response data, create mock data
+      const userData = data.user || {
+        id: '1',
+        name: 'Demo User',
+        email: email
+      };
+      
+      const tokenData = data.token || 'mock-jwt-token';
+      
+      localStorage.setItem('atlas_token', tokenData);
+      localStorage.setItem('atlas_user', JSON.stringify(userData));
+      
+      setToken(tokenData);
+      setCurrentUser(userData);
+      setIsAuthenticated(true);
+      
+      return { user: userData, token: tokenData };
+    } catch (error: any) {
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
     }
-
-    const { token, user } = await response.json();
-    localStorage.setItem('atlas_token', token); // Store the valid JWT token
-    localStorage.setItem('atlas_user', JSON.stringify(user)); // Store the user data
-    setToken(token);
-    setCurrentUser(user);
-    // setIsAuthenticated(true); // Update authentication state
-    return user;
   };
 
   const register = async (email: string, password: string, name: string) => {

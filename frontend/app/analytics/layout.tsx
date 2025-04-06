@@ -1,5 +1,3 @@
-import { Header } from "@/components/layout/Header";
-
 export default function AnalyticsLayout({
   children,
 }: {
@@ -7,7 +5,6 @@ export default function AnalyticsLayout({
 }) {
   return (
     <>
-      <Header />
       {children}
     </>
   );

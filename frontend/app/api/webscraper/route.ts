@@ -9,7 +9,7 @@ const openai = new OpenAI({
 
 // Define the URL for our scraper service
 const SCRAPER_SERVICE_URL =
-  process.env.SCRAPER_SERVICE_URL || 'http://localhost:3001';
+  process.env.SCRAPER_SERVICE_URL || 'http://localhost:5000';
 
 // Mock data for property analysis for Spanish properties (fallback)
 const mockSpanishPropertyData = {
@@ -103,6 +103,7 @@ async function analyzePropertyWithScraperService(
 ) {
   try {
     // Make the Axios request with the Authorization header
+    console.log('Request data:', { url, platform, useMockData, token });
     const response = await axios.post(
       `${SCRAPER_SERVICE_URL}/api/scraper/analyze`,
       {

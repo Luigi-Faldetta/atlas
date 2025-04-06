@@ -89,11 +89,11 @@ export default function AtlasDashboard() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b">
+      <div className="sticky top-16 z-10 bg-white dark:bg-slate-800 border-b">
         <div className="container mx-auto px-4 py-3">
           <h1 className="text-xl font-bold">Atlas Platform Dashboard</h1>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">

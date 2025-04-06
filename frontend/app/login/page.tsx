@@ -40,7 +40,7 @@ export default function LoginPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/dashboard');
+      router.push('/');
     }
   }, [isAuthenticated, router]);
 
@@ -64,7 +64,7 @@ export default function LoginPage() {
 
     try {
       await login(loginData.email, loginData.password);
-      router.push('/dashboard');
+      router.push('/');
     } catch (error: any) {
       setFormError(error?.message || 'Login failed');
     }
@@ -85,7 +85,7 @@ export default function LoginPage() {
         registerData.password,
         registerData.name
       );
-      router.push('/dashboard');
+      router.push('/');
     } catch (error: any) {
       setFormError(error?.message || 'Registration failed');
     }
