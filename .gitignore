@@ -28,3 +28,8 @@ jspm_packages/
 .idea/
 *.swp
 .next/
+
+# Virtual environment
+.venv/
+venv
+venv/lib/python3.12/site-packages/playwright/driver/node
