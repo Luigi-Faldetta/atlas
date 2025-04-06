@@ -9,6 +9,8 @@ router.post(
   '/analyze',
   (req, res, next) => {
     console.log('Route /api/scraper/analyze hit');
+    console.log('Request body:', req.body);
+    console.log('Authorization header:', req.headers.authorization);
     next();
   },
   authMiddleware,
