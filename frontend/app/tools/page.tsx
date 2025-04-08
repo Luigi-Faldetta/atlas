@@ -15,7 +15,12 @@ type AnalysisResult = {
   };
   agent_analysis?: {
     investment_score: number; // 0-100 score
-    roi: number | null; // ROI percentage
+    roi_5_years: number | null; // ROI for 5 years
+    roi_10_years: number | null; // ROI for 10 years
+    yearly_yield: number | null; // Yearly yield percentage
+    monthly_rental_income: number | null; // Monthly rental income
+    yearly_appreciation_percentage: number | null; // Yearly appreciation percentage
+    yearly_appreciation_value: number | null; // Yearly appreciation value in euros
     strengths: string[]; // Key strengths
     weaknesses: string[]; // Key weaknesses
   };
@@ -101,7 +106,27 @@ export default function ToolsPage() {
                       investmentScore={
                         analysisResult.agent_analysis?.investment_score || 0
                       }
-                      roi={analysisResult.agent_analysis?.roi || null}
+                      roi5Years={
+                        analysisResult.agent_analysis?.roi_5_years || null
+                      }
+                      roi10Years={
+                        analysisResult.agent_analysis?.roi_10_years || null
+                      }
+                      yearlyYield={
+                        analysisResult.agent_analysis?.yearly_yield || null
+                      }
+                      monthlyRentalIncome={
+                        analysisResult.agent_analysis?.monthly_rental_income ||
+                        null
+                      }
+                      yearlyAppreciationPercentage={
+                        analysisResult.agent_analysis
+                          ?.yearly_appreciation_percentage || null
+                      }
+                      yearlyAppreciationValue={
+                        analysisResult.agent_analysis
+                          ?.yearly_appreciation_value || null
+                      }
                       strengths={analysisResult.agent_analysis?.strengths || []}
                       weaknesses={
                         analysisResult.agent_analysis?.weaknesses || []

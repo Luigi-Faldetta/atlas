@@ -35,15 +35,52 @@ prompt = ChatPromptTemplate.from_messages(
             "role": "system",
             "content": """
             You are a real estate investment analysis AI. Your job is to analyze the provided property data and generate a detailed investment analysis. 
-            Consider the following criteria in your analysis:
-            
+            The response must strictly follow the format below to ensure it can be parsed correctly by regex patterns.
+
             1. **Property Details**:
                - Address, price, living area, plot size, and number of bedrooms.
 
             Based on the provided data, generate:
             - An **Investment Score** (0-100) that reflects the overall investment potential.
             - A detailed explanation of the score, highlighting the strengths and weaknesses of the property.
-            - An estimated **ROI (Return on Investment)** percentage based on reasonable assumptions about rental income and expenses.
+            - An estimated **ROI (Return on Investment)** percentage for 5 years and 10 years based on reasonable assumptions about rental income and expenses.
+            - The **Yearly Yield** percentage, calculated as (Net Annual Income / Purchase Price) * 100.
+            - The **Monthly Rental Income** (best estimate based on the property details).
+            - The **Yearly Appreciation** percentage and its corresponding value in euros.
+
+            The response must strictly follow this format:
+
+            **Investment Score**: <score>/100
+
+            **Address**: <address>
+
+            **Score Explanation**:
+            <explanation>
+
+            **Strengths**:
+            - <strength 1>
+            - <strength 2>
+            - <strength 3>
+
+            **Weaknesses**:
+            - <weakness 1>
+            - <weakness 2>
+            - <weakness 3>
+
+            **Estimated ROI**:
+            ROI (5 years): <value>%
+            ROI (10 years): <value>%
+
+            **Yearly Yield**:
+            approximately <value>%
+
+            **Monthly Rental Income**:
+            approximately €<value>
+
+            **Yearly Appreciation**:
+            approximately <value>% (€<value>)
+
+            Ensure the response strictly adheres to this format, including the exact headings, spacing, and structure. Do not include any additional text or explanations outside this format.
             """
         },
         {
@@ -108,21 +145,50 @@ async def analyze(request: AnalyzeRequest):
         content = agent_response.content
         logging.debug("Agent response content: %s", content)
 
-        # Extract investment score, strengths, and weaknesses from the content
-        investment_score_match = re.search(r"\*\*Investment Score\*\*:\s*(\d+)\s*/\s*100", content, re.IGNORECASE)
+        # Extract investment score
+        investment_score_match = re.search(r"(?i)\*\*Investment Score\*\*:\s*(\d+)", content)
         investment_score = int(investment_score_match.group(1)) if investment_score_match else None
 
-        strengths_match = re.search(r"Strengths:\n\n(.*?)\n\nWeaknesses:", content, re.S)
+        # Extract address
+        address_match = re.search(r"(?i)\*\*Address\*\*:\s*(.+)", content)
+        address = address_match.group(1).strip() if address_match else "Not available"
+
+        # Extract strengths
+        strengths_match = re.search(r"(?i)\*\*Strengths\*\*:\s*(.*?)\s*\*\*Weaknesses\*\*", content, re.S)
         strengths = [s.strip() for s in strengths_match.group(1).split("\n") if s.strip()] if strengths_match else []
 
-        weaknesses_match = re.search(r"Weaknesses:\n\n(.*?)\n\n\*\*Estimated ROI:", content, re.S)
+        # Extract weaknesses
+        weaknesses_match = re.search(r"(?i)\*\*Weaknesses\*\*:\s*(.*?)\s*\*\*Estimated ROI\*\*", content, re.S)
         weaknesses = [w.strip() for w in weaknesses_match.group(1).split("\n") if w.strip()] if weaknesses_match else []
 
-        roi_match = re.search(r"ROI.*?=\s*([\d.]+)%", content, re.IGNORECASE)
-        roi = float(roi_match.group(1)) if roi_match else None
+        # Extract ROI (5 years)
+        roi_5_years_match = re.search(r"(?i)ROI \(5 years\):\s*(?:approximately\s*)?([\d.]+)%", content)
+        roi_5_years = float(roi_5_years_match.group(1)) if roi_5_years_match else None
 
-        logging.debug("Extracted analysis: investment_score=%s, roi=%s, strengths=%s, weaknesses=%s",
-                      investment_score, roi, strengths, weaknesses)
+        # Extract ROI (10 years)
+        roi_10_years_match = re.search(r"(?i)ROI \(10 years\):\s*(?:approximately\s*)?([\d.]+)%", content)
+        roi_10_years = float(roi_10_years_match.group(1)) if roi_10_years_match else None
+
+        # Extract Yearly Yield
+        yearly_yield_match = re.search(r"(?i)\*\*Yearly Yield\*\*[\s\S]*?(?:approximately\s*)?([\d.]+)%", content)
+        yearly_yield = float(yearly_yield_match.group(1)) if yearly_yield_match else None
+
+        # Extract Monthly Rental Income
+        monthly_rental_income_match = re.search(r"(?i)\*\*Monthly Rental Income\*\*[\s\S]*?(?:approximately\s*)?€([\d.,]+)", content)
+        monthly_rental_income = float(monthly_rental_income_match.group(1).replace(",", "")) if monthly_rental_income_match else None
+
+        # Extract Yearly Appreciation Percentage
+        yearly_appreciation_percentage_match = re.search(r"(?i)\*\*Yearly Appreciation\*\*[\s\S]*?(?:approximately\s*)?([\d.]+)%", content)
+        yearly_appreciation_percentage = float(yearly_appreciation_percentage_match.group(1)) if yearly_appreciation_percentage_match else None
+
+        # Extract Yearly Appreciation Value (in euros)
+        yearly_appreciation_value_match = re.search(r"(?i)\*\*Yearly Appreciation\*\*[\s\S]*?(?:approximately\s*)?.*?\(€([\d.,]+)\)", content)
+        yearly_appreciation_value = float(yearly_appreciation_value_match.group(1).replace(",", "")) if yearly_appreciation_value_match else None
+
+        logging.debug(
+            "Extracted analysis: investment_score=%s, address=%s, roi_5_years=%s, roi_10_years=%s, yearly_yield=%s, monthly_rental_income=%s, yearly_appreciation_percentage=%s, yearly_appreciation_value=%s, strengths=%s, weaknesses=%s",
+            investment_score, address, roi_5_years, roi_10_years, yearly_yield, monthly_rental_income, yearly_appreciation_percentage, yearly_appreciation_value, strengths, weaknesses
+        )
 
         # Return both the scraped data and the agent's analysis
         return {
@@ -130,7 +196,13 @@ async def analyze(request: AnalyzeRequest):
             "scraped_data": simplified_data,
             "agent_analysis": {
                 "investment_score": investment_score,
-                "roi": roi,
+                "address": address,
+                "roi_5_years": roi_5_years,
+                "roi_10_years": roi_10_years,
+                "yearly_yield": yearly_yield,
+                "monthly_rental_income": monthly_rental_income,
+                "yearly_appreciation_percentage": yearly_appreciation_percentage,
+                "yearly_appreciation_value": yearly_appreciation_value,
                 "strengths": strengths,
                 "weaknesses": weaknesses,
             },

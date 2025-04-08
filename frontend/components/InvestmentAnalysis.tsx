@@ -1,63 +1,74 @@
-import React from 'react';
-
 type InvestmentAnalysisProps = {
-  investmentScore: number; // 0-100 score
-  roi: number | null; // ROI percentage
-  strengths: string[]; // Key strengths
-  weaknesses: string[]; // Key weaknesses
+  investmentScore: number;
+  roi5Years: number | null;
+  roi10Years: number | null;
+  yearlyYield: number | null;
+  monthlyRentalIncome: number | null;
+  yearlyAppreciationPercentage: number | null;
+  yearlyAppreciationValue: number | null;
+  strengths: string[];
+  weaknesses: string[];
   price: string;
   address: string;
 };
 
-export default function InvestmentAnalysis({
+const InvestmentAnalysis = ({
   investmentScore,
-  roi,
+  roi5Years,
+  roi10Years,
+  yearlyYield,
+  monthlyRentalIncome,
+  yearlyAppreciationPercentage,
+  yearlyAppreciationValue,
   strengths,
   weaknesses,
   price,
   address,
-}: InvestmentAnalysisProps) {
-  return (
-    <div className="p-4 border rounded bg-white">
-      <h2 className="text-xl font-bold mb-4">Investment Analysis</h2>
-      <ul className="list-disc pl-5 space-y-2">
-        <li>
-          <strong>Investment Score:</strong> {investmentScore}/100
-        </li>
-        <li>
-          <strong>ROI:</strong> {roi !== null ? `${roi}%` : 'Not available'}
-        </li>
-        <li>
-          <strong>Price:</strong> {price}
-        </li>
-        <li>
-          <strong>Address:</strong> {address}
-        </li>
-        <li>
-          <strong>Strengths:</strong>
-          <ul className="list-disc pl-5 space-y-1">
-            {strengths.length > 0 ? (
-              strengths.map((strength, index) => (
-                <li key={index}>{strength}</li>
-              ))
-            ) : (
-              <li>Not available</li>
-            )}
-          </ul>
-        </li>
-        <li>
-          <strong>Weaknesses:</strong>
-          <ul className="list-disc pl-5 space-y-1">
-            {weaknesses.length > 0 ? (
-              weaknesses.map((weakness, index) => (
-                <li key={index}>{weakness}</li>
-              ))
-            ) : (
-              <li>Not available</li>
-            )}
-          </ul>
-        </li>
-      </ul>
-    </div>
-  );
-}
+}: InvestmentAnalysisProps) => (
+  <div>
+    <h2>Investment Analysis</h2>
+    <p>
+      <strong>Address:</strong> {address}
+    </p>
+    <p>
+      <strong>Price:</strong> {price}
+    </p>
+    <p>
+      <strong>Investment Score:</strong> {investmentScore}/100
+    </p>
+    <p>
+      <strong>ROI (5 years):</strong> {roi5Years ? `${roi5Years}%` : 'N/A'}
+    </p>
+    <p>
+      <strong>ROI (10 years):</strong> {roi10Years ? `${roi10Years}%` : 'N/A'}
+    </p>
+    <p>
+      <strong>Yearly Yield:</strong> {yearlyYield ? `${yearlyYield}%` : 'N/A'}
+    </p>
+    <p>
+      <strong>Monthly Rental Income:</strong>{' '}
+      {monthlyRentalIncome ? `€${monthlyRentalIncome}` : 'N/A'}
+    </p>
+    <p>
+      <strong>Yearly Appreciation:</strong>{' '}
+      {yearlyAppreciationPercentage
+        ? `${yearlyAppreciationPercentage}%`
+        : 'N/A'}{' '}
+      ({yearlyAppreciationValue ? `€${yearlyAppreciationValue}` : 'N/A'})
+    </p>
+    <h3>Strengths</h3>
+    <ul>
+      {strengths.map((s, i) => (
+        <li key={i}>{s}</li>
+      ))}
+    </ul>
+    <h3>Weaknesses</h3>
+    <ul>
+      {weaknesses.map((w, i) => (
+        <li key={i}>{w}</li>
+      ))}
+    </ul>
+  </div>
+);
+
+export default InvestmentAnalysis;
