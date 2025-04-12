@@ -6,6 +6,10 @@ from langchain.prompts import ChatPromptTemplate
 from new_funda_scraper import FundaScraper  # Import the FundaScraper class
 import logging
 import re
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -21,11 +25,15 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    raise ValueError("OPENAI_API_KEY environment variable is not set")
+
 # Initialize the LangChain Chat LLM
 llm = ChatOpenAI(
     temperature=0.7,
     model_name="gpt-4",  # Replace with your OpenAI model
-    openai_api_key="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",  # Replace with your OpenAI API key
+    openai_api_key=api_key,  # Replace with your OpenAI API key
 )
 
 # Define the chat prompt template

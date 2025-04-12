@@ -2,7 +2,10 @@ from playwright.async_api import async_playwright
 from playwright_stealth import stealth_async
 import asyncio
 import random
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class FundaScraper:
     def __init__(self, proxy=None):
@@ -105,11 +108,20 @@ if __name__ == "__main__":
 
     async def main():
         # Bright Data Residential Proxy Configuration (optional)
-        proxy = {
-            "server": "http://brd.superproxy.io:33335",
-            "username": "brd-customer-hl_14208ce5-zone-residential_proxy1",
-            "password": "64ohzc020l4n"
-        }
+        proxy = None
+        proxy_server = os.getenv("PROXY_SERVER")
+        proxy_username = os.getenv("PROXY_USERNAME")
+        proxy_password = os.getenv("PROXY_PASSWORD")
+        
+        if proxy_server and proxy_username and proxy_password:
+            proxy = {
+                "server": proxy_server,
+                "username": proxy_username,
+                "password": proxy_password
+            }
+            print("Using proxy configuration from environment variables")
+        else:
+            print("No proxy configuration found in environment variables")
 
         # Funda property URL
         funda_url = "https://www.funda.nl/detail/koop/amsterdam/appartement-aragohof-4-1/43954500/"  
