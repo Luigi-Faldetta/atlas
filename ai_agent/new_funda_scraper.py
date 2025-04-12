@@ -49,20 +49,23 @@ class FundaScraper:
         try:
             await self.page.goto(url, timeout=60000)
 
-            # 🔁 Make sure key content has loaded
-            await self.page.wait_for_selector("h1 span.block.text-2xl.font-bold", timeout=10000)
-            await self.page.wait_for_load_state("networkidle")
+            # Try waiting for any span in the h1 to appear
+            try:
+                await self.page.wait_for_selector("h1 span", timeout=15000)
+            except Exception as e:
+                print("[Scraper Debug] Could not find main title span.")
+                html = await self.page.content()
+                print("[Scraper Debug HTML dump]", html[:1000])
+                return None
 
-            # 💡 Optional: Debug the rendered HTML
-            # html = await self.page.content()
-            # print(html[:1000])
+            await self.page.wait_for_load_state("networkidle")
 
             await asyncio.sleep(random.uniform(5, 10))
             await self.page.mouse.wheel(0, random.randint(300, 800))
             await asyncio.sleep(random.uniform(2, 5))
 
             # Extract the full address
-            street_elem = await self.page.query_selector("h1 span.block.text-2xl.font-bold")
+            street_elem = await self.page.query_selector("h1 span.block.text-2xl.font-bold") or await self.page.query_selector("h1 span")
             postal_city_elem = await self.page.query_selector("h1 span.text-neutral-40")
 
             street = await street_elem.inner_text() if street_elem else "Street not found"
@@ -73,12 +76,12 @@ class FundaScraper:
             price_elem = await self.page.query_selector("div.mt-5.flex.flex-wrap.items-center.gap-3 span")
             price = await price_elem.inner_text() if price_elem else "Price not found"
 
-            # Extract living area
+            # Extract the square meters and number of rooms
             features_elem = await self.page.query_selector_all("ul.flex.flex-wrap.gap-4 li")
             features = [await feature.inner_text() for feature in features_elem] if features_elem else []
             living_area = next((f.split("\n")[0] for f in features if "m²" in f), "Not found")
 
-            # Extract number of bedrooms
+            # Extract bedrooms specifically
             bedrooms_elem = await self.page.query_selector("ul.flex.flex-wrap.gap-4 li:nth-child(2) span.md\\:font-bold")
             bedrooms = await bedrooms_elem.inner_text() if bedrooms_elem else "Not found"
 
@@ -88,7 +91,7 @@ class FundaScraper:
                 "Address": address,
                 "Price": price,
                 "Living Area": living_area,
-                "Plot Size": "Not available",  # Needed for prompt format
+                "Plot Size": "Not available",
                 "Bedrooms": bedrooms,
             }
 
