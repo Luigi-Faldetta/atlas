@@ -9,10 +9,6 @@ load_dotenv()
 
 class FundaScraper:
     def __init__(self, proxy=None):
-        """
-        Initialize Playwright with optional proxy.
-        :param proxy: Proxy configuration dictionary with 'server', 'username', and 'password'.
-        """
         self.proxy = proxy
         self.playwright = None
         self.browser = None
@@ -20,9 +16,6 @@ class FundaScraper:
         self.page = None
 
     async def start(self):
-        """
-        Start Playwright and initialize the browser, context, and page.
-        """
         self.playwright = await async_playwright().start()
 
         launch_args = {
@@ -40,7 +33,7 @@ class FundaScraper:
         }
 
         if self.proxy:
-            print(f"Using proxy: {self.proxy}")  # Debugging proxy configuration
+            print(f"Using proxy: {self.proxy}")
             launch_args["proxy"] = {
                 "server": self.proxy["server"],
                 "username": self.proxy.get("username"),
@@ -50,20 +43,20 @@ class FundaScraper:
         self.browser = await self.playwright.chromium.launch(**launch_args)
         self.context = await self.browser.new_context(ignore_https_errors=True)
         self.page = await self.context.new_page()
-        await stealth_async(self.page)  # Apply stealth mode
+        await stealth_async(self.page)
 
     async def scrape_property(self, url: str):
-        """
-        Scrape basic property data from Funda.
-        :param url: The URL of the Funda property page.
-        :return: A dictionary containing property data.
-        """
         try:
-            # Navigate to the URL
             await self.page.goto(url, timeout=60000)
+
+            # 🔁 Make sure key content has loaded
+            await self.page.wait_for_selector("h1 span.block.text-2xl.font-bold", timeout=10000)
             await self.page.wait_for_load_state("networkidle")
 
-            # Mimic human behavior
+            # 💡 Optional: Debug the rendered HTML
+            # html = await self.page.content()
+            # print(html[:1000])
+
             await asyncio.sleep(random.uniform(5, 10))
             await self.page.mouse.wheel(0, random.randint(300, 800))
             await asyncio.sleep(random.uniform(2, 5))
@@ -80,30 +73,30 @@ class FundaScraper:
             price_elem = await self.page.query_selector("div.mt-5.flex.flex-wrap.items-center.gap-3 span")
             price = await price_elem.inner_text() if price_elem else "Price not found"
 
-            # Extract the square meters and number of rooms
+            # Extract living area
             features_elem = await self.page.query_selector_all("ul.flex.flex-wrap.gap-4 li")
             features = [await feature.inner_text() for feature in features_elem] if features_elem else []
             living_area = next((f.split("\n")[0] for f in features if "m²" in f), "Not found")
 
-            # Extract bedrooms specifically
+            # Extract number of bedrooms
             bedrooms_elem = await self.page.query_selector("ul.flex.flex-wrap.gap-4 li:nth-child(2) span.md\\:font-bold")
             bedrooms = await bedrooms_elem.inner_text() if bedrooms_elem else "Not found"
 
-            print(f"Extracted data: Address: {address}, Price: {price}, Living Area: {living_area}, Bedrooms: {bedrooms}")
+            print(f"[Scraped] Address: {address}, Price: {price}, Living Area: {living_area}, Bedrooms: {bedrooms}")
 
             return {
                 "Address": address,
                 "Price": price,
                 "Living Area": living_area,
+                "Plot Size": "Not available",  # Needed for prompt format
                 "Bedrooms": bedrooms,
             }
 
         except Exception as e:
-            print(f"Error extracting property data: {e}")
+            print(f"[Scraper Error] {e}")
             return None
 
     async def close(self):
-        """Close the browser and Playwright."""
         if self.context:
             await self.context.close()
         if self.browser:
@@ -111,10 +104,9 @@ class FundaScraper:
         if self.playwright:
             await self.playwright.stop()
 
-# Optional CLI tester
+
 if __name__ == "__main__":
     async def main():
-        # Load proxy settings from environment variables
         proxy = None
         proxy_server = os.getenv("PROXY_SERVER")
         proxy_username = os.getenv("PROXY_USERNAME")
@@ -130,7 +122,7 @@ if __name__ == "__main__":
         else:
             print("No proxy configuration found in environment variables")
 
-        funda_url = "https://www.funda.nl/detail/koop/amsterdam/appartement-aragohof-4-1/43954500/"  # example
+        funda_url = "https://www.funda.nl/detail/koop/amsterdam/appartement-aragohof-4-1/43954500/"
 
         scraper = FundaScraper(proxy=proxy)
         await scraper.start()
@@ -141,7 +133,7 @@ if __name__ == "__main__":
             for key, value in scraped_data.items():
                 print(f"{key}: {value}")
         else:
-            print("Failed to scrape property data.")
+            print("❌ Failed to scrape property data.")
 
         await scraper.close()
 
