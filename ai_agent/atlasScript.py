@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from ai_agent.new_funda_scraper import FundaScraper
 import logging
 import re
@@ -37,73 +37,70 @@ llm = ChatOpenAI(
 )
 
 # Define the chat prompt template
-prompt = ChatPromptTemplate.from_messages(
-    [
-        {
-            "role": "system",
-            "content": """
-            You are a real estate investment analysis AI. Your job is to analyze the provided property data and generate a detailed investment analysis. 
-            The response must strictly follow the format below to ensure it can be parsed correctly by regex patterns.
+prompt = ChatPromptTemplate.from_messages([
+    SystemMessagePromptTemplate.from_template(
+        """
+        You are a real estate investment analysis AI. Your job is to analyze the provided property data and generate a detailed investment analysis.
 
-            1. **Property Details**:
-               - Address, price, living area, plot size, and number of bedrooms.
+        The response must strictly follow the format below to ensure it can be parsed correctly by regex patterns.
 
-            Based on the provided data, generate:
-            - An **Investment Score** (0-100) that reflects the overall investment potential.
-            - A detailed explanation of the score, highlighting the strengths and weaknesses of the property.
-            - An estimated **ROI (Return on Investment)** percentage for 5 years and 10 years based on reasonable assumptions about rental income and expenses.
-            - The **Yearly Yield** percentage, calculated as (Net Annual Income / Purchase Price) * 100.
-            - The **Monthly Rental Income** (best estimate based on the property details).
-            - The **Yearly Appreciation** percentage and its corresponding value in euros.
+        1. **Property Details**:
+           - Address, price, living area, plot size, and number of bedrooms.
 
-            The response must strictly follow this format:
+        Based on the provided data, generate:
+        - An **Investment Score** (0-100) that reflects the overall investment potential.
+        - A detailed explanation of the score, highlighting the strengths and weaknesses of the property.
+        - An estimated **ROI (Return on Investment)** percentage for 5 years and 10 years based on reasonable assumptions about rental income and expenses.
+        - The **Yearly Yield** percentage, calculated as (Net Annual Income / Purchase Price) * 100.
+        - The **Monthly Rental Income** (best estimate based on the property details).
+        - The **Yearly Appreciation** percentage and its corresponding value in euros.
 
-            **Investment Score**: <score>/100
+        The response must strictly adhere to this format:
 
-            **Address**: <address>
+        **Investment Score**: <score>/100
 
-            **Score Explanation**:
-            <explanation>
+        **Address**: <address>
 
-            **Strengths**:
-            - <strength 1>
-            - <strength 2>
-            - <strength 3>
+        **Score Explanation**:
+        <explanation>
 
-            **Weaknesses**:
-            - <weakness 1>
-            - <weakness 2>
-            - <weakness 3>
+        **Strengths**:
+        - <strength 1>
+        - <strength 2>
+        - <strength 3>
 
-            **Estimated ROI**:
-            ROI (5 years): <value>%
-            ROI (10 years): <value>%
+        **Weaknesses**:
+        - <weakness 1>
+        - <weakness 2>
+        - <weakness 3>
 
-            **Yearly Yield**:
-            approximately <value>%
+        **Estimated ROI**:
+        ROI (5 years): <value>%
+        ROI (10 years): <value>%
 
-            **Monthly Rental Income**:
-            approximately €<value>
+        **Yearly Yield**:
+        approximately <value>%
 
-            **Yearly Appreciation**:
-            approximately <value>% (€<value>)
+        **Monthly Rental Income**:
+        approximately €<value>
 
-            Ensure the response strictly adheres to this format, including the exact headings, spacing, and structure. Do not include any additional text or explanations outside this format.
-            """
-        },
-        {
-            "role": "user",
-            "content": """
-            Here is the property data for analysis:
-            Address: {address}
-            Price: {price}
-            Living Area: {living_area}
-            Plot Size: {plot_size}
-            Bedrooms: {bedrooms}
-            """
-        },
-    ]
-)
+        **Yearly Appreciation**:
+        approximately <value>% (€<value>)
+
+        Ensure the response strictly adheres to this format, including the exact headings, spacing, and structure. Do not include any additional text or explanations outside this format.
+        """
+    ),
+    HumanMessagePromptTemplate.from_template(
+        """
+        Here is the property data for analysis:
+        Address: {address}
+        Price: {price}
+        Living Area: {living_area}
+        Plot Size: {plot_size}
+        Bedrooms: {bedrooms}
+        """
+    )
+])
 
 # Define the request model
 class AnalyzeRequest(BaseModel):
