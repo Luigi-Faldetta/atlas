@@ -37,7 +37,7 @@ export default function ToolsPage() {
 
     try {
       const response = await fetch(
-        'https://fastapi-playwright-app.onrender.com',
+        'https://fastapi-playwright-app.onrender.com/analyze',
         {
           method: 'POST',
           headers: {
