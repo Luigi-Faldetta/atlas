@@ -46,7 +46,8 @@ class FundaScraper:
             "username": self.proxy.get("username"),
             "password": self.proxy.get("password"),
         }
-            self.browser = await self.playwright.chromium.launch(**launch_args)
+            
+        self.browser = await self.playwright.chromium.launch(**launch_args)
                 
         # Create a browser context with ignore_https_errors=True
         self.context = await self.browser.new_context(ignore_https_errors=True)
