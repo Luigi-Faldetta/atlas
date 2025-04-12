@@ -1,9 +1,9 @@
-fastapi==0.95.2
-uvicorn==0.22.0
-pydantic==1.10.9
-langchain==0.0.208
-langchain-openai==0.3.11
-playwright==1.38.0
-playwright-stealth==1.0.6
-openai==0.27.8
+fastapi
+uvicorn[standard]
+playwright
+playwright-stealth
+pydantic>=1.10,<2.0
+langchain==0.1.14
+langchain-openai==0.0.8
+openai>=1.10
 watchfiles==0.19.0
