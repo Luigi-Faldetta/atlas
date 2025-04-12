@@ -28,6 +28,16 @@ class FundaScraper:
             print(f"Using proxy: {self.proxy}")  # Debugging proxy configuration
             self.browser = await self.playwright.chromium.launch(
                 headless=True,
+                args=[
+                    "--no-sandbox",
+                     "--disable-setuid-sandbox",
+                     "--disable-gpu",
+                      "--disable-dev-shm-usage",
+                      "--disable-extensions",
+                      "--disable-infobars",
+                      "--disable-web-security",
+                      "--disable-features=IsolateOrigins,site-per-process"
+                      ],
                 proxy={
                     "server": self.proxy["server"],
                     "username": self.proxy.get("username"),
