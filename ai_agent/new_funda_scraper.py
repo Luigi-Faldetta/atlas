@@ -24,29 +24,30 @@ class FundaScraper:
         Start Playwright and initialize the browser, context, and page.
         """
         self.playwright = await async_playwright().start()
+
+        launch_args = {
+        "headless": True,
+        "args": [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-gpu",
+            "--disable-dev-shm-usage",
+            "--disable-extensions",
+            "--disable-infobars",
+            "--disable-web-security",
+            "--disable-features=IsolateOrigins,site-per-process",
+        ]
+    }
+
         if self.proxy:
             print(f"Using proxy: {self.proxy}")  # Debugging proxy configuration
-            self.browser = await self.playwright.chromium.launch(
-                headless=True,
-                args=[
-                    "--no-sandbox",
-                     "--disable-setuid-sandbox",
-                     "--disable-gpu",
-                      "--disable-dev-shm-usage",
-                      "--disable-extensions",
-                      "--disable-infobars",
-                      "--disable-web-security",
-                      "--disable-features=IsolateOrigins,site-per-process"
-                      ],
-                proxy={
-                    "server": self.proxy["server"],
-                    "username": self.proxy.get("username"),
-                    "password": self.proxy.get("password"),
-                },
-            )
-        else:
-            self.browser = await self.playwright.chromium.launch(headless=False)
-
+            launch_args["proxy"] = {
+            "server": self.proxy["server"],
+            "username": self.proxy.get("username"),
+            "password": self.proxy.get("password"),
+        }
+            self.browser = await self.playwright.chromium.launch(**launch_args)
+                
         # Create a browser context with ignore_https_errors=True
         self.context = await self.browser.new_context(ignore_https_errors=True)
         self.page = await self.context.new_page()
