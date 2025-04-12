@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED 1
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies for Playwright
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
@@ -29,18 +29,18 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Install Playwright browsers
+# Install Playwright and its browser dependencies
 RUN pip install playwright && playwright install --with-deps
 
-# Copy app files
+# Copy the full project (including ai_agent folder)
 COPY . .
 
-# Expose port (Render uses 0.0.0.0:$PORT)
+# Expose the port (Render sets $PORT)
 EXPOSE 8000
 
-# Run the server
-CMD ["uvicorn", "atlasScript:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start the FastAPI app — make sure this path matches your file structure
+CMD ["uvicorn", "ai_agent.atlasScript:app", "--host", "0.0.0.0", "--port", "8000"]
