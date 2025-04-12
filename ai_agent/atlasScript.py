@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from ai_agent.new_funda_scraper import FundaScraper
 import logging
 import re
@@ -19,7 +19,7 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://atlasnew.vercel.app", "http://localhost:3000"],  # Allow requests from your frontend
+    allow_origins=["http://localhost:3000", "https://atlasnew-git-main-luigifaldettas-projects.vercel.app/"],  # Allow requests from your frontend
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
