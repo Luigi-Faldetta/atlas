@@ -89,6 +89,8 @@ class FundaScraper:
             bedrooms_elem = await self.page.query_selector("ul.flex.flex-wrap.gap-4 li:nth-child(2) span.md\\:font-bold")
             bedrooms = await bedrooms_elem.inner_text() if bedrooms_elem else "Not found"
 
+            print(f"Extracted data: Address: {address}, Price: {price}, Living Area: {living_area}, Bedrooms: {bedrooms}")
+
             return {
                 "Address": address,
                 "Price": price,
