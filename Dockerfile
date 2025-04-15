@@ -4,8 +4,8 @@ FROM python:3.11-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file into the container at /app
-COPY requirements.txt .
+# Copy the requirements file from the ai_agent subdirectory into the container at /app
+COPY ai_agent/requirements.txt .
 
 # Install any needed system dependencies for Playwright and then Python packages
 # Use --no-cache-dir to reduce image size
@@ -18,8 +18,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Install Playwright browsers and their dependencies *inside* the container
     && python -m playwright install --with-deps chromium
 
-# Copy the rest of your application code into the container at /app
-COPY . .
+# Copy the contents of the ai_agent subdirectory into the container at /app
+# This ensures atlasScript.py and new_funda_scraper.py are directly in /app
+COPY ai_agent/ .
 
 # Make port 8000 available to the world outside this container
 # Render typically uses port 10000 by default, but we define 8000 here.
@@ -28,8 +29,9 @@ EXPOSE 8000
 
 # Define environment variable to listen on all interfaces
 ENV HOST 0.0.0.0
-ENV PORT 8000
+ENV PORT 8000 # You can change this to 10000 if preferred
 
 # Run uvicorn when the container launches
-# Ensure this matches the port you EXPOSE and configure in Render
+# Since atlasScript.py is now directly in /app, this command is correct
+# Ensure Render's Start Command matches this (adjust port if necessary)
 CMD ["uvicorn", "atlasScript:app", "--host", "0.0.0.0", "--port", "8000"]
