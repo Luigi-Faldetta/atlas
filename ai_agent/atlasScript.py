@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
-from ai_agent.new_funda_scraper import FundaScraper
+from new_funda_scraper import FundaScraper
 import logging
 import re
 import os
