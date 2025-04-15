@@ -28,8 +28,9 @@ COPY ai_agent/ .
 EXPOSE 8000
 
 # Define environment variable to listen on all interfaces
-ENV HOST 0.0.0.0
-ENV PORT 8000 # You can change this to 10000 if preferred
+ENV HOST=0.0.0.0
+ENV PORT=8000
+# You can change this to 10000 if preferred
 
 # Run uvicorn when the container launches
 # Since atlasScript.py is now directly in /app, this command is correct
