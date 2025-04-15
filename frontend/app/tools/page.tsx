@@ -26,18 +26,25 @@ type AnalysisResult = {
   };
 } | null;
 
-export default function ToolsPage() {
+export default function PropertyAnalysisPage() {
+  // Or whatever your component name is
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult>(null);
+  const [analysisResult, setAnalysisResult] = useState<any>(null); // Use a more specific type if possible
+  const [error, setError] = useState<string | null>(null); // State for error messages
+  const [warning, setWarning] = useState<string | null>(null); // State for warning messages
 
   const handleAnalyze = async () => {
+    console.log('handleAnalyze function started!');
     setLoading(true);
     setAnalysisResult(null);
+    setError(null); // Reset error before new request
+    setWarning(null); // Reset warning before new request
 
     try {
+      console.log('Attempting to fetch analysis...');
       const response = await fetch(
-        'https://fastapi-playwright-app.onrender.com/analyze',
+        'https://fastapi-playwright-app.onrender.com/analyze', // Your Render URL
         {
           method: 'POST',
           headers: {
@@ -46,16 +53,41 @@ export default function ToolsPage() {
           body: JSON.stringify({ url }),
         }
       );
+      console.log('Fetch response status:', response.status);
 
       if (!response.ok) {
-        throw new Error('Failed to analyze the property.');
+        let errorDetail = 'Failed to analyze the property.';
+        try {
+          const errorData = await response.json();
+          errorDetail = errorData.detail || errorDetail;
+        } catch (e) {
+          console.error('Could not parse error response JSON:', e);
+        }
+        console.error('Fetch failed:', errorDetail);
+        throw new Error(errorDetail);
       }
 
+      console.log('Attempting to parse response JSON...');
       const data = await response.json();
+      console.log('Received data:', data);
+
       setAnalysisResult(data);
-    } catch (error) {
-      console.error(error);
-      setAnalysisResult({ error: 'Failed to analyze the property.' });
+
+      // Now check the fallback status
+      if (data.is_fallback === true) {
+        console.log('Analysis used fallback data (scraping likely failed).');
+        setWarning(
+          // Set the warning state
+          'Note: Limited property data was available. Analysis is based on estimates.'
+        );
+      } else {
+        console.log('Analysis based on successfully scraped data.');
+        // setWarning(null); // Already reset at the beginning
+      }
+    } catch (error: any) {
+      // Catch error and set the error state
+      console.error('Error in handleAnalyze:', error);
+      setError(error.message || 'Failed to analyze the property.');
     } finally {
       setLoading(false);
     }

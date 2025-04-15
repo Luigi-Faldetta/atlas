@@ -1,46 +1,38 @@
-# Use an official Python base image
+# Use an official Python runtime as a parent image
 FROM python:3.11-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-# Set working directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies for Playwright
-RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    gnupg \
-    libglib2.0-0 \
-    libnss3 \
-    libgconf-2-4 \
-    libfontconfig1 \
-    libxss1 \
-    libasound2 \
-    libxtst6 \
-    libgtk-3-0 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    xdg-utils \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+# Copy the requirements file from the ai_agent subdirectory into the container at /app
+COPY ai_agent/requirements.txt .
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Install any needed system dependencies for Playwright and then Python packages
+# Use --no-cache-dir to reduce image size
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Add system dependencies required by Playwright's browsers if needed
+    # The playwright install command below often handles this, but keep for reference
+    # Example: libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libdbus-1-3 libatspi2.0-0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libxkbcommon0 libpango-1.0-0 libcairo2 libasound2
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir -r requirements.txt \
+    # Install Playwright browsers and their dependencies *inside* the container
+    && python -m playwright install --with-deps chromium
 
-# Install Playwright and its browser dependencies
-RUN pip install playwright && playwright install --with-deps
+# Copy the contents of the ai_agent subdirectory into the container at /app
+# This ensures atlasScript.py and new_funda_scraper.py are directly in /app
+COPY ai_agent/ .
 
-# Copy the full project (including ai_agent folder)
-COPY . .
-
-# Expose the port (Render sets $PORT)
+# Make port 8000 available to the world outside this container
+# Render typically uses port 10000 by default, but we define 8000 here.
+# Ensure your Render service settings match this or the CMD below.
 EXPOSE 8000
 
-# Start the FastAPI app — make sure this path matches your file structure
-CMD ["uvicorn", "ai_agent.atlasScript:app", "--host", "0.0.0.0", "--port", "8000"]
+# Define environment variable to listen on all interfaces
+ENV HOST=0.0.0.0
+ENV PORT=8000
+# You can change this to 10000 if preferred
+
+# Run uvicorn when the container launches
+# Since atlasScript.py is now directly in /app, this command is correct
+# Ensure Render's Start Command matches this (adjust port if necessary)
+CMD ["uvicorn", "atlasScript:app", "--host", "0.0.0.0", "--port", "8000"]
