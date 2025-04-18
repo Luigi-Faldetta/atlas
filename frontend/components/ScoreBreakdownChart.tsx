@@ -19,10 +19,10 @@ const getScoreColor = (score: number) => {
 };
 
 const getScoreTextColor = (score: number) => {
-  if (score >= 8) return 'text-green-600';
-  if (score >= 6) return 'text-blue-600';
-  if (score >= 4) return 'text-amber-600';
-  return 'text-red-600';
+  if (score >= 8) return 'text-green-600 dark:text-green-400';
+  if (score >= 6) return 'text-blue-600 dark:text-blue-400';
+  if (score >= 4) return 'text-amber-600 dark:text-amber-400';
+  return 'text-red-600 dark:text-red-400';
 };
 
 const ScoreBar: React.FC<{
@@ -40,7 +40,7 @@ const ScoreBar: React.FC<{
         <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
           {label}
         </span>
-        <span className={`text-sm font-bold ${textColorClass} dark:text-white`}>
+        <span className={`text-sm font-bold ${textColorClass}`}>
           {score.toFixed(1)}
         </span>
       </div>
@@ -60,20 +60,6 @@ const ScoreBreakdownChart: React.FC<ScoreBreakdownChartProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center mb-2">
-        <h4 className="text-lg font-semibold text-slate-800 dark:text-white">
-          Atlas AI Score Breakdown
-        </h4>
-        <div className="flex items-center">
-          <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {weightedAverage.toFixed(1)}
-          </span>
-          <span className="text-sm text-slate-500 dark:text-slate-400 ml-1">
-            /10
-          </span>
-        </div>
-      </div>
-
       <ScoreBar label="Risk" score={scores.risk} maxScore={10} />
       <ScoreBar label="Yield" score={scores.yield} maxScore={10} />
       <ScoreBar label="Growth" score={scores.growth} maxScore={10} />

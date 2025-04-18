@@ -10,8 +10,10 @@ type AnalysisResult = {
     address: string;
     price: string;
     living_area: string;
-    plot_size: string;
     bedrooms: string;
+    bathrooms: string; // Added
+    year_built: string; // Added
+    price_per_sqm: number | null; // Added price per sqm
   };
   agent_analysis?: {
     investment_score: number; // 0-100 score
@@ -19,10 +21,17 @@ type AnalysisResult = {
     roi_10_years: number | null; // ROI for 10 years
     yearly_yield: number | null; // Yearly yield percentage
     monthly_rental_income: number | null; // Monthly rental income
+    expected_monthly_income: number | null; // Expected monthly income after improvements
     yearly_appreciation_percentage: number | null; // Yearly appreciation percentage
     yearly_appreciation_value: number | null; // Yearly appreciation value in euros
     strengths: string[]; // Key strengths
     weaknesses: string[]; // Key weaknesses
+    characteristics?: string[]; // Property characteristics
+    risk_score?: number; // Risk score out of 10
+    yield_score?: number; // Yield score out of 10
+    growth_score?: number; // Growth score out of 10
+    location_score?: number; // Location score out of 10
+    condition_score?: number; // Condition score out of 10
   };
 } | null;
 
@@ -56,6 +65,7 @@ export default function PropertyAnalysisPage() {
       console.log('Fetch response status:', response.status);
 
       if (!response.ok) {
+<<<<<<< HEAD
         let errorDetail = 'Failed to analyze the property.';
         try {
           const errorData = await response.json();
@@ -64,11 +74,24 @@ export default function PropertyAnalysisPage() {
           console.error('Could not parse error response JSON:', e);
         }
         console.error('Fetch failed:', errorDetail);
+=======
+        // Try to get error detail from response body
+        let errorDetail = 'Failed to analyze the property.';
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.detail) {
+            errorDetail = errorData.detail;
+          }
+        } catch (jsonError) {
+          // Ignore if response body is not valid JSON
+        }
+>>>>>>> scraper_test
         throw new Error(errorDetail);
       }
 
       console.log('Attempting to parse response JSON...');
       const data = await response.json();
+<<<<<<< HEAD
       console.log('Received data:', data);
 
       setAnalysisResult(data);
@@ -88,9 +111,177 @@ export default function PropertyAnalysisPage() {
       // Catch error and set the error state
       console.error('Error in handleAnalyze:', error);
       setError(error.message || 'Failed to analyze the property.');
+=======
+
+      // If expected_monthly_income is not provided by the API, estimate it
+      if (
+        data.agent_analysis &&
+        data.agent_analysis.monthly_rental_income &&
+        !data.agent_analysis.expected_monthly_income
+      ) {
+        // Estimate expected monthly income as 10% higher than current monthly income
+        data.agent_analysis.expected_monthly_income =
+          data.agent_analysis.monthly_rental_income * 1.1;
+      }
+
+      // Add default property characteristics if not provided
+      if (data.agent_analysis && !data.agent_analysis.characteristics) {
+        data.agent_analysis.characteristics = determineCharacteristics(
+          data.agent_analysis
+        );
+      }
+
+      // Add default score breakdown if not provided
+      if (data.agent_analysis && !data.agent_analysis.risk_score) {
+        const scores = generateScoreBreakdown(
+          data.agent_analysis.investment_score
+        );
+        data.agent_analysis = {
+          ...data.agent_analysis,
+          ...scores,
+        };
+      }
+
+      // Log the data to verify score breakdown values are present
+      console.log('Analysis result with score breakdown:', data.agent_analysis);
+      console.log('Scraped data including price/sqm:', data.scraped_data); // Log scraped data
+
+      setAnalysisResult(data);
+    } catch (error: any) {
+      // Catch specific error type
+      console.error(error);
+      setAnalysisResult({
+        error: error.message || 'Failed to analyze the property.',
+      }); // Use error message
+>>>>>>> scraper_test
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to determine property characteristics based on analysis
+  const determineCharacteristics = (analysis: any) => {
+    const characteristics = [];
+
+    if (
+      analysis.yearly_appreciation_percentage &&
+      analysis.yearly_appreciation_percentage > 3
+    ) {
+      characteristics.push('Stable Growth');
+    }
+
+    if (analysis.strengths) {
+      if (
+        analysis.strengths.some((s: string) =>
+          s.toLowerCase().includes('location')
+        )
+      ) {
+        characteristics.push('Prime Location');
+      }
+
+      if (
+        analysis.strengths.some(
+          (s: string) =>
+            s.toLowerCase().includes('energy') ||
+            s.toLowerCase().includes('sustainable')
+        )
+      ) {
+        characteristics.push('Eco Friendly');
+      }
+    }
+
+    if (analysis.yearly_yield && analysis.yearly_yield > 5) {
+      characteristics.push('High Yield');
+    } else if (analysis.yearly_yield && analysis.yearly_yield > 3) {
+      characteristics.push('Moderate Yield');
+    }
+
+    if (analysis.weaknesses) {
+      if (
+        analysis.weaknesses.some(
+          (w: string) =>
+            w.toLowerCase().includes('supply') ||
+            w.toLowerCase().includes('availability')
+        )
+      ) {
+        characteristics.push('Limited Supply');
+      }
+
+      if (
+        analysis.weaknesses.some((w: string) =>
+          w.toLowerCase().includes('demand')
+        )
+      ) {
+        characteristics.push('High Demand');
+      }
+    }
+
+    // Ensure we have at least some characteristics
+    if (characteristics.length < 2) {
+      characteristics.push('Residential Property');
+    }
+
+    return characteristics;
+  };
+
+  // Helper function to generate score breakdown based on investment score
+  const generateScoreBreakdown = (investmentScore: number) => {
+    // Scale the investment score (0-100) to weighted average (0-10)
+    const weightedAverage = investmentScore / 10;
+
+    // Generate individual scores with some variation
+    const variation = () => Math.random() * 2 - 1; // Random value between -1 and 1
+
+    // Ensure scores are within 1-10 range
+    const clampScore = (score: number) => Math.min(10, Math.max(1, score));
+
+    return {
+      risk_score: clampScore(weightedAverage * 0.8 + variation()),
+      yield_score: clampScore(weightedAverage * 0.9 + variation()),
+      growth_score: clampScore(weightedAverage * 1.1 + variation()),
+      location_score: clampScore(weightedAverage * 1.0 + variation()),
+      condition_score: clampScore(weightedAverage * 1.0 + variation()),
+    };
+  };
+
+  // For testing/debugging - create a sample analysis result
+  const createSampleAnalysis = () => {
+    const sampleScore = 75;
+    const scores = generateScoreBreakdown(sampleScore);
+
+    setAnalysisResult({
+      scraped_data: {
+        address: 'Aragohof 4-1, 1098 RR Amsterdam',
+        price: '€ 535.000 k.k.',
+        living_area: '68 m²',
+        bedrooms: '3',
+        bathrooms: '1', // Added sample
+        year_built: '1960', // Added sample
+        price_per_sqm: 535000 / 68, // Added sample calculation
+      },
+      agent_analysis: {
+        investment_score: sampleScore,
+        roi_5_years: 18.0,
+        roi_10_years: 42.5,
+        yearly_yield: 3.5,
+        monthly_rental_income: 1500,
+        expected_monthly_income: 1650,
+        yearly_appreciation_percentage: 3.2,
+        yearly_appreciation_value: 17120,
+        strengths: [
+          'Prime location in a popular neighborhood',
+          'Good public transport connections',
+          'Recently renovated property',
+        ],
+        weaknesses: [
+          'Limited parking options in the area',
+          'Higher price per square meter than average',
+          'Potential noise from nearby main road',
+        ],
+        characteristics: ['Stable Growth', 'Prime Location', 'High Demand'],
+        ...scores,
+      },
+    });
   };
 
   return (
@@ -176,10 +367,18 @@ export default function PropertyAnalysisPage() {
                       )}
                     </button>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
-                    Paste a property listing URL to analyze investment potential
-                    using AI
-                  </p>
+                  <div className="flex justify-between mt-3">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Paste a property listing URL to analyze investment
+                      potential using AI
+                    </p>
+                    <button
+                      onClick={createSampleAnalysis}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Use sample data
+                    </button>
+                  </div>
                 </div>
 
                 {/* Results Section */}
@@ -217,7 +416,7 @@ export default function PropertyAnalysisPage() {
                         }
                         expectedMonthlyIncome={
                           analysisResult.agent_analysis
-                            ?.monthly_rental_income || null
+                            ?.expected_monthly_income || null
                         }
                         yearlyAppreciationPercentage={
                           analysisResult.agent_analysis
@@ -239,6 +438,24 @@ export default function PropertyAnalysisPage() {
                         address={
                           analysisResult.scraped_data?.address ||
                           'Not available'
+                        }
+                        // Pass the calculated price per sqm
+                        pricePerSqm={
+                          analysisResult.scraped_data?.price_per_sqm ?? null
+                        }
+                        characteristics={
+                          analysisResult.agent_analysis?.characteristics
+                        }
+                        riskScore={analysisResult.agent_analysis?.risk_score}
+                        yieldScore={analysisResult.agent_analysis?.yield_score}
+                        growthScore={
+                          analysisResult.agent_analysis?.growth_score
+                        }
+                        locationScore={
+                          analysisResult.agent_analysis?.location_score
+                        }
+                        conditionScore={
+                          analysisResult.agent_analysis?.condition_score
                         }
                       />
                     )}

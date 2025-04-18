@@ -1,9 +1,12 @@
 {
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@radix-ui/primitive": "^1.1.1",
     "@radix-ui/react-dialog": "^1.1.6",
     "langchain": "^0.3.19",
     "latest": "^0.2.0",
-    "openai": "^4.91.1"
+    "openai": "^4.91.1",
+    "react-circular-progressbar": "^2.2.0",
+    "resend": "^4.3.0"
   }
 }

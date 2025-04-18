@@ -7,15 +7,11 @@ import {
   ArcElement,
   Tooltip,
   Legend,
-  ChartOptions
+  ChartOptions,
 } from 'chart.js';
 
 // Register ChartJS components
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend
-);
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface PieChartProps {
   title: string;

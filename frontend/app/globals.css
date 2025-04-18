@@ -22,34 +22,40 @@ body {
   .btn-primary {
     @apply bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded;
   }
-  
+
   .btn-secondary {
     @apply bg-white hover:bg-gray-100 text-blue-600 font-bold py-2 px-4 rounded border border-blue-600;
   }
-  
+
   .card {
     @apply bg-white rounded-lg shadow-md p-6;
   }
-  
+
   .input-field {
     @apply border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500;
   }
 
   .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
-    display: none;  /* Chrome, Safari and Opera */
+    display: none; /* Chrome, Safari and Opera */
   }
 }
 
 /* Custom animations */
 @keyframes progress {
-  0% { width: 0%; }
-  50% { width: 70%; }
-  100% { width: 100%; }
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 70%;
+  }
+  100% {
+    width: 100%;
+  }
 }
 
 .animate-progress {
@@ -82,13 +88,59 @@ body {
 
 .animate-shine {
   background: linear-gradient(
-    to right, 
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0.2) 25%,
-    rgba(255,255,255,0.3) 50%,
-    rgba(255,255,255,0.2) 75%,
-    rgba(255,255,255,0) 100%
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 25%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.2) 75%,
+    rgba(255, 255, 255, 0) 100%
   );
   background-size: 200% 100%;
   animation: shine 2s infinite;
+}
+
+/* Card Flip Animation */
+.perspective {
+  perspective: 1000px;
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+
+.is-flipped .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden; /* Safari */
+  backface-visibility: hidden;
+}
+
+.card-front {
+  /* Styles for the front face */
+  transition: box-shadow 0.3s ease;
+}
+
+.card-front:hover {
+  box-shadow: 5px 0 15px rgba(59, 130, 246, 0.5); /* Blue shadow on right side */
+}
+
+.card-back {
+  /* Styles for the back face */
+  transform: rotateY(180deg);
+  transition: box-shadow 0.3s ease;
+}
+
+.card-back:hover {
+  box-shadow: -5px 0 15px rgba(245, 158, 11, 0.5); /* Amber shadow on left side */
 }

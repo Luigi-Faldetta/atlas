@@ -11,7 +11,7 @@ import {
   Title,
   Tooltip,
   Legend,
-  ChartOptions
+  ChartOptions,
 } from 'chart.js';
 
 // Register ChartJS components
