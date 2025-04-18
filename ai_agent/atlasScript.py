@@ -2,14 +2,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
-<<<<<<< HEAD
-from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
-from new_funda_scraper import FundaScraper
-=======
 from langchain.prompts import ChatPromptTemplate
 from new_funda_scraper import FundaScraper  # Import the FundaScraper class
 from idealista_scraper import IdealistaScraper  # Import the IdealistaScraper class
->>>>>>> scraper_test
 import logging
 import re
 import os
@@ -26,7 +21,7 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://atlasnew.vercel.app","http://localhost:3000", "https://atlasnew-git-main-luigifaldettas-projects.vercel.app"],  # Allow requests from your frontend
+    allow_origins=["http://localhost:3000", "https://atlasnew-git-main-luigifaldettas-projects.vercel.app/"],  # Allow requests from your frontend
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
@@ -44,17 +39,6 @@ llm = ChatOpenAI(
 )
 
 # Define the chat prompt template
-<<<<<<< HEAD
-prompt = ChatPromptTemplate.from_messages([
-    SystemMessagePromptTemplate.from_template(
-        """
-        You are a real estate investment analysis AI. Your job is to analyze the provided property data and generate a detailed investment analysis.
-
-        The response must strictly follow the format below to ensure it can be parsed correctly by regex patterns.
-
-        1. **Property Details**:
-           - Address, price, living area, plot size, and number of bedrooms.
-=======
 prompt = ChatPromptTemplate.from_messages(
     [
         {
@@ -74,31 +58,16 @@ prompt = ChatPromptTemplate.from_messages(
             - The **Monthly Rental Income** (best estimate based on the property details).
             - The **Expected Monthly Income** after potential improvements and market adjustments (should be 5-15% higher than current rental income).
             - The **Yearly Appreciation** percentage and its corresponding value in euros.
->>>>>>> scraper_test
 
-        Based on the provided data, generate:
-        - An **Investment Score** (0-100) that reflects the overall investment potential.
-        - A detailed explanation of the score, highlighting the strengths and weaknesses of the property.
-        - An estimated **ROI (Return on Investment)** percentage for 5 years and 10 years based on reasonable assumptions about rental income and expenses.
-        - The **Yearly Yield** percentage, calculated as (Net Annual Income / Purchase Price) * 100.
-        - The **Monthly Rental Income** (best estimate based on the property details).
-        - The **Yearly Appreciation** percentage and its corresponding value in euros.
+            The response must strictly follow this format:
 
-        The response must strictly adhere to this format:
+            **Investment Score**: <score>/100
 
-        **Investment Score**: <score>/100
+            **Address**: <address>
 
-        **Address**: <address>
+            **Score Explanation**:
+            <explanation>
 
-<<<<<<< HEAD
-        **Score Explanation**:
-        <explanation>
-
-        **Strengths**:
-        - <strength 1>
-        - <strength 2>
-        - <strength 3>
-=======
             **Strengths**:
              <strength 1>
              <strength 2>
@@ -108,42 +77,17 @@ prompt = ChatPromptTemplate.from_messages(
              <weakness 1>
              <weakness 2>
              <weakness 3>
->>>>>>> scraper_test
 
-        **Weaknesses**:
-        - <weakness 1>
-        - <weakness 2>
-        - <weakness 3>
+            **Estimated ROI**:
+            ROI (5 years): <value>%
+            ROI (10 years): <value>%
 
-        **Estimated ROI**:
-        ROI (5 years): <value>%
-        ROI (10 years): <value>%
+            **Yearly Yield**:
+            approximately <value>%
 
-        **Yearly Yield**:
-        approximately <value>%
+            **Monthly Rental Income**:
+            approximately €<value>
 
-<<<<<<< HEAD
-        **Monthly Rental Income**:
-        approximately €<value>
-
-        **Yearly Appreciation**:
-        approximately <value>% (€<value>)
-
-        Ensure the response strictly adheres to this format, including the exact headings, spacing, and structure. Do not include any additional text or explanations outside this format.
-        """
-    ),
-    HumanMessagePromptTemplate.from_template(
-        """
-        Here is the property data for analysis:
-        Address: {address}
-        Price: {price}
-        Living Area: {living_area}
-        Plot Size: {plot_size}
-        Bedrooms: {bedrooms}
-        """
-    )
-])
-=======
             **Expected Monthly Income**:
             approximately €<value>
 
@@ -167,7 +111,6 @@ prompt = ChatPromptTemplate.from_messages(
         },
     ]
 )
->>>>>>> scraper_test
 
 # Define the request model
 class AnalyzeRequest(BaseModel):

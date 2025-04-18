@@ -65,16 +65,6 @@ export default function PropertyAnalysisPage() {
       console.log('Fetch response status:', response.status);
 
       if (!response.ok) {
-<<<<<<< HEAD
-        let errorDetail = 'Failed to analyze the property.';
-        try {
-          const errorData = await response.json();
-          errorDetail = errorData.detail || errorDetail;
-        } catch (e) {
-          console.error('Could not parse error response JSON:', e);
-        }
-        console.error('Fetch failed:', errorDetail);
-=======
         // Try to get error detail from response body
         let errorDetail = 'Failed to analyze the property.';
         try {
@@ -85,33 +75,11 @@ export default function PropertyAnalysisPage() {
         } catch (jsonError) {
           // Ignore if response body is not valid JSON
         }
->>>>>>> scraper_test
         throw new Error(errorDetail);
       }
 
       console.log('Attempting to parse response JSON...');
       const data = await response.json();
-<<<<<<< HEAD
-      console.log('Received data:', data);
-
-      setAnalysisResult(data);
-
-      // Now check the fallback status
-      if (data.is_fallback === true) {
-        console.log('Analysis used fallback data (scraping likely failed).');
-        setWarning(
-          // Set the warning state
-          'Note: Limited property data was available. Analysis is based on estimates.'
-        );
-      } else {
-        console.log('Analysis based on successfully scraped data.');
-        // setWarning(null); // Already reset at the beginning
-      }
-    } catch (error: any) {
-      // Catch error and set the error state
-      console.error('Error in handleAnalyze:', error);
-      setError(error.message || 'Failed to analyze the property.');
-=======
 
       // If expected_monthly_income is not provided by the API, estimate it
       if (
@@ -153,7 +121,6 @@ export default function PropertyAnalysisPage() {
       setAnalysisResult({
         error: error.message || 'Failed to analyze the property.',
       }); // Use error message
->>>>>>> scraper_test
     } finally {
       setLoading(false);
     }
