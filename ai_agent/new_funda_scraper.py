@@ -3,6 +3,7 @@ from playwright_stealth import stealth_async
 import asyncio
 import random
 import os
+import re  # Import the regex module
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -82,11 +83,41 @@ class FundaScraper:
             bedrooms_elem = await self.page.query_selector("ul.flex.flex-wrap.gap-4 li:nth-child(2) span.md\\:font-bold")
             bedrooms = await bedrooms_elem.inner_text() if bedrooms_elem else "Not found"
 
+            # --- Extract Bathrooms ---
+            bathrooms = "Not found"
+            try:
+                # Find the 'dt' element containing 'Badkamers' and get the next 'dd' sibling
+                bathroom_dd_elem = await self.page.query_selector("dt:has-text('Badkamers') + dd")
+                if bathroom_dd_elem:
+                    bathroom_text = await bathroom_dd_elem.inner_text()
+                    # Use regex to find the number before 'badkamer' or 'badkamers'
+                    match = re.search(r"(\d+)\s+badkamer", bathroom_text, re.IGNORECASE)
+                    if match:
+                        bathrooms = match.group(1)  # Extract the number as a string
+            except Exception as e:
+                print(f"Could not extract bathrooms: {e}")  # Log error if extraction fails
+
+            # --- Extract Year Built (Bouwjaar) ---
+            year_built = "Not found"
+            try:
+                # Find the 'dt' element containing 'Bouwjaar' and get the next 'dd' sibling
+                year_dd_elem = await self.page.query_selector("dt:has-text('Bouwjaar') + dd")
+                if year_dd_elem:
+                    year_text = await year_dd_elem.inner_text()
+                    # Use regex to find a 4-digit number (the year)
+                    match = re.search(r"(\d{4})", year_text)
+                    if match:
+                        year_built = match.group(1)  # Extract the 4-digit year
+            except Exception as e:
+                print(f"Could not extract year built: {e}")  # Log error if extraction fails
+
             return {
                 "Address": address,
                 "Price": price,
                 "Living Area": living_area,
                 "Bedrooms": bedrooms,
+                "Bathrooms": bathrooms,
+                "Year Built": year_built,  # Add year built to the result
             }
 
         except Exception as e:
@@ -112,7 +143,7 @@ if __name__ == "__main__":
         proxy_server = os.getenv("PROXY_SERVER")
         proxy_username = os.getenv("PROXY_USERNAME")
         proxy_password = os.getenv("PROXY_PASSWORD")
-        
+
         if proxy_server and proxy_username and proxy_password:
             proxy = {
                 "server": proxy_server,
@@ -124,7 +155,7 @@ if __name__ == "__main__":
             print("No proxy configuration found in environment variables")
 
         # Funda property URL
-        funda_url = "https://www.funda.nl/detail/koop/amsterdam/appartement-aragohof-4-1/43954500/"  
+        funda_url = "https://www.funda.nl/detail/koop/amsterdam/appartement-aragohof-4-1/43954500/"
         # Replace with your desired property URL
 
         # Initialize the scraper with the proxy
