@@ -1,185 +1,172 @@
-from playwright.async_api import async_playwright
-from playwright_stealth import stealth_async
-import asyncio
-import random
-import re
-import logging
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
+import os
+import re
+import json
+import logging
+import httpx
+from dotenv import load_dotenv
+
+load_dotenv()
+logging.basicConfig(level=logging.INFO)
 
 class IdealistaScraper:
-    def __init__(self, proxy=None):
+    def __init__(self, api_key: str = None):
         """
-        Initialize Playwright with optional proxy.
-        :param proxy: Proxy configuration dictionary (optional).
+        Scraper using ScrapingBee premium proxy and HTTP fallback.
+        Requires SCRAPINGBEE_API_KEY env var.
         """
-        self.proxy = proxy
-        self.playwright = None
-        self.browser = None
-        self.context = None
-        self.page = None
+        self.api_key = api_key or os.getenv('SCRAPINGBEE_API_KEY')
+        if not self.api_key:
+            raise ValueError('SCRAPINGBEE_API_KEY must be set')
+        self.session = httpx.Client(timeout=60)
 
-    async def start(self):
+    def fetch_html(self, url: str) -> str:
         """
-        Start Playwright and initialize the browser, context, and page.
+        Fetch HTML via ScrapingBee (no-JS first, then JS), else direct HTTP.
         """
-        self.playwright = await async_playwright().start()
-        launch_options = {"headless": False} # Consider headless=True for production
-        if self.proxy:
-            logging.info(f"Using proxy: {self.proxy.get('server')}")
-            launch_options["proxy"] = {
-                "server": self.proxy["server"],
-                "username": self.proxy.get("username"),
-                "password": self.proxy.get("password"),
-            }
-        self.browser = await self.playwright.chromium.launch(**launch_options)
-        self.context = await self.browser.new_context(ignore_https_errors=True)
-        self.page = await self.context.new_page()
-        await stealth_async(self.page)
-        logging.info("IdealistaScraper started.")
-
-    async def scrape_property(self, url: str):
-        """
-        Scrape basic property data from Idealista.
-        :param url: The URL of the Idealista property page.
-        :return: A dictionary containing property data or None if scraping fails.
-        """
-        logging.info(f"Attempting to scrape Idealista URL: {url}")
+        base_url = 'https://app.scrapingbee.com/api/v1/'
+        common = {
+            'api_key': self.api_key,
+            'url': url,
+            'premium_proxy': 'true',
+            'country_code': 'es',
+        }
+        # 1) ScrapingBee no-JS
+        params = {**common, 'render_js': 'false'}
+        logging.info(f'[*] ScrapingBee no-JS: {url}')
         try:
-            await self.page.goto(url, timeout=60000, wait_until="domcontentloaded")
-            # Add a small delay or wait for a specific element that indicates page load
-            await self.page.wait_for_selector('div#headerMap', timeout=20000) # Wait for address section
-            await self.page.wait_for_load_state("networkidle", timeout=30000)
-
-            address = "Not found"
-            price = "Not found"
-            living_area = "Not found"
-            bedrooms = "Not found"
-            bathrooms = "Not found"
-            year_built = "Not found" # As per user, year built is omitted
-
-            # --- Address ---
-            try:
-                address_items = []
-                # Select all list items within the specific ul in div#headerMap
-                li_elements = await self.page.query_selector_all("div#headerMap ul li.header-map-list")
-                for li in li_elements:
-                    text = await li.inner_text()
-                    address_items.append(text.strip())
-                if address_items:
-                    # Join the items, potentially reversing for standard address order
-                    address = ", ".join(reversed(address_items))
-            except Exception as e:
-                logging.warning(f"Could not extract address: {e}")
-
-            # --- Price ---
-            try:
-                # More specific selector using the preceding span's text
-                price_elem = await self.page.query_selector("span:has-text('Precio del inmueble:') + strong")
-                if price_elem:
-                    price_text = await price_elem.inner_text()
-                    # Basic cleaning, remove currency symbol and potential thousand separators (dots)
-                    price = re.sub(r'[.€\s]', '', price_text).strip() + " €" # Keep space before €
-            except Exception as e:
-                logging.warning(f"Could not extract price: {e}")
-
-            # --- Living Area (Square Meters) ---
-            try:
-                 # Assuming the span is within a features section, adjust selector if needed
-                 # Trying a potentially more robust selector targeting the features area
-                area_elem = await self.page.query_selector("div.info-features span:has-text('m²')")
-                if area_elem:
-                    living_area_text = await area_elem.inner_text()
-                    match = re.search(r"(\d+)\s*m²", living_area_text)
-                    if match:
-                        living_area = f"{match.group(1)} m²"
-            except Exception as e:
-                logging.warning(f"Could not extract living area: {e}")
-
-            # --- Bedrooms (Rooms) ---
-            try:
-                # Assuming the span is within a features section
-                bedrooms_elem = await self.page.query_selector("div.info-features span:has-text('hab.')")
-                if bedrooms_elem:
-                    bedrooms_text = await bedrooms_elem.inner_text()
-                    match = re.search(r"(\d+)", bedrooms_text)
-                    if match:
-                        bedrooms = match.group(1)
-            except Exception as e:
-                logging.warning(f"Could not extract bedrooms: {e}")
-
-            # --- Bathrooms ---
-            try:
-                 # Assuming the li is within a features section/list
-                bathrooms_elem = await self.page.query_selector("div.details-property_features li:has-text('baño')") # Using 'baño' singular/plural
-                if bathrooms_elem:
-                    bathrooms_text = await bathrooms_elem.inner_text()
-                    match = re.search(r"(\d+)", bathrooms_text) # Extract the number
-                    if match:
-                        bathrooms = match.group(1)
-            except Exception as e:
-                logging.warning(f"Could not extract bathrooms: {e}")
-
-            # --- Year Built ---
-            # Initialize year_built to "Not found"
-            year_built = "Not found"
-            try:
-                # Look for the list item containing "Construido en" within the same features block
-                year_elem = await self.page.query_selector("div.details-property_features li:has-text('Construido en')")
-                if year_elem:
-                    year_text = await year_elem.inner_text()
-                    # Use regex to find the 4-digit year
-                    match = re.search(r"(\d{4})", year_text)
-                    if match:
-                        year_built = match.group(1) # Extract the 4-digit year
-                        logging.info(f"Successfully extracted Year Built: {year_built}")
-                    else:
-                         logging.warning("Found 'Construido en' text but could not extract year number.")
-            except Exception as e:
-                logging.warning(f"Could not extract year built: {e}")
-
-            scraped_data = {
-                "Address": address,
-                "Price": price,
-                "Living Area": living_area,
-                "Bedrooms": bedrooms,
-                "Bathrooms": bathrooms,
-                "Year Built": year_built, # Will remain "Not found"
-            }
-            logging.info(f"Successfully scraped data from Idealista: {scraped_data}")
-            return scraped_data
-
+            r = self.session.get(base_url, params=params)
+            r.raise_for_status()
+            return r.text
         except Exception as e:
-            logging.error(f"Error scraping Idealista property data: {e}", exc_info=True)
-            return None
+            logging.warning(f'ScrapingBee no-JS failed: {e}')
+        # 2) ScrapingBee with-JS
+        params['render_js'] = 'true'
+        logging.info(f'[*] ScrapingBee with-JS: {url}')
+        try:
+            r = self.session.get(base_url, params=params)
+            r.raise_for_status()
+            return r.text
+        except Exception as e:
+            logging.warning(f'ScrapingBee JS fetch failed: {e}')
+        # 3) Direct HTTP
+        logging.info(f'[*] HTTP fallback: {url}')
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0',
+            'Accept-Language': 'es-ES,es;q=0.9',
+        }
+        resp = self.session.get(url, headers=headers)
+        resp.raise_for_status()
+        return resp.text
 
-    async def close(self):
-        """Close the browser and Playwright."""
-        if self.context:
-            await self.context.close()
-        if self.browser:
-            await self.browser.close()
-        if self.playwright:
-            await self.playwright.stop()
-        logging.info("IdealistaScraper closed.")
+    def parse_json_data(self, html: str) -> dict:
+        """
+        Extract Next.js __NEXT_DATA__ payload for server-side data.
+        """
+        m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.S)
+        if not m:
+            logging.info('No __NEXT_DATA__ found')
+            return {}
+        try:
+            payload = json.loads(m.group(1))
+            props = payload.get('props', {}).get('pageProps', {})
+            estate = (props.get('estate') or props.get('inmueble') or
+                      props.get('property') or props)
+            return estate if isinstance(estate, dict) else {}
+        except json.JSONDecodeError:
+            logging.error('JSON decode error in NEXT_DATA')
+            return {}
 
-# Example usage (optional, for testing)
-if __name__ == "__main__":
-    async def main():
-        # Replace with a valid Idealista URL for testing
-        idealista_url = "https://www.idealista.com/inmueble/106481863/" # e.g., "https://www.idealista.com/inmueble/..."
+    def scrape_property(self, url: str) -> dict:
+        """
+        Scrape and return a dict with:
+        Address, Price, Living Area, Bedrooms, Bathrooms, Year Built.
+        """
+        # Fetch HTML
+        try:
+            html = self.fetch_html(url)
+        except Exception as e:
+            logging.error(f'Failed to fetch HTML: {e}')
+            return {'error': 'Failed to fetch HTML'}
 
-        scraper = IdealistaScraper()
-        await scraper.start()
-        data = await scraper.scrape_property(idealista_url)
-        await scraper.close()
+        # Parse server-side JSON data
+        estate = self.parse_json_data(html)
 
-        if data:
-            print("Scraped Data:")
-            for key, value in data.items():
-                print(f"{key}: {value}")
-            else:
-                print("Failed to scrape data.")
+        # Initialize defaults
+        fields = ['Address', 'Price', 'Living Area', 'Bedrooms', 'Bathrooms', 'Year Built']
+        data = {k: 'Not found' for k in fields}
 
-    asyncio.run(main())
+        def to_int(v):
+            try: return int(float(v))
+            except: return None
+
+        # 1) Populate from JSON
+        if isinstance(estate, dict) and estate:
+            # Address
+            addr = estate.get('address', {})
+            if isinstance(addr, dict):
+                parts = [addr.get(k) for k in ('streetAddress', 'postalCode', 'addressLocality') if addr.get(k)]
+                if parts:
+                    data['Address'] = ', '.join(parts)
+            # Price
+            pv = estate.get('price') or estate.get('offers', {}).get('price')
+            pi = to_int(pv)
+            if pi is not None:
+                data['Price'] = f"{pi} €"
+            # Living Area
+            sv = (estate.get('floorSize', {}).get('value') or
+                  estate.get('size') or estate.get('surface'))
+            si = to_int(sv)
+            if si is not None:
+                data['Living Area'] = f"{si} m²"
+            # Bedrooms
+            rm = estate.get('numberOfRooms') or estate.get('bedrooms') or estate.get('rooms')
+            ri = to_int(rm)
+            if ri is not None:
+                data['Bedrooms'] = str(ri)
+            # Bathrooms
+            bt = estate.get('bathrooms') or estate.get('wc')
+            bi = to_int(bt)
+            if bi is not None:
+                data['Bathrooms'] = str(bi)
+            # Year Built
+            yr = (estate.get('constructionYear') or estate.get('yearBuilt') or
+                  estate.get('builtYear'))
+            yi = to_int(yr)
+            if yi is not None:
+                data['Year Built'] = str(yi)
+
+        # 2) Fallback: parse headerMap <ul> after 'Ubicación'
+        if data['Address'] == 'Not found':
+            ul_match = re.search(r'<h2[^>]*>Ubicación</h2>\s*<ul>(.*?)</ul>', html, re.S)
+            if ul_match:
+                lis = re.findall(r'<li[^>]*>([^<]+)</li>', ul_match.group(1))
+                items = [li.strip() for li in lis if li.strip()]
+                if items:
+                    data['Address'] = ', '.join(items)
+
+        # 3) Other regex fallbacks if still missing
+        patterns = {
+            'Price': r'([\d\.]+)\s*€',
+            'Living Area': r'(\d+)\s*m²',
+            'Bedrooms': r'(\d+)\s*hab',
+            'Bathrooms': r'(\d+)\s*baño',
+            'Year Built': r'Construido en\s*(\d{4})',
+        }
+        for k, pat in patterns.items():
+            if data[k] == 'Not found':
+                m = re.search(pat, html)
+                if m:
+                    val = m.group(1).replace('.', '')
+                    suffix = ' €' if k == 'Price' else ' m²' if k == 'Living Area' else ''
+                    data[k] = val + suffix
+
+        return data
+
+# Example usage
+if __name__ == '__main__':
+    scraper = IdealistaScraper()
+    url = os.getenv('TEST_IDEALISTA_URL') or 'https://www.idealista.com/inmueble/106396109/'
+    result = scraper.scrape_property(url)
+    print(result)
+
