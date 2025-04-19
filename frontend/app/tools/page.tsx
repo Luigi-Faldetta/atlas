@@ -2,8 +2,10 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InvestmentAnalysis from '@/components/InvestmentAnalysis';
+import ROICalculator from '@/components/ROICalculator'; // Import the ROI Calculator component
 import { Calculator, Search, ArrowRight } from 'lucide-react';
 
+// Define the type for the analysis result, including potential errors
 type AnalysisResult = {
   error?: string;
   scraped_data?: {
@@ -11,38 +13,38 @@ type AnalysisResult = {
     price: string;
     living_area: string;
     bedrooms: string;
-    bathrooms: string; // Added
-    year_built: string; // Added
-    price_per_sqm: number | null; // Added price per sqm
+    bathrooms: string;
+    year_built: string;
+    price_per_sqm: number | null;
   };
   agent_analysis?: {
-    investment_score: number; // 0-100 score
-    roi_5_years: number | null; // ROI for 5 years
-    roi_10_years: number | null; // ROI for 10 years
-    yearly_yield: number | null; // Yearly yield percentage
-    monthly_rental_income: number | null; // Monthly rental income
-    expected_monthly_income: number | null; // Expected monthly income after improvements
-    yearly_appreciation_percentage: number | null; // Yearly appreciation percentage
-    yearly_appreciation_value: number | null; // Yearly appreciation value in euros
-    strengths: string[]; // Key strengths
-    weaknesses: string[]; // Key weaknesses
-    characteristics?: string[]; // Property characteristics
-    risk_score?: number; // Risk score out of 10
-    yield_score?: number; // Yield score out of 10
-    growth_score?: number; // Growth score out of 10
-    location_score?: number; // Location score out of 10
-    condition_score?: number; // Condition score out of 10
+    investment_score: number;
+    roi_5_years: number | null;
+    roi_10_years: number | null;
+    yearly_yield: number | null;
+    monthly_rental_income: number | null;
+    expected_monthly_income: number | null;
+    yearly_appreciation_percentage: number | null;
+    yearly_appreciation_value: number | null;
+    strengths: string[];
+    weaknesses: string[];
+    characteristics?: string[];
+    risk_score?: number;
+    yield_score?: number;
+    growth_score?: number;
+    location_score?: number;
+    condition_score?: number;
   };
 } | null;
 
 export default function PropertyAnalysisPage() {
-  // Or whatever your component name is
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null); // Use a more specific type if possible
-  const [error, setError] = useState<string | null>(null); // State for error messages
-  const [warning, setWarning] = useState<string | null>(null); // State for warning messages
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult>(null); // Use the defined type
+  const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
+  // Function to handle the analysis request
   const handleAnalyze = async () => {
     console.log('handleAnalyze function started!');
     setLoading(true);
@@ -406,7 +408,6 @@ export default function PropertyAnalysisPage() {
                           analysisResult.scraped_data?.address ||
                           'Not available'
                         }
-                        // Pass the calculated price per sqm
                         pricePerSqm={
                           analysisResult.scraped_data?.price_per_sqm ?? null
                         }
@@ -431,16 +432,9 @@ export default function PropertyAnalysisPage() {
               </div>
             </TabsContent>
 
+            {/* ROI Calculator Tab Content */}
             <TabsContent value="calculator" className="p-6 md:p-8">
-              <div className="bg-slate-50 dark:bg-slate-700/30 p-6 rounded-xl text-center">
-                <h2 className="text-xl font-semibold mb-2 text-slate-800 dark:text-white">
-                  ROI Calculator
-                </h2>
-                <p className="text-slate-600 dark:text-slate-300">
-                  Coming soon! This feature will allow you to manually calculate
-                  ROI for any property.
-                </p>
-              </div>
+              <ROICalculator />
             </TabsContent>
           </Tabs>
         </div>
@@ -449,7 +443,7 @@ export default function PropertyAnalysisPage() {
   );
 }
 
-// Add this to your global CSS file
+// Add this to your global CSS file if you haven't already
 /*
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
