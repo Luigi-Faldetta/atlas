@@ -54,7 +54,7 @@ prompt = ChatPromptTemplate.from_messages(
             - An **Investment Score** (0-100) that reflects the overall investment potential. Consider all provided details including bathrooms and year built.
             - A detailed explanation of the score, highlighting the strengths and weaknesses of the property.
             - An estimated **ROI (Return on Investment)** percentage for 5 years and 10 years based on reasonable assumptions about rental income and expenses.
-            - The **Yearly Yield** percentage, calculated as (Net Annual Income / Purchase Price) * 100.
+            - The **Yearly Yield** percentage, calculated as (Gross Annual Income / Purchase Price) * 100.
             - The **Monthly Rental Income** (best estimate based on the property details).
             - The **Expected Monthly Income** after potential improvements and market adjustments (should be 5-15% higher than current rental income).
             - The **Yearly Appreciation** percentage and its corresponding value in euros.

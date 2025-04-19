@@ -288,20 +288,20 @@ const InvestmentAnalysis = ({
         {/* Yield Metrics */}
         <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
           <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 flex items-center">
-            Yearly Yield
+            Gross Yearly Yield
             <InfoModal
-              title="Yearly Yield Calculation"
+              title="Gross Yearly Yield Calculation"
               content={
                 <div>
                   <p className="mb-1">
-                    Yearly Yield is calculated using the formula:
+                    Gross Yearly Yield is calculated using the formula:
                   </p>
                   <p className="font-mono bg-slate-100 dark:bg-slate-700 p-1 rounded text-xs mb-1">
-                    Yield = (Annual Rental Income / Property Value) × 100
+                    Yield = (Annual Gross Rental Income / Property Value) × 100
                   </p>
                   <p>
-                    This represents the annual return as a percentage of the
-                    property value.
+                    This represents the annual gross return as a percentage of
+                    the property value, before deducting operating expenses.
                   </p>
                 </div>
               }
