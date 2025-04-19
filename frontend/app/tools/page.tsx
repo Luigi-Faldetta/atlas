@@ -2,8 +2,10 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InvestmentAnalysis from '@/components/InvestmentAnalysis';
+import ROICalculator from '@/components/ROICalculator'; // Import the ROI Calculator component
 import { Calculator, Search, ArrowRight } from 'lucide-react';
 
+// Define the type for the analysis result, including potential errors
 type AnalysisResult = {
   error?: string;
   scraped_data?: {
@@ -11,47 +13,74 @@ type AnalysisResult = {
     price: string;
     living_area: string;
     bedrooms: string;
-    bathrooms: string; // Added
-    year_built: string; // Added
-    price_per_sqm: number | null; // Added price per sqm
+    bathrooms: string;
+    year_built: string;
+    price_per_sqm: number | null;
   };
   agent_analysis?: {
-    investment_score: number; // 0-100 score
-    roi_5_years: number | null; // ROI for 5 years
-    roi_10_years: number | null; // ROI for 10 years
-    yearly_yield: number | null; // Yearly yield percentage
-    monthly_rental_income: number | null; // Monthly rental income
-    expected_monthly_income: number | null; // Expected monthly income after improvements
-    yearly_appreciation_percentage: number | null; // Yearly appreciation percentage
-    yearly_appreciation_value: number | null; // Yearly appreciation value in euros
-    strengths: string[]; // Key strengths
-    weaknesses: string[]; // Key weaknesses
-    characteristics?: string[]; // Property characteristics
-    risk_score?: number; // Risk score out of 10
-    yield_score?: number; // Yield score out of 10
-    growth_score?: number; // Growth score out of 10
-    location_score?: number; // Location score out of 10
-    condition_score?: number; // Condition score out of 10
+    investment_score: number;
+    roi_5_years: number | null;
+    roi_10_years: number | null;
+    yearly_yield: number | null;
+    monthly_rental_income: number | null;
+    expected_monthly_income: number | null;
+    yearly_appreciation_percentage: number | null;
+    yearly_appreciation_value: number | null;
+    strengths: string[];
+    weaknesses: string[];
+    characteristics?: string[];
+    risk_score?: number;
+    yield_score?: number;
+    growth_score?: number;
+    location_score?: number;
+    condition_score?: number;
   };
 } | null;
 
 export default function ToolsPage() {
+  // Renamed from PropertyAnalysisPage to ToolsPage
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult>(null); // Use the defined type
+  // Removed unused error and warning states
+  // const [error, setError] = useState<string | null>(null);
+  // const [warning, setWarning] = useState<string | null>(null);
 
+  // --- Read API base URL from environment variable ---
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+
+  // Function to handle the analysis request
   const handleAnalyze = async () => {
+    console.log('handleAnalyze function started!');
     setLoading(true);
     setAnalysisResult(null);
+    // setError(null); // Reset error before new request - Removed as error is handled within analysisResult
+    // setWarning(null); // Reset warning before new request - Removed
+
+    // --- Check if API_BASE is defined ---
+    if (!API_BASE) {
+      console.error(
+        'Error: NEXT_PUBLIC_API_URL environment variable is not set.'
+      );
+      setAnalysisResult({
+        error:
+          'API endpoint is not configured. Please check environment variables.',
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/analyze', {
+      console.log(`Attempting to fetch analysis from ${API_BASE}/analyze...`);
+      // --- Use API_BASE in fetch URL ---
+      const response = await fetch(`${API_BASE}/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ url }),
       });
+      console.log('Fetch response status:', response.status);
 
       if (!response.ok) {
         // Try to get error detail from response body
@@ -63,10 +92,12 @@ export default function ToolsPage() {
           }
         } catch (jsonError) {
           // Ignore if response body is not valid JSON
+          console.warn('Could not parse error response JSON:', jsonError);
         }
         throw new Error(errorDetail);
       }
 
+      console.log('Attempting to parse response JSON...');
       const data = await response.json();
 
       // If expected_monthly_income is not provided by the API, estimate it
@@ -105,7 +136,7 @@ export default function ToolsPage() {
       setAnalysisResult(data);
     } catch (error: any) {
       // Catch specific error type
-      console.error(error);
+      console.error('Error during analysis fetch:', error);
       setAnalysisResult({
         error: error.message || 'Failed to analyze the property.',
       }); // Use error message
@@ -299,6 +330,7 @@ export default function ToolsPage() {
                         <button
                           onClick={() => setUrl('')}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          aria-label="Clear URL input"
                         >
                           ×
                         </button>
@@ -394,7 +426,6 @@ export default function ToolsPage() {
                           analysisResult.scraped_data?.address ||
                           'Not available'
                         }
-                        // Pass the calculated price per sqm
                         pricePerSqm={
                           analysisResult.scraped_data?.price_per_sqm ?? null
                         }
@@ -419,16 +450,9 @@ export default function ToolsPage() {
               </div>
             </TabsContent>
 
+            {/* ROI Calculator Tab Content */}
             <TabsContent value="calculator" className="p-6 md:p-8">
-              <div className="bg-slate-50 dark:bg-slate-700/30 p-6 rounded-xl text-center">
-                <h2 className="text-xl font-semibold mb-2 text-slate-800 dark:text-white">
-                  ROI Calculator
-                </h2>
-                <p className="text-slate-600 dark:text-slate-300">
-                  Coming soon! This feature will allow you to manually calculate
-                  ROI for any property.
-                </p>
-              </div>
+              <ROICalculator />
             </TabsContent>
           </Tabs>
         </div>
@@ -437,7 +461,7 @@ export default function ToolsPage() {
   );
 }
 
-// Add this to your global CSS file
+// Add this to your global CSS file if you haven't already
 /*
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
