@@ -37,27 +37,23 @@ type AnalysisResult = {
   };
 } | null;
 
-export default function ToolsPage() {
-  // Renamed from PropertyAnalysisPage to ToolsPage
+export default function PropertyAnalysisPage() {
+  // Using the name from main branch
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult>(null); // Use the defined type
-  // Removed unused error and warning states
-  // const [error, setError] = useState<string | null>(null);
-  // const [warning, setWarning] = useState<string | null>(null);
+  // Removed separate error and warning states, using analysisResult.error
 
-  // --- Read API base URL from environment variable ---
+  // --- Read API base URL from environment variable (from current branch) ---
   const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
-  // Function to handle the analysis request
+  // Function to handle the analysis request (incorporating current branch logic)
   const handleAnalyze = async () => {
     console.log('handleAnalyze function started!');
     setLoading(true);
-    setAnalysisResult(null);
-    // setError(null); // Reset error before new request - Removed as error is handled within analysisResult
-    // setWarning(null); // Reset warning before new request - Removed
+    setAnalysisResult(null); // Reset result/error before new request
 
-    // --- Check if API_BASE is defined ---
+    // --- Check if API_BASE is defined (from current branch) ---
     if (!API_BASE) {
       console.error(
         'Error: NEXT_PUBLIC_API_URL environment variable is not set.'
@@ -72,7 +68,7 @@ export default function ToolsPage() {
 
     try {
       console.log(`Attempting to fetch analysis from ${API_BASE}/analyze...`);
-      // --- Use API_BASE in fetch URL ---
+      // --- Use API_BASE in fetch URL (from current branch) ---
       const response = await fetch(`${API_BASE}/analyze`, {
         method: 'POST',
         headers: {
@@ -135,7 +131,7 @@ export default function ToolsPage() {
 
       setAnalysisResult(data);
     } catch (error: any) {
-      // Catch specific error type
+      // Catch specific error type and set error in analysisResult (from current branch)
       console.error('Error during analysis fetch:', error);
       setAnalysisResult({
         error: error.message || 'Failed to analyze the property.',

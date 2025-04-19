@@ -289,6 +289,8 @@ async def analyze(request: AnalyzeRequest):
             investment_score, address, roi_5_years, roi_10_years, yearly_yield, monthly_rental_income, expected_monthly_income, yearly_appreciation_percentage, yearly_appreciation_value, strengths, weaknesses
         )
 
+        # test comment
+
         # --- Return response ---
         return {
             "success": True,

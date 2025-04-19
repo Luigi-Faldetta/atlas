@@ -33,9 +33,3 @@ jspm_packages/
 .venv/
 venv
 venv/lib/python3.12/site-packages/playwright/driver/node
-
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.DS_Store
