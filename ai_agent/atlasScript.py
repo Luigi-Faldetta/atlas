@@ -183,19 +183,34 @@ async def analyze(request: AnalyzeRequest):
             scraper = FundaScraper()
         elif "idealista.com" in domain:
             logging.info("Detected Idealista URL. Using IdealistaScraper.")
-            scraper = IdealistaScraper(proxy=proxy_config)
+            scraper = IdealistaScraper()
         else:
             logging.error(f"Unsupported domain: {domain}")
             raise HTTPException(status_code=400, detail=f"Unsupported URL domain: {domain}. Only funda.nl and idealista.com are supported.")
 
-        # --- Scrape data using the selected scraper ---
-        await scraper.start()
-        scraped_data = await scraper.scrape_property(request.url)
-        await scraper.close()
+       # --- Scrape data using the selected scraper ---
+        scraped_data = None
+        # --- Only call start/close for FundaScraper (or scrapers that need it) ---
+        if isinstance(scraper, FundaScraper):
+            await scraper.start() # Assuming FundaScraper needs async start
+            try:
+                # Assuming scrape_property is async for FundaScraper
+                scraped_data = await scraper.scrape_property(request.url)
+            finally:
+                await scraper.close() # Ensure close is called even if scrape fails
+        elif isinstance(scraper, IdealistaScraper):
+            # IdealistaScraper's scrape_property is synchronous
+            # Run the synchronous scrape_property in a thread to avoid blocking FastAPI's event loop
+            import asyncio
+            loop = asyncio.get_event_loop()
+            scraped_data = await loop.run_in_executor(None, scraper.scrape_property, request.url)
+            # No start/close needed for IdealistaScraper
+        # --- End Scraper Execution ---
 
-        if not scraped_data:
-            logging.error("Failed to scrape property data.")
-            raise HTTPException(status_code=400, detail="Failed to scrape property data from the provided URL.")
+        if not scraped_data or scraped_data.get('error'):
+            error_detail = scraped_data.get('error', 'Failed to scrape property data from the provided URL.') if scraped_data else 'Failed to scrape property data from the provided URL.'
+            logging.error(f"Scraping failed: {error_detail}")
+            raise HTTPException(status_code=400, detail=error_detail)
 
         logging.debug("Raw scraped data: %s", scraped_data)
 
