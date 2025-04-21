@@ -14,195 +14,293 @@ import {
   ArrowDown,
   ArrowUp,
   BarChart3,
+  Wrench,
+  Briefcase,
+  CalendarDays,
+  Landmark,
+  Receipt,
+  PiggyBank,
+  Wallet,
+  LineChart,
+  Building,
 } from 'lucide-react';
 
-interface ROIData {
-  annualRentalIncome: number;
-  annualExpenses: number;
+// --- Updated Interface for Investment Metrics ---
+interface InvestmentMetrics {
+  // Initial Investment
+  initialCashInvested: number;
+  loanAmount: number;
+
+  // Annual Operations (Year 1)
+  effectiveGrossIncome: number;
+  operatingExpenses: number;
   netOperatingIncome: number;
-  cashOnCashReturn: number;
+  annualDebtService: number;
+  annualCashFlow: number;
+
+  // Key Ratios (Year 1)
   capRate: number;
-  totalReturn5Year: number;
-  totalReturn10Year: number;
-  irr5Year: number;
-  irr10Year: number;
+  cashOnCashReturn: number;
+
+  // Projections over Holding Period
+  projectedSalePrice: number;
+  totalCashFlow: number;
+  equityGain: number; // Appreciation + Loan Paydown
+  totalProfit: number;
+  totalROI: number; // Total Return on Investment over the holding period
+  averageAnnualROI: number; // Simple average annual return
+  // Note: A true IRR calculation is complex and often requires a library or iterative function.
+  // This simplified version gives a basic idea but isn't a finance-standard IRR.
+  simplifiedIRR: number;
 }
 
 export default function ROICalculator() {
   console.log('ROICalculator component rendering...');
-  // Property investment inputs
+
+  // --- Input State Variables ---
+  // Acquisition
   const [purchasePrice, setPurchasePrice] = useState(500000);
-  const [downPayment, setDownPayment] = useState(100000);
+  const [closingCostsPercent, setClosingCostsPercent] = useState(3); // % of Purchase Price
+  const [initialRepairs, setInitialRepairs] = useState(10000); // Fixed Amount
+
+  // Financing
   const [downPaymentPercent, setDownPaymentPercent] = useState(20);
   const [interestRate, setInterestRate] = useState(5.5);
   const [loanTerm, setLoanTerm] = useState(30);
+
+  // Income
   const [monthlyRent, setMonthlyRent] = useState(3000);
-  const [annualAppreciation, setAnnualAppreciation] = useState(3);
-  const [vacancyRate, setVacancyRate] = useState(5);
-  const [propertyTaxRate, setPropertyTaxRate] = useState(1.2);
-  const [insuranceRate, setInsuranceRate] = useState(0.5);
-  const [maintenanceRate, setMaintenanceRate] = useState(1);
-  const [managementFeeRate, setManagementFeeRate] = useState(8);
+  const [annualRentIncrease, setAnnualRentIncrease] = useState(2); // %
 
-  // Calculated results
-  const [results, setResults] = useState<ROIData | null>(null);
+  // Operating Expenses (% of Purchase Price or Rent)
+  const [propertyTaxRate, setPropertyTaxRate] = useState(1.2); // % of Purchase Price
+  const [insuranceRate, setInsuranceRate] = useState(0.5); // % of Purchase Price
+  const [maintenanceRate, setMaintenanceRate] = useState(1); // % of Purchase Price
+  const [vacancyRate, setVacancyRate] = useState(5); // % of Gross Rent
+  const [managementFeeRate, setManagementFeeRate] = useState(8); // % of Effective Gross Income
+  const [annualExpenseInflation, setAnnualExpenseInflation] = useState(2); // %
 
+  // Projections & Sale
+  const [holdingPeriod, setHoldingPeriod] = useState(5); // Years
+  const [annualAppreciation, setAnnualAppreciation] = useState(3); // %
+  const [sellingCostsPercent, setSellingCostsPercent] = useState(6); // % of Sale Price
+
+  // --- Calculated Derived State ---
+  const [downPayment, setDownPayment] = useState(
+    (purchasePrice * downPaymentPercent) / 100
+  );
+  const [closingCosts, setClosingCosts] = useState(
+    (purchasePrice * closingCostsPercent) / 100
+  );
+
+  // --- Results State ---
+  const [results, setResults] = useState<InvestmentMetrics | null>(null);
+
+  // --- Recalculate Derived State on Input Change ---
+  useEffect(() => {
+    setDownPayment(Math.round((purchasePrice * downPaymentPercent) / 100));
+    setClosingCosts(Math.round((purchasePrice * closingCostsPercent) / 100));
+  }, [purchasePrice, downPaymentPercent, closingCostsPercent]);
+
+  // --- Recalculate ROI on Any Input Change ---
   useEffect(() => {
     console.log('ROICalculator useEffect running...');
-    calculateROI();
+    calculateInvestmentMetrics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     purchasePrice,
-    downPayment,
+    closingCostsPercent,
+    initialRepairs,
     downPaymentPercent,
     interestRate,
     loanTerm,
     monthlyRent,
-    annualAppreciation,
-    vacancyRate,
+    annualRentIncrease,
     propertyTaxRate,
     insuranceRate,
     maintenanceRate,
+    vacancyRate,
     managementFeeRate,
+    annualExpenseInflation,
+    holdingPeriod,
+    annualAppreciation,
+    sellingCostsPercent,
+    // Derived state included as they trigger recalculation indirectly via purchasePrice etc.
+    downPayment,
+    closingCosts,
   ]);
 
-  // Handle down payment changes
-  const handleDownPaymentChange = (value: number) => {
-    setDownPayment(value);
-    setDownPaymentPercent(Math.round((value / purchasePrice) * 100));
-  };
-
-  const handleDownPaymentPercentChange = (value: number) => {
-    setDownPaymentPercent(value);
-    setDownPayment(Math.round((purchasePrice * value) / 100));
-  };
-
-  // Handle purchase price changes
-  const handlePurchasePriceChange = (value: number) => {
-    setPurchasePrice(value);
-    setDownPayment(Math.round((value * downPaymentPercent) / 100));
-  };
-
-  const calculateROI = () => {
-    // Calculate loan amount
+  // --- Calculation Logic ---
+  const calculateInvestmentMetrics = () => {
+    // --- Initial Investment ---
     const loanAmount = purchasePrice - downPayment;
+    const initialCashInvested = downPayment + closingCosts + initialRepairs;
 
-    // Calculate monthly mortgage payment
+    if (initialCashInvested <= 0 || purchasePrice <= 0) {
+      setResults(null); // Avoid division by zero or nonsensical results
+      return;
+    }
+
+    // --- Mortgage Calculation ---
     const monthlyInterestRate = interestRate / 100 / 12;
     const numberOfPayments = loanTerm * 12;
     const monthlyMortgagePayment =
-      (loanAmount *
-        (monthlyInterestRate *
-          Math.pow(1 + monthlyInterestRate, numberOfPayments))) /
-      (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
+      loanAmount <= 0 || monthlyInterestRate <= 0 // Handle 100% cash purchase or 0% interest
+        ? 0
+        : (loanAmount *
+            (monthlyInterestRate *
+              Math.pow(1 + monthlyInterestRate, numberOfPayments))) /
+          (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
+    const annualDebtService = monthlyMortgagePayment * 12;
 
-    // Calculate annual rental income (accounting for vacancy)
-    const effectiveVacancyRate = vacancyRate / 100;
-    const annualRentalIncome = monthlyRent * 12 * (1 - effectiveVacancyRate);
+    // --- Year 1 Operations ---
+    const grossScheduledIncome = monthlyRent * 12;
+    const vacancyLoss = grossScheduledIncome * (vacancyRate / 100);
+    const effectiveGrossIncome = grossScheduledIncome - vacancyLoss;
 
-    // Calculate annual expenses
     const propertyTax = purchasePrice * (propertyTaxRate / 100);
     const insurance = purchasePrice * (insuranceRate / 100);
     const maintenance = purchasePrice * (maintenanceRate / 100);
-    const managementFee = annualRentalIncome * (managementFeeRate / 100);
-    const annualMortgagePayment = monthlyMortgagePayment * 12;
-
+    // Management fee based on EGI
+    const managementFee = effectiveGrossIncome * (managementFeeRate / 100);
     const operatingExpenses =
       propertyTax + insurance + maintenance + managementFee;
-    const totalAnnualExpenses = operatingExpenses + annualMortgagePayment;
 
-    // Calculate net operating income (NOI)
-    const netOperatingIncome = annualRentalIncome - operatingExpenses;
+    const netOperatingIncome = effectiveGrossIncome - operatingExpenses;
+    const annualCashFlow = netOperatingIncome - annualDebtService;
 
-    // Calculate cash-on-cash return
-    const cashFlow = annualRentalIncome - totalAnnualExpenses;
-    const cashOnCashReturn = (cashFlow / downPayment) * 100;
-
-    // Calculate cap rate
+    // --- Year 1 Ratios ---
     const capRate = (netOperatingIncome / purchasePrice) * 100;
+    const cashOnCashReturn = (annualCashFlow / initialCashInvested) * 100;
 
-    // Calculate 5-year and 10-year returns including appreciation
-    const appreciationRate = annualAppreciation / 100;
-    let propertyValue5Year = purchasePrice;
-    let propertyValue10Year = purchasePrice;
-    let totalCashFlow5Year = 0;
-    let totalCashFlow10Year = 0;
-    let remainingLoanBalance5Year = loanAmount;
-    let remainingLoanBalance10Year = loanAmount;
+    // --- Projections over Holding Period ---
+    let currentPropertyValue = purchasePrice;
+    let currentMonthlyRent = monthlyRent;
+    let currentOperatingExpenses = operatingExpenses;
+    let remainingLoanBalance = loanAmount;
+    let totalCashFlow = 0;
+    let totalPrincipalPaid = 0;
 
-    for (let year = 1; year <= 10; year++) {
-      // Calculate appreciation
-      propertyValue5Year =
-        year <= 5
-          ? propertyValue5Year * (1 + appreciationRate)
-          : propertyValue5Year;
-      propertyValue10Year = propertyValue10Year * (1 + appreciationRate);
+    for (let year = 1; year <= holdingPeriod; year++) {
+      // Calculate income and expenses for the current year
+      const yearlyGrossScheduledIncome = currentMonthlyRent * 12;
+      const yearlyVacancyLoss =
+        yearlyGrossScheduledIncome * (vacancyRate / 100);
+      const yearlyEffectiveGrossIncome =
+        yearlyGrossScheduledIncome - yearlyVacancyLoss;
 
-      // Calculate loan balance reduction (simplified)
-      const interestPaid5Year =
-        year <= 5 ? remainingLoanBalance5Year * (interestRate / 100) : 0;
-      const principalPaid5Year =
-        year <= 5 ? annualMortgagePayment - interestPaid5Year : 0;
-      remainingLoanBalance5Year =
-        year <= 5
-          ? remainingLoanBalance5Year - principalPaid5Year
-          : remainingLoanBalance5Year;
+      // Adjust management fee based on current EGI
+      const yearlyManagementFee =
+        yearlyEffectiveGrossIncome * (managementFeeRate / 100);
+      const yearlyOpExExcludingMgmt =
+        currentOperatingExpenses / (1 - managementFeeRate / 100); // Estimate OpEx without old mgmt fee
+      const yearlyOperatingExpenses =
+        yearlyOpExExcludingMgmt + yearlyManagementFee;
 
-      const interestPaid10Year =
-        remainingLoanBalance10Year * (interestRate / 100);
-      const principalPaid10Year = annualMortgagePayment - interestPaid10Year;
-      remainingLoanBalance10Year =
-        remainingLoanBalance10Year - principalPaid10Year;
+      const yearlyNOI = yearlyEffectiveGrossIncome - yearlyOperatingExpenses;
 
-      // Add cash flow for each year
-      totalCashFlow5Year += year <= 5 ? cashFlow : 0;
-      totalCashFlow10Year += cashFlow;
+      // Calculate Debt Service for the year
+      let yearlyInterestPaid = 0;
+      let yearlyPrincipalPaid = 0;
+      if (loanAmount > 0) {
+        for (let month = 1; month <= 12; month++) {
+          const interestPayment = remainingLoanBalance * monthlyInterestRate;
+          const principalPayment = monthlyMortgagePayment - interestPayment;
+          yearlyInterestPaid += interestPayment;
+          yearlyPrincipalPaid += principalPayment;
+          remainingLoanBalance -= principalPayment;
+          // Ensure balance doesn't go below zero
+          remainingLoanBalance = Math.max(0, remainingLoanBalance);
+        }
+      }
+      const yearlyDebtService = yearlyInterestPaid + yearlyPrincipalPaid; // Should approx = annualDebtService
+      const yearlyCashFlow = yearlyNOI - yearlyDebtService;
+
+      totalCashFlow += yearlyCashFlow;
+      totalPrincipalPaid += yearlyPrincipalPaid;
+
+      // Update values for next year
+      currentPropertyValue *= 1 + annualAppreciation / 100;
+      currentMonthlyRent *= 1 + annualRentIncrease / 100;
+      // Inflate expenses (excluding management fee, which adjusts with rent)
+      currentOperatingExpenses =
+        (propertyTax + insurance + maintenance) *
+          Math.pow(1 + annualExpenseInflation / 100, year) +
+        yearlyManagementFee; // Recalculate management fee based on next year's projected EGI
     }
 
-    // Calculate equity after 5 and 10 years
-    const equity5Year = propertyValue5Year - remainingLoanBalance5Year;
-    const equity10Year = propertyValue10Year - remainingLoanBalance10Year;
+    // --- Sale Calculation ---
+    const projectedSalePrice = currentPropertyValue;
+    const sellingCosts = projectedSalePrice * (sellingCostsPercent / 100);
+    const saleProceedsBeforeLoan = projectedSalePrice - sellingCosts;
+    const equityGain = projectedSalePrice - purchasePrice + totalPrincipalPaid; // Appreciation + Loan Paydown
+    const saleProceedsAfterLoan = saleProceedsBeforeLoan - remainingLoanBalance;
 
-    // Calculate total return
-    const totalReturn5Year =
-      ((equity5Year - downPayment + totalCashFlow5Year) / downPayment) * 100;
-    const totalReturn10Year =
-      ((equity10Year - downPayment + totalCashFlow10Year) / downPayment) * 100;
+    // --- Total Return Calculation ---
+    const totalProfit =
+      saleProceedsAfterLoan - initialCashInvested + totalCashFlow;
+    const totalROI = (totalProfit / initialCashInvested) * 100;
+    const averageAnnualROI = totalROI / holdingPeriod;
 
-    // Calculate IRR (simplified approximation)
-    const irr5Year = (totalReturn5Year / 100 / 5) * 100;
-    const irr10Year = (totalReturn10Year / 100 / 10) * 100;
+    // Simplified IRR approximation (Average Annual ROI) - A proper calculation is more complex
+    const simplifiedIRR = averageAnnualROI;
 
     setResults({
-      annualRentalIncome,
-      annualExpenses: totalAnnualExpenses,
+      initialCashInvested,
+      loanAmount,
+      effectiveGrossIncome,
+      operatingExpenses,
       netOperatingIncome,
-      cashOnCashReturn,
+      annualDebtService,
+      annualCashFlow,
       capRate,
-      totalReturn5Year,
-      totalReturn10Year,
-      irr5Year,
-      irr10Year,
+      cashOnCashReturn,
+      projectedSalePrice,
+      totalCashFlow,
+      equityGain,
+      totalProfit,
+      totalROI,
+      averageAnnualROI,
+      simplifiedIRR,
     });
   };
 
+  // --- Helper Functions ---
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value === null || value === undefined || isNaN(value)) return '$--';
+    return value.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+  };
+
+  const formatPercent = (value: number | null | undefined) => {
+    if (value === null || value === undefined || isNaN(value)) return '--%';
+    return `${value.toFixed(2)}%`;
+  };
+
+  // --- JSX Structure ---
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6">
+    <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-4 md:p-6">
       <div className="flex items-center mb-6">
-        <Calculator className="w-6 h-6 mr-2 text-blue-600" />
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-          Investment ROI Calculator
+        <Building className="w-6 h-6 mr-2 text-blue-600" />
+        <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
+          Real Estate Investment Calculator
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Input Form */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        {/* Input Form Column */}
         <div className="space-y-6">
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">
-              Property Details
+          {/* Acquisition Costs */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
+            <h3 className="text-lg font-semibold mb-3 text-slate-900 dark:text-white flex items-center">
+              <Home className="w-5 h-5 mr-2 text-slate-500" /> Acquisition
             </h3>
-
             <div className="space-y-4">
+              {/* Purchase Price */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Purchase Price
@@ -213,29 +311,65 @@ export default function ROICalculator() {
                     type="number"
                     value={purchasePrice}
                     onChange={(e) =>
-                      handlePurchasePriceChange(Number(e.target.value))
+                      setPurchasePrice(Math.max(0, Number(e.target.value)))
                     }
                     className="pl-10"
                   />
                 </div>
               </div>
-
+              {/* Closing Costs */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Down Payment: ${downPayment.toLocaleString()} (
+                  Closing Costs: {formatCurrency(closingCosts)} (
+                  {closingCostsPercent}%)
+                </label>
+                <Slider
+                  value={[closingCostsPercent]}
+                  max={10}
+                  step={0.1}
+                  onValueChange={(value) => setClosingCostsPercent(value[0])}
+                />
+              </div>
+              {/* Initial Repairs */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Initial Repairs/Renovations
+                </label>
+                <div className="relative">
+                  <Wrench className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    type="number"
+                    value={initialRepairs}
+                    onChange={(e) =>
+                      setInitialRepairs(Math.max(0, Number(e.target.value)))
+                    }
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Financing */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
+            <h3 className="text-lg font-semibold mb-3 text-slate-900 dark:text-white flex items-center">
+              <Landmark className="w-5 h-5 mr-2 text-slate-500" /> Financing
+            </h3>
+            <div className="space-y-4">
+              {/* Down Payment */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Down Payment: {formatCurrency(downPayment)} (
                   {downPaymentPercent}%)
                 </label>
                 <Slider
-                  defaultValue={[downPaymentPercent]}
+                  value={[downPaymentPercent]}
                   max={100}
                   step={1}
-                  value={[downPaymentPercent]}
-                  onValueChange={(value) =>
-                    handleDownPaymentPercentChange(value[0])
-                  }
+                  onValueChange={(value) => setDownPaymentPercent(value[0])}
                 />
               </div>
-
+              {/* Interest Rate */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Interest Rate (%)
@@ -245,13 +379,15 @@ export default function ROICalculator() {
                   <Input
                     type="number"
                     value={interestRate}
-                    onChange={(e) => setInterestRate(Number(e.target.value))}
+                    onChange={(e) =>
+                      setInterestRate(Math.max(0, Number(e.target.value)))
+                    }
                     className="pl-10"
                     step="0.1"
                   />
                 </div>
               </div>
-
+              {/* Loan Term */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Loan Term (years)
@@ -261,12 +397,24 @@ export default function ROICalculator() {
                   <Input
                     type="number"
                     value={loanTerm}
-                    onChange={(e) => setLoanTerm(Number(e.target.value))}
+                    onChange={(e) =>
+                      setLoanTerm(Math.max(1, Number(e.target.value)))
+                    }
                     className="pl-10"
                   />
                 </div>
               </div>
+            </div>
+          </div>
 
+          {/* Income & Expenses */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
+            <h3 className="text-lg font-semibold mb-3 text-slate-900 dark:text-white flex items-center">
+              <Receipt className="w-5 h-5 mr-2 text-slate-500" /> Income &
+              Expenses
+            </h3>
+            <div className="space-y-4">
+              {/* Monthly Rent */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Monthly Rental Income
@@ -276,262 +424,324 @@ export default function ROICalculator() {
                   <Input
                     type="number"
                     value={monthlyRent}
-                    onChange={(e) => setMonthlyRent(Number(e.target.value))}
+                    onChange={(e) =>
+                      setMonthlyRent(Math.max(0, Number(e.target.value)))
+                    }
                     className="pl-10"
                   />
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">
-              Additional Factors
-            </h3>
-
-            <div className="space-y-4">
+              {/* Vacancy Rate */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Annual Appreciation Rate: {annualAppreciation}%
+                  Vacancy Rate: {vacancyRate}% (of Gross Rent)
                 </label>
                 <Slider
-                  defaultValue={[annualAppreciation]}
-                  max={10}
-                  step={0.1}
-                  value={[annualAppreciation]}
-                  onValueChange={(value) => setAnnualAppreciation(value[0])}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Vacancy Rate: {vacancyRate}%
-                </label>
-                <Slider
-                  defaultValue={[vacancyRate]}
-                  max={20}
-                  step={0.5}
                   value={[vacancyRate]}
+                  max={50}
+                  step={0.5}
                   onValueChange={(value) => setVacancyRate(value[0])}
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Property Tax: {propertyTaxRate}%
-                  </label>
-                  <Slider
-                    defaultValue={[propertyTaxRate]}
-                    max={5}
-                    step={0.1}
-                    value={[propertyTaxRate]}
-                    onValueChange={(value) => setPropertyTaxRate(value[0])}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Insurance: {insuranceRate}%
-                  </label>
-                  <Slider
-                    defaultValue={[insuranceRate]}
-                    max={3}
-                    step={0.1}
-                    value={[insuranceRate]}
-                    onValueChange={(value) => setInsuranceRate(value[0])}
-                  />
-                </div>
+              {/* Property Tax */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Property Tax Rate: {propertyTaxRate}% (of Purchase Price)
+                </label>
+                <Slider
+                  value={[propertyTaxRate]}
+                  max={5}
+                  step={0.1}
+                  onValueChange={(value) => setPropertyTaxRate(value[0])}
+                />
               </div>
+              {/* Insurance */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Insurance Rate: {insuranceRate}% (of Purchase Price)
+                </label>
+                <Slider
+                  value={[insuranceRate]}
+                  max={3}
+                  step={0.1}
+                  onValueChange={(value) => setInsuranceRate(value[0])}
+                />
+              </div>
+              {/* Maintenance */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Maintenance Rate: {maintenanceRate}% (of Purchase Price)
+                </label>
+                <Slider
+                  value={[maintenanceRate]}
+                  max={5}
+                  step={0.1}
+                  onValueChange={(value) => setMaintenanceRate(value[0])}
+                />
+              </div>
+              {/* Management Fee */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Management Fee: {managementFeeRate}% (of Effective Income)
+                </label>
+                <Slider
+                  value={[managementFeeRate]}
+                  max={20}
+                  step={0.5}
+                  onValueChange={(value) => setManagementFeeRate(value[0])}
+                />
+              </div>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Maintenance: {maintenanceRate}%
-                  </label>
-                  <Slider
-                    defaultValue={[maintenanceRate]}
-                    max={5}
-                    step={0.1}
-                    value={[maintenanceRate]}
-                    onValueChange={(value) => setMaintenanceRate(value[0])}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Management Fee: {managementFeeRate}%
-                  </label>
-                  <Slider
-                    defaultValue={[managementFeeRate]}
-                    max={15}
-                    step={0.5}
-                    value={[managementFeeRate]}
-                    onValueChange={(value) => setManagementFeeRate(value[0])}
-                  />
-                </div>
+          {/* Projections */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
+            <h3 className="text-lg font-semibold mb-3 text-slate-900 dark:text-white flex items-center">
+              <LineChart className="w-5 h-5 mr-2 text-slate-500" /> Projections
+            </h3>
+            <div className="space-y-4">
+              {/* Holding Period */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Holding Period: {holdingPeriod} years
+                </label>
+                <Slider
+                  value={[holdingPeriod]}
+                  min={1}
+                  max={30}
+                  step={1}
+                  onValueChange={(value) => setHoldingPeriod(value[0])}
+                />
+              </div>
+              {/* Annual Appreciation */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Annual Property Appreciation: {annualAppreciation}%
+                </label>
+                <Slider
+                  value={[annualAppreciation]}
+                  max={10}
+                  step={0.1}
+                  onValueChange={(value) => setAnnualAppreciation(value[0])}
+                />
+              </div>
+              {/* Annual Rent Increase */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Annual Rent Increase: {annualRentIncrease}%
+                </label>
+                <Slider
+                  value={[annualRentIncrease]}
+                  max={10}
+                  step={0.1}
+                  onValueChange={(value) => setAnnualRentIncrease(value[0])}
+                />
+              </div>
+              {/* Annual Expense Inflation */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Annual Expense Inflation: {annualExpenseInflation}%
+                </label>
+                <Slider
+                  value={[annualExpenseInflation]}
+                  max={10}
+                  step={0.1}
+                  onValueChange={(value) => setAnnualExpenseInflation(value[0])}
+                />
+              </div>
+              {/* Selling Costs */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Selling Costs: {sellingCostsPercent}% (of Sale Price)
+                </label>
+                <Slider
+                  value={[sellingCostsPercent]}
+                  max={10}
+                  step={0.1}
+                  onValueChange={(value) => setSellingCostsPercent(value[0])}
+                />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Results */}
+        {/* Results Column */}
         <div className="space-y-6">
-          <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-6 border border-blue-100 dark:border-blue-800">
-            <h3 className="text-lg font-semibold mb-4 text-blue-800 dark:text-blue-300 flex items-center">
-              <BarChart3 className="w-5 h-5 mr-2" />
-              Investment Analysis
-            </h3>
+          <div className="sticky top-6">
+            {' '}
+            {/* Make results sticky */}
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 md:p-6 border border-blue-100 dark:border-blue-800">
+              <h3 className="text-lg font-semibold mb-4 text-blue-800 dark:text-blue-300 flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2" />
+                Investment Analysis Results
+              </h3>
 
-            {results && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Annual Rental Income
-                    </p>
-                    <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                      ${results.annualRentalIncome.toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Annual Expenses
-                    </p>
-                    <p className="text-xl font-bold text-red-600 dark:text-red-400">
-                      ${results.annualExpenses.toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Net Operating Income
-                    </p>
-                    <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                      ${Math.round(results.netOperatingIncome).toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Cap Rate
-                    </p>
+              {!results ? (
+                <p className="text-slate-500 dark:text-slate-400 text-center py-8">
+                  Enter investment details to see analysis.
+                </p>
+              ) : (
+                <div className="space-y-5">
+                  {/* Initial Investment */}
+                  <div className="p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                    <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 flex items-center">
+                      <PiggyBank className="w-4 h-4 mr-1.5" /> Initial Cash
+                      Invested
+                    </h4>
                     <p className="text-xl font-bold text-slate-900 dark:text-white">
-                      {results.capRate.toFixed(2)}%
+                      {formatCurrency(results.initialCashInvested)}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      (Down Payment + Closing Costs + Repairs)
                     </p>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Cash-on-Cash Return
+                  {/* Year 1 Operations */}
+                  <div className="p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                    <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
+                      Year 1 Performance
+                    </h4>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Net Operating Income (NOI)
+                        </p>
+                        <p className="text-md font-semibold text-green-600 dark:text-green-400">
+                          {formatCurrency(results.netOperatingIncome)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Annual Cash Flow
+                        </p>
+                        <p
+                          className={`text-md font-semibold ${
+                            results.annualCashFlow >= 0
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}
+                        >
+                          {formatCurrency(results.annualCashFlow)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Cap Rate
+                        </p>
+                        <p className="text-md font-semibold text-slate-900 dark:text-white">
+                          {formatPercent(results.capRate)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Cash-on-Cash Return
+                        </p>
+                        <p
+                          className={`text-md font-semibold ${
+                            results.cashOnCashReturn >= 0
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}
+                        >
+                          {formatPercent(results.cashOnCashReturn)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Projections */}
+                  <div className="p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                    <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
+                      {holdingPeriod}-Year Projection
+                    </h4>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Projected Sale Price
+                        </p>
+                        <p className="text-md font-semibold text-slate-900 dark:text-white">
+                          {formatCurrency(results.projectedSalePrice)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Total Cash Flow
+                        </p>
+                        <p
+                          className={`text-md font-semibold ${
+                            results.totalCashFlow >= 0
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}
+                        >
+                          {formatCurrency(results.totalCashFlow)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Equity Gain
+                        </p>
+                        <p className="text-md font-semibold text-blue-600 dark:text-blue-400">
+                          {formatCurrency(results.equityGain)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Total Profit
+                        </p>
+                        <p
+                          className={`text-md font-semibold ${
+                            results.totalProfit >= 0
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}
+                        >
+                          {formatCurrency(results.totalProfit)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Total Returns */}
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
+                      Overall Returns ({holdingPeriod} Years)
+                    </h4>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                      <div>
+                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                          Total ROI
+                        </p>
+                        <p className="text-lg font-bold text-blue-800 dark:text-blue-300">
+                          {formatPercent(results.totalROI)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                          Average Annual ROI
+                        </p>
+                        <p className="text-lg font-bold text-blue-800 dark:text-blue-300">
+                          {formatPercent(results.averageAnnualROI)}
+                        </p>
+                      </div>
+                      {/* <div>
+                                                <p className="text-xs text-blue-600 dark:text-blue-400">Simplified IRR</p>
+                                                <p className="text-lg font-bold text-blue-800 dark:text-blue-300">{formatPercent(results.simplifiedIRR)}</p>
+                                            </div> */}
+                    </div>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                      (Total ROI = Total Profit / Initial Cash Invested)
                     </p>
-                    <div className="flex items-center">
-                      <p
-                        className={`text-xl font-bold ${
-                          results.cashOnCashReturn >= 0
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-red-600 dark:text-red-400'
-                        }`}
-                      >
-                        {results.cashOnCashReturn.toFixed(2)}%
-                      </p>
-                      {results.cashOnCashReturn >= 0 ? (
-                        <ArrowUp className="w-4 h-4 ml-1 text-green-600 dark:text-green-400" />
-                      ) : (
-                        <ArrowDown className="w-4 h-4 ml-1 text-red-600 dark:text-red-400" />
-                      )}
-                    </div>
                   </div>
+
+                  {/* Placeholder for Action Button */}
+                  {/* <Button className="w-full bg-blue-600 hover:bg-blue-700 mt-4">
+                                        <Home className="w-4 h-4 mr-2" />
+                                        Find Properties with Similar Returns
+                                    </Button> */}
                 </div>
-
-                <div>
-                  <h4 className="text-md font-semibold mb-2 text-slate-900 dark:text-white">
-                    Long-Term Returns
-                  </h4>
-
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-blue-100 dark:bg-blue-900/30 rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                          5-Year Return
-                        </p>
-                        <TrendingUp className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <p className="text-xl font-bold text-blue-800 dark:text-blue-300">
-                        {results.totalReturn5Year.toFixed(2)}%
-                      </p>
-                      <p className="text-xs text-blue-600 dark:text-blue-400">
-                        IRR: {results.irr5Year.toFixed(2)}%
-                      </p>
-                    </div>
-
-                    <div className="bg-blue-100 dark:bg-blue-900/30 rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                          10-Year Return
-                        </p>
-                        <TrendingUp className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <p className="text-xl font-bold text-blue-800 dark:text-blue-300">
-                        {results.totalReturn10Year.toFixed(2)}%
-                      </p>
-                      <p className="text-xs text-blue-600 dark:text-blue-400">
-                        IRR: {results.irr10Year.toFixed(2)}%
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                  <Home className="w-4 h-4 mr-2" />
-                  Find Properties with This ROI
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
-            <h4 className="font-semibold mb-2 text-slate-900 dark:text-white">
-              Atlas ROI Score
-            </h4>
-            <div className="flex items-center">
-              <div className="flex-grow h-3 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                {results && (
-                  <div
-                    className={`h-full rounded-full ${
-                      results.cashOnCashReturn < 0
-                        ? 'bg-red-500'
-                        : results.cashOnCashReturn < 5
-                          ? 'bg-amber-500'
-                          : results.cashOnCashReturn < 10
-                            ? 'bg-green-500'
-                            : 'bg-blue-500'
-                    }`}
-                    style={{
-                      width: `${(Math.min(Math.max(results?.cashOnCashReturn || 0, 0), 15) / 15) * 100}%`,
-                    }}
-                  ></div>
-                )}
-              </div>
-              {results && (
-                <span className="ml-4 font-bold text-lg text-slate-900 dark:text-white">
-                  {results.cashOnCashReturn < 0
-                    ? 'Poor'
-                    : results.cashOnCashReturn < 5
-                      ? 'Fair'
-                      : results.cashOnCashReturn < 10
-                        ? 'Good'
-                        : 'Excellent'}
-                </span>
               )}
             </div>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              Based on cash-on-cash return, cap rate, and projected long-term
-              performance.
-            </p>
           </div>
         </div>
       </div>
