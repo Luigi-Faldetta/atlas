@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import {
   Calculator,
-  DollarSign, // Keep for potential future use, but we'll use € symbol directly
-  Euro, // Import Euro icon if available and desired, otherwise use text symbol
+  DollarSign,
+  Euro,
   Percent,
   Clock,
   Home,
@@ -18,46 +18,41 @@ import {
   Wrench,
   Briefcase,
   CalendarDays,
-  Landmark,
+  Landmark, // Keep or remove Landmark icon? Removing financing section, so maybe remove.
   Receipt,
   PiggyBank,
   Wallet,
   LineChart,
   Building,
-} from 'lucide-react'; // Assuming Euro icon exists, if not, remove it
-import InfoModal from './InfoModal'; // Import the InfoModal component
+} from 'lucide-react';
+import InfoModal from './InfoModal';
 
-// --- Updated Interface for Investment Metrics ---
+// --- Updated Interface for Investment Metrics (No Financing) ---
 interface InvestmentMetrics {
   // Initial Investment
-  initialCashInvested: number;
-  loanAmount: number;
+  initialCashInvested: number; // Now equals Purchase Price + Closing Costs + Repairs
 
   // Annual Operations (Year 1)
   effectiveGrossIncome: number;
   operatingExpenses: number;
-  netOperatingIncome: number;
-  annualDebtService: number;
-  annualCashFlow: number;
+  netOperatingIncome: number; // NOI is now the same as Cash Flow before tax
+  annualCashFlow: number; // Same as NOI in this scenario
 
   // Key Ratios (Year 1)
   capRate: number;
-  cashOnCashReturn: number;
+  cashOnCashReturn: number; // Return based on total cash invested
 
   // Projections over Holding Period
   projectedSalePrice: number;
-  totalCashFlow: number;
-  equityGain: number; // Appreciation + Loan Paydown
+  totalCashFlow: number; // Sum of annual NOI over the period
+  equityGain: number; // Appreciation only
   totalProfit: number;
   totalROI: number; // Total Return on Investment over the holding period
   averageAnnualROI: number; // Simple average annual return
-  // Note: A true IRR calculation is complex and often requires a library or iterative function.
-  // This simplified version gives a basic idea but isn't a finance-standard IRR.
-  simplifiedIRR: number;
 }
 
 export default function ROICalculator() {
-  console.log('ROICalculator component rendering...');
+  console.log('ROICalculator component rendering (Cash Purchase)...');
 
   // --- Input State Variables ---
   // Acquisition
@@ -65,10 +60,10 @@ export default function ROICalculator() {
   const [closingCostsPercent, setClosingCostsPercent] = useState(3); // % of Purchase Price
   const [initialRepairs, setInitialRepairs] = useState(10000); // Fixed Amount
 
-  // Financing
-  const [downPaymentPercent, setDownPaymentPercent] = useState(20);
-  const [interestRate, setInterestRate] = useState(5.5); // Store as number (e.g., 5.5 for 5.5%)
-  const [loanTerm, setLoanTerm] = useState(30);
+  // Financing - REMOVED
+  // const [downPaymentPercent, setDownPaymentPercent] = useState(20);
+  // const [interestRate, setInterestRate] = useState(5.5);
+  // const [loanTerm, setLoanTerm] = useState(30);
 
   // Income
   const [monthlyRent, setMonthlyRent] = useState(3000);
@@ -88,9 +83,9 @@ export default function ROICalculator() {
   const [sellingCostsPercent, setSellingCostsPercent] = useState(6); // % of Sale Price
 
   // --- Calculated Derived State ---
-  const [downPayment, setDownPayment] = useState(
-    (purchasePrice * downPaymentPercent) / 100
-  );
+  // const [downPayment, setDownPayment] = useState(
+  //   (purchasePrice * downPaymentPercent) / 100
+  // ); // REMOVED
   const [closingCosts, setClosingCosts] = useState(
     (purchasePrice * closingCostsPercent) / 100
   );
@@ -100,22 +95,22 @@ export default function ROICalculator() {
 
   // --- Recalculate Derived State on Input Change ---
   useEffect(() => {
-    setDownPayment(Math.round((purchasePrice * downPaymentPercent) / 100));
+    // setDownPayment(Math.round((purchasePrice * downPaymentPercent) / 100)); // REMOVED
     setClosingCosts(Math.round((purchasePrice * closingCostsPercent) / 100));
-  }, [purchasePrice, downPaymentPercent, closingCostsPercent]);
+  }, [purchasePrice, closingCostsPercent]); // Removed downPaymentPercent
 
   // --- Recalculate ROI on Any Input Change ---
   useEffect(() => {
-    console.log('ROICalculator useEffect running...');
+    console.log('ROICalculator useEffect running (Cash Purchase)...');
     calculateInvestmentMetrics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     purchasePrice,
     closingCostsPercent,
     initialRepairs,
-    downPaymentPercent,
-    interestRate,
-    loanTerm,
+    // downPaymentPercent, // REMOVED
+    // interestRate, // REMOVED
+    // loanTerm, // REMOVED
     monthlyRent,
     annualRentIncrease,
     propertyTaxRate,
@@ -127,33 +122,26 @@ export default function ROICalculator() {
     holdingPeriod,
     annualAppreciation,
     sellingCostsPercent,
-    // Derived state included as they trigger recalculation indirectly via purchasePrice etc.
-    downPayment,
-    closingCosts,
+    // Derived state
+    closingCosts, // Removed downPayment
   ]);
 
-  // --- Calculation Logic ---
+  // --- Calculation Logic (Cash Purchase) ---
   const calculateInvestmentMetrics = () => {
     // --- Initial Investment ---
-    const loanAmount = purchasePrice - downPayment;
-    const initialCashInvested = downPayment + closingCosts + initialRepairs;
+    // const loanAmount = purchasePrice - downPayment; // REMOVED
+    const initialCashInvested = purchasePrice + closingCosts + initialRepairs; // Updated calculation
 
     if (initialCashInvested <= 0 || purchasePrice <= 0) {
-      setResults(null); // Avoid division by zero or nonsensical results
+      setResults(null);
       return;
     }
 
-    // --- Mortgage Calculation ---
-    const monthlyInterestRate = interestRate / 100 / 12;
-    const numberOfPayments = loanTerm * 12;
-    const monthlyMortgagePayment =
-      loanAmount <= 0 || monthlyInterestRate <= 0 // Handle 100% cash purchase or 0% interest
-        ? 0
-        : (loanAmount *
-            (monthlyInterestRate *
-              Math.pow(1 + monthlyInterestRate, numberOfPayments))) /
-          (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
-    const annualDebtService = monthlyMortgagePayment * 12;
+    // --- Mortgage Calculation - REMOVED ---
+    // const monthlyInterestRate = interestRate / 100 / 12;
+    // const numberOfPayments = loanTerm * 12;
+    // const monthlyMortgagePayment = ... ; // REMOVED
+    const annualDebtService = 0; // No debt service for cash purchase
 
     // --- Year 1 Operations ---
     const grossScheduledIncome = monthlyRent * 12;
@@ -163,17 +151,17 @@ export default function ROICalculator() {
     const propertyTax = purchasePrice * (propertyTaxRate / 100);
     const insurance = purchasePrice * (insuranceRate / 100);
     const maintenance = purchasePrice * (maintenanceRate / 100);
-    // Management fee based on EGI
     const managementFee = effectiveGrossIncome * (managementFeeRate / 100);
     const operatingExpenses =
       propertyTax + insurance + maintenance + managementFee;
 
     const netOperatingIncome = effectiveGrossIncome - operatingExpenses;
-    const annualCashFlow = netOperatingIncome - annualDebtService;
+    const annualCashFlow = netOperatingIncome - annualDebtService; // Will be same as NOI
 
     // --- Year 1 Ratios ---
     const capRate =
       purchasePrice > 0 ? (netOperatingIncome / purchasePrice) * 100 : 0;
+    // Cash-on-Cash is now NOI / Total Investment
     const cashOnCashReturn =
       initialCashInvested > 0
         ? (annualCashFlow / initialCashInvested) * 100
@@ -182,10 +170,9 @@ export default function ROICalculator() {
     // --- Projections over Holding Period ---
     let currentPropertyValue = purchasePrice;
     let currentMonthlyRent = monthlyRent;
-    // let currentOperatingExpenses = operatingExpenses; // Not needed like this
-    let remainingLoanBalance = loanAmount;
+    // let remainingLoanBalance = loanAmount; // REMOVED
     let totalCashFlow = 0;
-    let totalPrincipalPaid = 0;
+    // let totalPrincipalPaid = 0; // REMOVED
 
     for (let year = 1; year <= holdingPeriod; year++) {
       // Calculate income and expenses for the current year
@@ -195,112 +182,81 @@ export default function ROICalculator() {
       const yearlyEffectiveGrossIncome =
         yearlyGrossScheduledIncome - yearlyVacancyLoss;
 
-      // Adjust management fee based on current EGI
       const yearlyManagementFee =
         yearlyEffectiveGrossIncome * (managementFeeRate / 100);
-      // Calculate base expenses (Tax, Insurance, Maintenance) for the current year based on inflation
       const baseOpExYear1 = propertyTax + insurance + maintenance;
       const inflatedBaseOpEx =
         baseOpExYear1 * Math.pow(1 + annualExpenseInflation / 100, year - 1);
-      const yearlyOperatingExpenses = inflatedBaseOpEx + yearlyManagementFee; // Add current year's management fee
+      const yearlyOperatingExpenses = inflatedBaseOpEx + yearlyManagementFee;
 
       const yearlyNOI = yearlyEffectiveGrossIncome - yearlyOperatingExpenses;
 
-      // Calculate Debt Service for the year
-      let yearlyInterestPaid = 0;
-      let yearlyPrincipalPaid = 0;
-      if (loanAmount > 0 && remainingLoanBalance > 0) {
-        // Check remaining balance
-        for (let month = 1; month <= 12; month++) {
-          const interestPayment = remainingLoanBalance * monthlyInterestRate;
-          // Ensure principal payment doesn't exceed remaining balance or mortgage payment
-          const principalPayment = Math.min(
-            monthlyMortgagePayment - interestPayment,
-            remainingLoanBalance
-          );
-          yearlyInterestPaid += interestPayment;
-          yearlyPrincipalPaid += principalPayment;
-          remainingLoanBalance -= principalPayment;
-          // Ensure balance doesn't go below zero
-          remainingLoanBalance = Math.max(0, remainingLoanBalance);
-          if (remainingLoanBalance === 0) break; // Stop if loan paid off
-        }
-      }
-      const yearlyDebtService = yearlyInterestPaid + yearlyPrincipalPaid;
-      const yearlyCashFlow = yearlyNOI - yearlyDebtService;
+      // Calculate Debt Service for the year - REMOVED
+      // let yearlyInterestPaid = 0;
+      // let yearlyPrincipalPaid = 0;
+      // ... (loan balance calculations removed) ...
+      const yearlyDebtService = 0; // No debt
+      const yearlyCashFlow = yearlyNOI - yearlyDebtService; // yearlyCashFlow = yearlyNOI
 
       totalCashFlow += yearlyCashFlow;
-      totalPrincipalPaid += yearlyPrincipalPaid;
+      // totalPrincipalPaid += yearlyPrincipalPaid; // REMOVED
 
       // Update values for next year
       currentPropertyValue *= 1 + annualAppreciation / 100;
       currentMonthlyRent *= 1 + annualRentIncrease / 100;
-      // No need to update currentOperatingExpenses state here, it's recalculated fully each year
     }
 
     // --- Sale Calculation ---
     const projectedSalePrice = currentPropertyValue;
     const sellingCosts = projectedSalePrice * (sellingCostsPercent / 100);
     const saleProceedsBeforeLoan = projectedSalePrice - sellingCosts;
-    // Equity Gain = Appreciation + Loan Paydown
-    // Appreciation = projectedSalePrice - purchasePrice
-    // Loan Paydown = totalPrincipalPaid
-    const equityGain = projectedSalePrice - purchasePrice + totalPrincipalPaid;
-    const saleProceedsAfterLoan = saleProceedsBeforeLoan - remainingLoanBalance;
+    // Equity Gain = Appreciation only
+    const equityGain = projectedSalePrice - purchasePrice; // Updated calculation
+    // const saleProceedsAfterLoan = saleProceedsBeforeLoan - remainingLoanBalance; // REMOVED
+    const saleProceedsAfterCosts = saleProceedsBeforeLoan; // No loan to pay off
 
     // --- Total Return Calculation ---
-    // Total Profit = (Sale Proceeds After Loan - Initial Cash Invested) + Total Cash Flow
-    // Sale Proceeds After Loan = projectedSalePrice - sellingCosts - remainingLoanBalance
-    // Initial Cash Invested = downPayment + closingCosts + initialRepairs
+    // Total Profit = (Sale Proceeds After Costs - Initial Cash Invested) + Total Cash Flow
     const totalProfit =
-      saleProceedsAfterLoan - initialCashInvested + totalCashFlow;
+      saleProceedsAfterCosts - initialCashInvested + totalCashFlow; // Updated calculation
     const totalROI =
       initialCashInvested > 0 ? (totalProfit / initialCashInvested) * 100 : 0;
     const averageAnnualROI = holdingPeriod > 0 ? totalROI / holdingPeriod : 0;
 
-    // Simplified IRR approximation (Average Annual ROI) - A proper calculation is more complex
-    const simplifiedIRR = averageAnnualROI;
-
     setResults({
       initialCashInvested,
-      loanAmount,
-      effectiveGrossIncome, // Year 1 EGI
-      operatingExpenses, // Year 1 OpEx
-      netOperatingIncome, // Year 1 NOI
-      annualDebtService, // Year 1 Debt Service
-      annualCashFlow, // Year 1 Cash Flow
-      capRate, // Year 1 Cap Rate
-      cashOnCashReturn, // Year 1 CoC Return
+      // loanAmount, // REMOVED
+      effectiveGrossIncome,
+      operatingExpenses,
+      netOperatingIncome,
+      // annualDebtService, // REMOVED (or keep as 0 if needed elsewhere, but removed from interface)
+      annualCashFlow,
+      capRate,
+      cashOnCashReturn,
       projectedSalePrice,
-      totalCashFlow, // Over holding period
-      equityGain, // Over holding period
-      totalProfit, // Over holding period
-      totalROI, // Over holding period
-      averageAnnualROI, // Over holding period
-      simplifiedIRR, // Approximation
+      totalCashFlow,
+      equityGain, // Now only appreciation
+      totalProfit,
+      totalROI,
+      averageAnnualROI,
+      // simplifiedIRR, // REMOVED (was based on avg ROI)
     });
   };
 
   // --- Helper Functions ---
   const formatCurrency = (value: number | null | undefined) => {
     if (value === null || value === undefined || isNaN(value)) return '-- €';
-    // Use 'nl-NL' locale for Euro symbol prefix, dot thousands separator, and comma decimal separator
     return value.toLocaleString('nl-NL', {
-      // Changed locale to nl-NL
       style: 'currency',
       currency: 'EUR',
-      minimumFractionDigits: 0, // Display whole numbers for currency
+      minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
   };
 
   const formatPercent = (value: number | null | undefined) => {
     if (value === null || value === undefined || isNaN(value)) return '-- %';
-    // Input value should be the decimal representation (e.g., 0.05 for 5%)
-    // 'nl-NL' locale also uses comma decimal separator
-    // 'style: 'percent'' automatically multiplies by 100 and adds '%'
     return value.toLocaleString('nl-NL', {
-      // Changed locale to nl-NL
       style: 'percent',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -313,7 +269,7 @@ export default function ROICalculator() {
       <div className="flex items-center mb-6">
         <Building className="w-6 h-6 mr-2 text-blue-600" />
         <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
-          Real Estate Investment Calculator
+          Real Estate Investment Calculator (Cash Purchase)
         </h2>
       </div>
 
@@ -350,8 +306,7 @@ export default function ROICalculator() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Closing Costs: {formatCurrency(closingCosts)} (
-                  {formatPercent(closingCostsPercent / 100)}){' '}
-                  {/* Pass decimal to formatPercent */}
+                  {formatPercent(closingCostsPercent / 100)})
                 </label>
                 <Slider
                   value={[closingCostsPercent]}
@@ -384,69 +339,8 @@ export default function ROICalculator() {
             </div>
           </div>
 
-          {/* Financing */}
-          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
-            <h3 className="text-lg font-semibold mb-3 text-slate-900 dark:text-white flex items-center">
-              <Landmark className="w-5 h-5 mr-2 text-slate-500" /> Financing
-            </h3>
-            <div className="space-y-4">
-              {/* Down Payment */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Down Payment: {formatCurrency(downPayment)} (
-                  {formatPercent(downPaymentPercent / 100)}){' '}
-                  {/* Pass decimal */}
-                </label>
-                <Slider
-                  value={[downPaymentPercent]}
-                  max={100}
-                  step={1}
-                  onValueChange={(value) => setDownPaymentPercent(value[0])}
-                />
-              </div>
-              {/* Interest Rate */}
-              <div>
-                {/* Label shows formatted rate */}
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Interest Rate ({formatPercent(interestRate / 100)}){' '}
-                  {/* Pass decimal */}
-                </label>
-                <div className="relative">
-                  {/* Input takes the raw number value. Browser controls display format (usually '.') */}
-                  <Input
-                    type="number"
-                    value={interestRate} // Keep as number for input state
-                    onChange={(e) => {
-                      // Allow comma or period input, convert comma to period for Number()
-                      const valueString = e.target.value.replace(',', '.');
-                      setInterestRate(Math.max(0, Number(valueString)));
-                    }}
-                    className="pr-10" // Add padding for potential icon if needed later
-                    step="0.01" // Allow fine steps
-                    lang="de-DE" // Hint for browser localization, might affect input behavior
-                  />
-                  <Percent className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                </div>
-              </div>
-              {/* Loan Term */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Loan Term (years)
-                </label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <Input
-                    type="number"
-                    value={loanTerm}
-                    onChange={(e) =>
-                      setLoanTerm(Math.max(1, Number(e.target.value)))
-                    }
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Financing - REMOVED */}
+          {/* <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700"> ... </div> */}
 
           {/* Income & Expenses */}
           <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border dark:border-slate-700">
@@ -479,7 +373,7 @@ export default function ROICalculator() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Vacancy Rate: {formatPercent(vacancyRate / 100)} (of Gross
-                  Rent) {/* Pass decimal */}
+                  Rent)
                 </label>
                 <Slider
                   value={[vacancyRate]}
@@ -492,7 +386,7 @@ export default function ROICalculator() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Property Tax Rate: {formatPercent(propertyTaxRate / 100)} (of
-                  Purchase Price) {/* Pass decimal */}
+                  Purchase Price)
                 </label>
                 <Slider
                   value={[propertyTaxRate]}
@@ -505,7 +399,7 @@ export default function ROICalculator() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Insurance Rate: {formatPercent(insuranceRate / 100)} (of
-                  Purchase Price) {/* Pass decimal */}
+                  Purchase Price)
                 </label>
                 <Slider
                   value={[insuranceRate]}
@@ -518,7 +412,7 @@ export default function ROICalculator() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Maintenance Rate: {formatPercent(maintenanceRate / 100)} (of
-                  Purchase Price) {/* Pass decimal */}
+                  Purchase Price)
                 </label>
                 <Slider
                   value={[maintenanceRate]}
@@ -531,7 +425,7 @@ export default function ROICalculator() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Management Fee: {formatPercent(managementFeeRate / 100)} (of
-                  Effective Income) {/* Pass decimal */}
+                  Effective Income)
                 </label>
                 <Slider
                   value={[managementFeeRate]}
@@ -566,7 +460,7 @@ export default function ROICalculator() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Annual Property Appreciation:{' '}
-                  {formatPercent(annualAppreciation / 100)} {/* Pass decimal */}
+                  {formatPercent(annualAppreciation / 100)}
                 </label>
                 <Slider
                   value={[annualAppreciation]}
@@ -579,7 +473,7 @@ export default function ROICalculator() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Annual Rent Increase:{' '}
-                  {formatPercent(annualRentIncrease / 100)} {/* Pass decimal */}
+                  {formatPercent(annualRentIncrease / 100)}
                 </label>
                 <Slider
                   value={[annualRentIncrease]}
@@ -592,8 +486,7 @@ export default function ROICalculator() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Annual Expense Inflation:{' '}
-                  {formatPercent(annualExpenseInflation / 100)}{' '}
-                  {/* Pass decimal */}
+                  {formatPercent(annualExpenseInflation / 100)}
                 </label>
                 <Slider
                   value={[annualExpenseInflation]}
@@ -606,7 +499,7 @@ export default function ROICalculator() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Selling Costs: {formatPercent(sellingCostsPercent / 100)} (of
-                  Sale Price) {/* Pass decimal */}
+                  Sale Price)
                 </label>
                 <Slider
                   value={[sellingCostsPercent]}
@@ -625,7 +518,7 @@ export default function ROICalculator() {
             <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 md:p-6 border border-blue-100 dark:border-blue-800">
               <h3 className="text-lg font-semibold mb-4 text-blue-800 dark:text-blue-300 flex items-center">
                 <BarChart3 className="w-5 h-5 mr-2" />
-                Investment Analysis Results
+                Investment Analysis Results (Cash Purchase)
               </h3>
 
               {!results ? (
@@ -638,11 +531,11 @@ export default function ROICalculator() {
                   <div className="p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
                     <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 flex items-center">
                       <PiggyBank className="w-4 h-4 mr-1.5" />
-                      Initial Cash Invested
+                      Total Cash Invested
                       <span className="ml-1.5">
                         <InfoModal
-                          title="Initial Cash Invested"
-                          content="The total amount of cash required to purchase the property, including the down payment, closing costs, and initial repairs/renovations."
+                          title="Total Cash Invested"
+                          content="The total amount of cash required to purchase the property, including the purchase price, closing costs, and initial repairs/renovations."
                         />
                       </span>
                     </h4>
@@ -650,7 +543,7 @@ export default function ROICalculator() {
                       {formatCurrency(results.initialCashInvested)}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      (Down Payment + Closing Costs + Repairs)
+                      (Purchase Price + Closing Costs + Repairs)
                     </p>
                   </div>
 
@@ -666,7 +559,7 @@ export default function ROICalculator() {
                           <span className="ml-1">
                             <InfoModal
                               title="Net Operating Income (NOI)"
-                              content="The property's annual income after deducting operating expenses (like taxes, insurance, maintenance, management fees), but before deducting debt service (mortgage payments)."
+                              content="The property's annual income after deducting operating expenses (like taxes, insurance, maintenance, management fees). For a cash purchase, this is also the annual cash flow before taxes."
                             />
                           </span>
                         </p>
@@ -675,12 +568,13 @@ export default function ROICalculator() {
                         </p>
                       </div>
                       <div>
+                        {/* Can optionally rename "Annual Cash Flow" to "NOI" here too if desired */}
                         <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center">
-                          Annual Cash Flow
+                          Annual Cash Flow (NOI)
                           <span className="ml-1">
                             <InfoModal
-                              title="Annual Cash Flow"
-                              content="The amount of cash generated by the property annually after paying all operating expenses and debt service (mortgage payments). Calculated as NOI minus Annual Debt Service."
+                              title="Annual Cash Flow (NOI)"
+                              content="The amount of cash generated by the property annually after paying all operating expenses. For a cash purchase, this equals the Net Operating Income (NOI)."
                             />
                           </span>
                         </p>
@@ -688,7 +582,7 @@ export default function ROICalculator() {
                           className={`text-md font-semibold ${
                             results.annualCashFlow >= 0
                               ? 'text-green-600 dark:text-green-400'
-                              : 'text-red-600 dark:text-red-400'
+                              : 'text-red-600 dark:text-red-400' // Should always be >= 0 if NOI is
                           }`}
                         >
                           {formatCurrency(results.annualCashFlow)}
@@ -700,13 +594,12 @@ export default function ROICalculator() {
                           <span className="ml-1">
                             <InfoModal
                               title="Capitalization Rate (Cap Rate)"
-                              content="A measure of the property's unleveraged rate of return. Calculated as Net Operating Income (NOI) divided by the Purchase Price. It helps compare the profitability of different properties."
+                              content="A measure of the property's unleveraged rate of return. Calculated as Net Operating Income (NOI) divided by the Purchase Price."
                             />
                           </span>
                         </p>
                         <p className="text-md font-semibold text-slate-900 dark:text-white">
-                          {formatPercent(results.capRate / 100)}{' '}
-                          {/* Pass decimal */}
+                          {formatPercent(results.capRate / 100)}
                         </p>
                       </div>
                       <div>
@@ -715,7 +608,7 @@ export default function ROICalculator() {
                           <span className="ml-1">
                             <InfoModal
                               title="Cash-on-Cash Return (CoC)"
-                              content="Measures the annual return on the actual cash invested. Calculated as Annual Cash Flow divided by the Initial Cash Invested. It shows the return on your out-of-pocket investment."
+                              content="Measures the annual return on the actual cash invested. Calculated as Annual Cash Flow (NOI) divided by the Total Cash Invested (Purchase Price + Closing Costs + Repairs)."
                             />
                           </span>
                         </p>
@@ -726,8 +619,7 @@ export default function ROICalculator() {
                               : 'text-red-600 dark:text-red-400'
                           }`}
                         >
-                          {formatPercent(results.cashOnCashReturn / 100)}{' '}
-                          {/* Pass decimal */}
+                          {formatPercent(results.cashOnCashReturn / 100)}
                         </p>
                       </div>
                     </div>
@@ -755,11 +647,11 @@ export default function ROICalculator() {
                       </div>
                       <div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center">
-                          Total Cash Flow
+                          Total Cash Flow (NOI)
                           <span className="ml-1">
                             <InfoModal
-                              title="Total Cash Flow"
-                              content={`The sum of all annual cash flows generated over the ${holdingPeriod}-year holding period.`}
+                              title="Total Cash Flow (NOI)"
+                              content={`The sum of all annual Net Operating Income generated over the ${holdingPeriod}-year holding period.`}
                             />
                           </span>
                         </p>
@@ -775,11 +667,11 @@ export default function ROICalculator() {
                       </div>
                       <div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center">
-                          Equity Gain
+                          Equity Gain (Appreciation)
                           <span className="ml-1">
                             <InfoModal
-                              title="Equity Gain"
-                              content={`The increase in equity over the holding period, resulting from property appreciation (Projected Sale Price - Purchase Price) and loan principal paydown.`}
+                              title="Equity Gain (Appreciation)"
+                              content={`The increase in equity over the holding period resulting only from property appreciation (Projected Sale Price - Purchase Price).`}
                             />
                           </span>
                         </p>
@@ -793,7 +685,7 @@ export default function ROICalculator() {
                           <span className="ml-1">
                             <InfoModal
                               title="Total Profit"
-                              content={`The overall profit from the investment after selling the property. Calculated as (Sale Proceeds After Costs & Loan Payoff - Initial Cash Invested) + Total Cash Flow over the holding period.`}
+                              content={`The overall profit from the investment after selling the property. Calculated as (Sale Proceeds After Costs - Total Cash Invested) + Total Cash Flow (NOI) over the holding period.`}
                             />
                           </span>
                         </p>
@@ -822,13 +714,12 @@ export default function ROICalculator() {
                           <span className="ml-1">
                             <InfoModal
                               title="Total Return on Investment (ROI)"
-                              content="The total profit generated over the holding period expressed as a percentage of the initial cash invested. Calculated as (Total Profit / Initial Cash Invested)."
+                              content="The total profit generated over the holding period expressed as a percentage of the total cash invested. Calculated as (Total Profit / Total Cash Invested)."
                             />
                           </span>
                         </p>
                         <p className="text-lg font-bold text-blue-800 dark:text-blue-300">
-                          {formatPercent(results.totalROI / 100)}{' '}
-                          {/* Pass decimal */}
+                          {formatPercent(results.totalROI / 100)}
                         </p>
                       </div>
                       <div>
@@ -842,26 +733,17 @@ export default function ROICalculator() {
                           </span>
                         </p>
                         <p className="text-lg font-bold text-blue-800 dark:text-blue-300">
-                          {formatPercent(results.averageAnnualROI / 100)}{' '}
-                          {/* Pass decimal */}
+                          {formatPercent(results.averageAnnualROI / 100)}
                         </p>
                       </div>
-                      {/* Simplified IRR display commented out */}
-                      {/* <div>
-                        <p className="text-xs text-blue-600 dark:text-blue-400">Simplified IRR</p>
-                        <p className="text-lg font-bold text-blue-800 dark:text-blue-300">{formatPercent(results.simplifiedIRR / 100)}</p>
-                      </div> */}
                     </div>
                     <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                      (Total ROI = Total Profit / Initial Cash Invested)
+                      (Total ROI = Total Profit / Total Cash Invested)
                     </p>
                   </div>
 
                   {/* Placeholder for Action Button */}
-                  {/* <Button className="w-full bg-blue-600 hover:bg-blue-700 mt-4">
-                    <Home className="w-4 h-4 mr-2" />
-                    Find Properties with Similar Returns
-                  </Button> */}
+                  {/* <Button className="w-full bg-blue-600 hover:bg-blue-700 mt-4"> ... </Button> */}
                 </div>
               )}
             </div>
