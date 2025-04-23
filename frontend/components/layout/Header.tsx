@@ -29,10 +29,6 @@ export function Header() {
         <div className="flex-1 flex items-center justify-between md:justify-end">
           {/* --- Pass state down to MainNav --- */}
           {/* MainNav now handles its own mobile toggle button internally */}
-          <MainNav
-            mobileMenuOpen={mobileMenuOpen}
-            setMobileMenuOpen={setMobileMenuOpen}
-          />
 
           {/* Action Icons (matches "ideal" header placement) */}
           <div className="flex items-center space-x-1 sm:space-x-3">
