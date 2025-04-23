@@ -31,41 +31,23 @@ const ScoreHistoryChart = ({ scoreData }: { scoreData: ScoreBreakdownItem | null
                                  : [];
    
    // Prepare chart data only if safeHistoricalScores has items
-   const chartData = safeHistoricalScores.length > 0 ? {
-      labels: safeHistoricalScores.map(hs => hs.date), 
-      datasets: [
-        {
-          label: 'Atlas AI Score',
-          data: safeHistoricalScores.map(hs => hs.score),
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          borderWidth: 2,
-          pointRadius: 3,
-          pointBackgroundColor: '#3b82f6',
-          tension: 0.3,
-          fill: true,
-        }
-      ]
-    } : {
-      labels: [], // Ensure valid structure
-      datasets: []
-    };
+   const labels = safeHistoricalScores.map(hs => hs.date);
+   const datasets = safeHistoricalScores.length > 0 ? [
+      {
+         label: 'Atlas AI Score',
+         data: safeHistoricalScores.map(hs => hs.score),
+         borderColor: '#3b82f6',
+         backgroundColor: 'rgba(59, 130, 246, 0.1)',
+         borderWidth: 2,
+         pointRadius: 3,
+         pointBackgroundColor: '#3b82f6',
+         tension: 0.3,
+         fill: true,
+      }
+   ] : [];
 
-    const options = {
-      scales: {
-        y: {
-          min: 0,
-          max: 10,
-          grid: { display: false },
-          ticks: { stepSize: 2 }
-        },
-        x: { grid: { display: false } }
-      },
-      plugins: { legend: { display: false } }
-    };
-
-    return chartData.datasets.length > 0 
-        ? <LineChart data={chartData} options={options} height={200} />
+    return datasets.length > 0 
+        ? <LineChart title="Score History" labels={labels} datasets={datasets} />
         : <div className="h-[200px] flex items-center justify-center text-gray-500">Score history unavailable.</div>;
 };
 

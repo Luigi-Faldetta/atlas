@@ -14,6 +14,14 @@ export interface ScoreBreakdownItem {
   }[];
 }
 
+// Property recommendations data
+export interface PropertyRecommendation {
+  propertyId: string;
+  category: 'high-yield' | 'stable-growth' | 'undervalued' | 'custom';
+  score: number;
+  reason: string;
+}
+
 // Property tags data based on prototype (Images 4 & 7)
 export interface PropertyTag {
   label: string;       // e.g., "Stable Growth", "Eco Friendly", "+1"
@@ -159,4 +167,43 @@ export const propertyTags: PropertyTagsData[] = [
     ]
   },
   // Add more property tags for other properties...
+];
+
+export const propertyRecommendations: PropertyRecommendation[] = [
+  {
+    propertyId: 'prop-001',
+    category: 'high-yield',
+    score: 8.7,
+    reason: 'Strong rental yield with 5-year lease to AAA tenant. Located in growing business district with limited new supply.'
+  },
+  {
+    propertyId: 'prop-003',
+    category: 'high-yield',
+    score: 8.5,
+    reason: 'Recently renovated with premium amenities commanding higher rent. Occupancy rates consistently above 95%.'
+  },
+  {
+    propertyId: 'prop-002',
+    category: 'stable-growth',
+    score: 7.9,
+    reason: 'Historically consistent 3-5% annual appreciation. Located in established area with strong infrastructure.'
+  },
+  {
+    propertyId: 'prop-008',
+    category: 'stable-growth',
+    score: 7.8,
+    reason: 'Long-term tenant with annual rent increases built into contract. Area seeing steady development.'
+  },
+  {
+    propertyId: 'prop-009',
+    category: 'undervalued',
+    score: 8.2,
+    reason: 'Current price 15% below market comparables. Upcoming infrastructure project likely to increase property values.'
+  },
+  {
+    propertyId: 'prop-004',
+    category: 'custom',
+    score: 8.4,
+    reason: 'Matches your preference for sustainable buildings with strong yield. Recent energy efficiency upgrades.'
+  }
 ]; 
