@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true, // Or whatever other config you have
   experimental: {
-    serverActions: true, // Add this line
+    serverActions: {}, // Add this line
   },
   images: {
     remotePatterns: [
