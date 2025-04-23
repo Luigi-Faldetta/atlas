@@ -68,7 +68,7 @@ export default function WatchlistPage() {
           <p className="mt-1 text-sm text-gray-500">You haven't added any properties yet.</p>
           <div className="mt-6">
             {/* Link or Button to go back to properties page */}
-            <Button onClick={() => window.location.href='/properties'} variant="primary">
+            <Button onClick={() => window.location.href='/properties'} variant="default">
               Explore Properties
             </Button>
           </div>

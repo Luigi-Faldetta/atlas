@@ -164,7 +164,6 @@ export default function AnalyticsTab({ propertyId, history, correlations, liquid
     },
     plugins: { 
       legend: { display: true },
-      title: { display: true, text: 'Value vs Token Price'}
     }
   };
 
@@ -179,7 +178,7 @@ export default function AnalyticsTab({ propertyId, history, correlations, liquid
          <CardContent>
             <div className="h-64 md:h-80">
               {historyChartData.datasets.length > 0 
-                 ? <LineChart data={historyChartData} options={historyChartOptions} />
+                 ? <LineChart title="Value vs Token Price" labels={historyChartData.labels} datasets={historyChartData.datasets} />
                  : <div className="flex items-center justify-center h-full text-gray-500">Historical data unavailable.</div>
               }
             </div>

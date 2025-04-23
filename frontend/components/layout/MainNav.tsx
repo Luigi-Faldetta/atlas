@@ -14,6 +14,7 @@ import {
   Menu, // Keep icons
   X,
   Settings, // Keep icons
+  Star, // <-- Added Star icon
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -39,6 +40,11 @@ const navItems = [
     name: 'Properties',
     href: '/properties',
     icon: Building2,
+  },
+  {
+    name: 'Watchlist',
+    href: '/watchlist',
+    icon: Star, // <-- Use the Star icon
   },
   {
     name: 'Market',

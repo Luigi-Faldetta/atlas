@@ -98,7 +98,10 @@ export default function PropertyCard({ property, onClick }: PropertyCardProps) {
 
         {/* Button - Pushes to bottom */}
         <div className="mt-auto">
-          <Button variant="primary" className="w-full">
+          <Button 
+            variant="default" 
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
             View Details
           </Button>
         </div>

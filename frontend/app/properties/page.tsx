@@ -113,7 +113,7 @@ export default function PropertiesPage() {
            {/* <DialogTrigger asChild> 
               // We trigger opening programmatically, so no trigger needed here 
            </DialogTrigger> */}
-          <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+          <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle className="text-2xl font-semibold">{selectedProperty.name}</DialogTitle>
                {/* Close button is usually part of DialogContent in shadcn */}

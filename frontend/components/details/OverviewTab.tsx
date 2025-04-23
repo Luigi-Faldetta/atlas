@@ -108,9 +108,8 @@ export default function OverviewTab({ property, aiTagsData }: OverviewTabProps) 
         
         {/* Watchlist Button */}
         <Button 
-          variant={isWatchlisted ? "secondary" : "outline"} 
           onClick={handleWatchlistToggle}
-          className="w-full"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
         >
           {isWatchlisted ? 'Remove from Watchlist' : 'Add to Watchlist'}
         </Button>
@@ -129,8 +128,16 @@ export default function OverviewTab({ property, aiTagsData }: OverviewTabProps) 
               id="investment-amount"
               type="number"
               value={investmentAmount}
-              onChange={(e) => setInvestmentAmount(Math.max(0, Number(e.target.value)))}
-              className="w-full"
+              onChange={(e) => {
+                // Handle empty input or 0
+                const inputValue = e.target.value;
+                if (inputValue === "" || inputValue === "0") {
+                  setInvestmentAmount(0);
+                } else {
+                  setInvestmentAmount(Number(inputValue));
+                }
+              }}
+              className="w-full bg-white"
               min="0"
               step="1000"
             />
@@ -171,9 +178,10 @@ export default function OverviewTab({ property, aiTagsData }: OverviewTabProps) 
         {/* Invest Button */}
         <div className="text-center">
           <Button 
-            variant="primary"
+            variant="default"
             size="lg"
             onClick={handleInvestNow}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8"
           >
             Invest Now
           </Button>
