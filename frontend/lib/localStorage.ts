@@ -70,4 +70,28 @@ export const toggleWatchlist = (propertyId: string): boolean => {
 
   safelySetLocalStorage(WATCHLIST_KEY, newWatchlist);
   return newStatus;
+};
+
+// --- Add Note Functions --- 
+
+// Helper function to get a note for a specific property ID
+export const getNote = (propertyId: string): string | null => {
+  if (typeof window === 'undefined') return null; // Ensure runs client-side only
+  return localStorage.getItem(`watchlist-note-${propertyId}`);
+};
+
+// Helper function to save a note for a specific property ID
+export const saveNote = (propertyId: string, note: string): void => {
+  if (typeof window === 'undefined') return; // Ensure runs client-side only
+  localStorage.setItem(`watchlist-note-${propertyId}`, note);
+  // Optional: Store timestamp for 'Last Edited' sorting
+  // localStorage.setItem(`watchlist-note-timestamp-${propertyId}`, Date.now().toString());
+};
+
+// Helper function to remove a note for a specific property ID
+export const removeNote = (propertyId: string): void => {
+  if (typeof window === 'undefined') return; // Ensure runs client-side only
+  localStorage.removeItem(`watchlist-note-${propertyId}`);
+  // Optional: Remove timestamp if used
+  // localStorage.removeItem(`watchlist-note-timestamp-${propertyId}`);
 }; 
