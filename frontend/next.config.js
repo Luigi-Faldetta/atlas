@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true, // Or whatever other config you have
+  experimental: {
+    serverActions: true, // Add this line
+  },
   images: {
     remotePatterns: [
       {

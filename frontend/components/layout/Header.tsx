@@ -25,12 +25,11 @@ export function Header() {
           </Link>
         </div>
 
-        {/* MainNav component directly in header */}
-        <MainNav
-          mobileMenuOpen={mobileMenuOpen}
-          setMobileMenuOpen={setMobileMenuOpen}
-        />
-
+        {/* Layout matches "ideal" header (justify-between md:justify-end) */}
+        <div className="flex-1 flex items-center justify-between md:justify-end">
+          {/* --- Pass state down to MainNav --- */}
+          {/* MainNav now handles its own mobile toggle button internally */}
+        </div>
       </div>
 
       {/* Search Panel (matches "ideal" header) */}

@@ -17,6 +17,7 @@ import {
   Star, // <-- Added Star icon
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { UserButton } from '@clerk/nextjs';
 
 // Define Props interface (accepts state from Header)
 interface MainNavProps {
@@ -70,8 +71,9 @@ const navItems = [
 ];
 
 // Accept props: mobileMenuOpen and setMobileMenuOpen
-export function MainNav({ mobileMenuOpen, setMobileMenuOpen }: MainNavProps) {
+export function MainNav() {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expanded, setExpanded] = useState(false); // State for desktop expand/collapse
   // Removed internal mobileMenuOpen state
   const [windowWidth, setWindowWidth] = useState(
@@ -187,45 +189,18 @@ export function MainNav({ mobileMenuOpen, setMobileMenuOpen }: MainNavProps) {
           })}
         </div>
 
-        {/* Toggle expand/collapse button */}
-        <div className="p-3 border-t border-slate-800">
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center justify-center w-10 h-10 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
-          >
-            {expanded ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                />
-              </svg>
-            )}
-          </button>
+        {/* User Button at the bottom (replaces expand/collapse button) */}
+        <div className="p-3 border-t border-slate-800 flex justify-center">
+          {/* --- START REPLACEMENT --- */}
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: 'w-10 h-10', // Match icon button size
+              },
+            }}
+            afterSignOutUrl="/login"
+          />
+          {/* --- END REPLACEMENT --- */}
         </div>
       </nav>
 
