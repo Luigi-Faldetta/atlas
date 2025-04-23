@@ -15,7 +15,7 @@ export function Header() {
   return (
     // Style matches "ideal" header
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 md:pl-16">
-      <div className="flex h-16 items-center px-4">
+      <div>
         {/* Mobile Logo (matches "ideal" header) */}
         <div className="md:hidden mr-4 flex items-center">
           <Link href="/" className="flex items-center">
@@ -25,44 +25,12 @@ export function Header() {
           </Link>
         </div>
 
-        {/* Layout matches "ideal" header (justify-between md:justify-end) */}
-        <div className="flex-1 flex items-center justify-between md:justify-end">
-          {/* --- Pass state down to MainNav --- */}
-          {/* MainNav now handles its own mobile toggle button internally */}
-          <MainNav
-            mobileMenuOpen={mobileMenuOpen}
-            setMobileMenuOpen={setMobileMenuOpen}
-          />
+        {/* MainNav component directly in header */}
+        <MainNav
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+        />
 
-          {/* Action Icons (matches "ideal" header placement) */}
-          <div className="flex items-center space-x-1 sm:space-x-3">
-            {/* Search Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
-              onClick={() => setSearchOpen(!searchOpen)}
-              aria-label="Open search"
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-
-            {/* Notifications Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
-              aria-label="View notifications"
-            >
-              <Bell className="h-5 w-5" />
-              {/* Example notification dot */}
-              <span className="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full"></span>
-            </Button>
-
-            {/* User Menu would go here if needed */}
-            {/* <UserNav /> */}
-          </div>
-        </div>
       </div>
 
       {/* Search Panel (matches "ideal" header) */}
