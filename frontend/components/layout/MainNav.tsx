@@ -41,11 +41,6 @@ const navItems = [
     icon: Building2,
   },
   {
-    name: 'Portfolio',
-    href: '/portfolio',
-    icon: Wallet,
-  },
-  {
     name: 'Market',
     href: '/market',
     icon: LineChart,
