@@ -1,142 +1,162 @@
-export interface PropertyRecommendation {
-  propertyId: string;
-  category: 'high-yield' | 'stable-growth' | 'undervalued' | 'custom';
-  score: number; // Match score from 0-10
-  reason: string;
-}
-
-// Mock property recommendations for Atlas AI
-export const propertyRecommendations: PropertyRecommendation[] = [
-  {
-    propertyId: 'prop-001',
-    category: 'high-yield',
-    score: 8.7,
-    reason: 'This property has consistently shown above-market rental yields and is situated in a high-demand area with limited new supply.'
-  },
-  {
-    propertyId: 'prop-003',
-    category: 'undervalued',
-    score: 9.2,
-    reason: 'Based on comparable properties in the area, this property is currently trading at 12% below market value with strong appreciation potential.'
-  },
-  {
-    propertyId: 'prop-005',
-    category: 'high-yield',
-    score: 8.4,
-    reason: 'High seasonal demand in this tourist location creates exceptional yield opportunities, with peak season rates 3x higher than off-season.'
-  },
-  {
-    propertyId: 'prop-002',
-    category: 'stable-growth',
-    score: 7.8,
-    reason: 'Long-term corporate leases provide predictable cash flow, and the location is seeing consistent year-over-year appreciation.'
-  },
-  {
-    propertyId: 'prop-004',
-    category: 'stable-growth',
-    score: 7.6,
-    reason: 'Anchor tenants with 10+ year leases and annual rent escalation clauses ensure reliable income growth over time.'
-  }
-];
-
-// AI score breakdown data
+// AI score breakdown data based on prototype (Image 7)
 export interface ScoreBreakdownItem {
   propertyId: string;
   overallScore: number;
+  scoreChange?: string; // e.g., "(no change)" or "(+0.2)"
   factors: {
-    name: string;
-    score: number;
-    weight: number;
-    description: string;
+    name: 'Risk' | 'Yield' | 'Growth' | 'Location' | 'Condition';
+    score: number; // Score out of 10 for the progress bar
   }[];
+  weightedAverage: number;
   historicalScores: {
-    date: string;
+    date: string; // e.g., "Nov 23"
     score: number;
   }[];
 }
+
+// Property tags data based on prototype (Images 4 & 7)
+export interface PropertyTag {
+  label: string;       // e.g., "Stable Growth", "Eco Friendly", "+1"
+  category: 'feature' | 'location' | 'yield' | 'growth' | 'other'; // Helps determine icon/color potentially
+  explanation?: string; // Optional explanation for modal view
+}
+
+export interface PropertyTagsData {
+  propertyId: string;
+  tags: PropertyTag[];
+}
+
+
+// --- MOCK DATA ---
 
 export const propertyScoreBreakdowns: ScoreBreakdownItem[] = [
   {
-    propertyId: 'prop-001',
-    overallScore: 8.5,
+    propertyId: 'prop-001', // Nordic Business Center
+    overallScore: 8.0,
+    scoreChange: '(+0.1)',
     factors: [
-      {
-        name: 'Location',
-        score: 9.2,
-        weight: 0.25,
-        description: 'Prime downtown location with excellent accessibility and amenities.'
-      },
-      {
-        name: 'Yield Potential',
-        score: 8.7,
-        weight: 0.3,
-        description: 'Strong rental demand supports above-market yields.'
-      },
-      {
-        name: 'Growth Forecast',
-        score: 8.1,
-        weight: 0.2,
-        description: 'Property value expected to appreciate faster than market average.'
-      },
-      {
-        name: 'Risk Assessment',
-        score: 7.8,
-        weight: 0.15,
-        description: 'Diversified tenant base reduces vacancy risk.'
-      },
-      {
-        name: 'Liquidity',
-        score: 8.3,
-        weight: 0.1,
-        description: 'High market demand for similar properties in the area.'
-      }
+      { name: 'Risk', score: 7.5 },
+      { name: 'Yield', score: 8.2 },
+      { name: 'Growth', score: 7.8 },
+      { name: 'Location', score: 8.5 },
+      { name: 'Condition', score: 9.0 },
     ],
+    weightedAverage: 8.1, // Example calculation
     historicalScores: [
-      { date: '2023-01-01', score: 7.8 },
-      { date: '2023-02-01', score: 8.0 },
-      { date: '2023-03-01', score: 8.2 },
-      { date: '2023-04-01', score: 8.3 },
-      { date: '2023-05-01', score: 8.5 }
+      { date: 'Nov 23', score: 7.8 }, { date: 'Dec 23', score: 7.9 }, { date: 'Jan 24', score: 7.9 },
+      { date: 'Feb 24', score: 8.0 }, { date: 'Mar 24', score: 8.0 }, { date: 'Apr 24', score: 8.0 }
     ]
   },
-  // Add more score breakdowns for other properties
+  {
+    propertyId: 'prop-002', // Riverside Plaza
+    overallScore: 7.9,
+    scoreChange: '(no change)',
+    factors: [
+      { name: 'Risk', score: 5.9 },
+      { name: 'Yield', score: 4.9 },
+      { name: 'Growth', score: 5.7 },
+      { name: 'Location', score: 6.3 },
+      { name: 'Condition', score: 8.2 },
+    ],
+    weightedAverage: 6.2, // Example calculation
+    historicalScores: [
+      { date: 'Nov 23', score: 8.0 }, { date: 'Dec 23', score: 7.9 }, { date: 'Jan 24', score: 7.8 },
+      { date: 'Feb 24', score: 7.8 }, { date: 'Mar 24', score: 7.9 }, { date: 'Apr 24', score: 7.9 }
+    ]
+  },
+  {
+    propertyId: 'prop-003', // Urban Heights Residence
+    overallScore: 8.5,
+    scoreChange: '(+0.3)',
+    factors: [
+      { name: 'Risk', score: 7.0 },
+      { name: 'Yield', score: 9.0 },
+      { name: 'Growth', score: 8.0 },
+      { name: 'Location', score: 8.8 },
+      { name: 'Condition', score: 8.5 },
+    ],
+    weightedAverage: 8.3, // Example calculation
+    historicalScores: [
+      { date: 'Nov 23', score: 8.0 }, { date: 'Dec 23', score: 8.1 }, { date: 'Jan 24', score: 8.2 },
+      { date: 'Feb 24', score: 8.3 }, { date: 'Mar 24', score: 8.4 }, { date: 'Apr 24', score: 8.5 }
+    ]
+  },
+  // Add more score breakdowns for other properties...
 ];
-
-// Property tags with AI analysis
-export interface PropertyTagsData {
-  propertyId: string;
-  tags: {
-    category: 'strength' | 'opportunity' | 'risk';
-    text: string;
-    explanation: string;
-  }[];
-}
 
 export const propertyTags: PropertyTagsData[] = [
   {
-    propertyId: 'prop-001',
+    propertyId: 'prop-001', // Nordic Business Center
     tags: [
-      {
-        category: 'strength',
-        text: 'Prime Location',
-        explanation: 'Located in a high-growth urban neighborhood with excellent walkability score.'
-      },
-      {
-        category: 'strength',
-        text: 'High Demand',
-        explanation: 'Vacancy rates in this area are consistently below 2%.'
-      },
-      {
-        category: 'opportunity',
-        text: 'Renovation Potential',
-        explanation: 'Minor updates could increase rental rates by 15-20%.'
-      },
-      {
-        category: 'risk',
-        text: 'New Development',
-        explanation: 'Planned constructions nearby could temporarily impact property values.'
-      }
+      { label: 'Eco Friendly', category: 'feature', explanation: 'Built with sustainable materials and energy-efficient systems.' },
     ]
   },
-  // Add more property tags for other properties
+  {
+    propertyId: 'prop-002', // Riverside Plaza
+    tags: [
+      { label: 'Stable Growth', category: 'growth', explanation: 'Consistent appreciation due to long-term leases and location.' },
+      { label: 'Prime Location', category: 'location', explanation: 'Located in a desirable area with high foot traffic.' },
+    ]
+  },
+  {
+    propertyId: 'prop-003', // Urban Heights Residence
+    tags: [
+      { label: 'High Yield', category: 'yield', explanation: 'Generates above-average rental income for the area.' },
+      { label: 'Prime Location', category: 'location', explanation: 'Situated in a central, high-demand neighborhood.' },
+      { label: '+1', category: 'other', explanation: 'One additional key feature identified by AI.' },
+    ]
+  },
+   {
+    propertyId: 'prop-005', // Mediterranean Villa
+    tags: [
+      { label: 'High Yield', category: 'yield' },
+      { label: 'Stable Growth', category: 'growth' },
+      { label: '+2', category: 'other' },
+    ]
+  },
+  {
+    propertyId: 'prop-008', // Alpine Retreat
+    tags: [
+      { label: 'Stable Growth', category: 'growth' },
+      { label: 'Eco Friendly', category: 'feature' },
+      { label: '+2', category: 'other' },
+    ]
+  },
+  {
+    propertyId: 'prop-007', // Central District Lofts
+    tags: [
+      { label: 'High Yield', category: 'yield' },
+    ]
+  },
+  {
+    propertyId: 'prop-006', // Parisian Elegance
+    tags: [
+      { label: 'Stable Growth', category: 'growth' },
+      { label: 'Prime Location', category: 'location' },
+      { label: '+2', category: 'other' },
+    ]
+  },
+  {
+    propertyId: 'prop-009', // Harbor View Towers
+    tags: [
+      { label: 'Eco Friendly', category: 'feature' },
+    ]
+  },
+  {
+    propertyId: 'prop-010', // Green Valley Estate
+    tags: [
+      { label: 'Stable Growth', category: 'growth' },
+      { label: 'Eco Friendly', category: 'feature' },
+      { label: '+1', category: 'other' },
+    ]
+  },
+  {
+    propertyId: 'prop-004', // Lisbon Heights
+    tags: [
+      { label: 'High Yield', category: 'yield' },
+      { label: 'Stable Growth', category: 'growth' },
+      { label: '+1', category: 'other' },
+    ]
+  },
+  // Add more property tags for other properties...
 ]; 

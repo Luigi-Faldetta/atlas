@@ -142,7 +142,7 @@ export default function PropertyRecommendations({
               return (
                 <div 
                   key={recommendation.propertyId}
-                  className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+                  className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
                   onClick={() => handlePropertyClick(recommendation.propertyId)}
                 >
                   {/* Property image with overlay */}
