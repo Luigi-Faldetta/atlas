@@ -15,10 +15,27 @@ export default function SignInPage() {
       <SignIn
         appearance={{
           baseTheme: dark,
-          elements: {
-            card: 'backdrop-blur bg-white/10 border border-white/10 shadow-xl rounded-xl',
+          variables: {
+            colorBackground: '#1A1A1A', // Clerk uses this for its own surfaces
+            colorPrimary: '#2F4D46', // (or whatever accent you picked)
           },
-          variables: { colorPrimary: '#2F4D46' },
+          elements: {
+            /* NOTE
+               ────────────────────────────────────────────
+               - In Clerk < 4.8 the key is `card`
+               - In Clerk 4.8+ (a.k.a. “Core v2”) it’s split
+                 into `cardBox` + `footer`.
+               - Keep whichever keys match your version.
+            */
+            cardBox:
+              // glassy charcoal panel
+              'backdrop-blur bg-[#1A1A1A]/60 ' + // translucent charcoal
+              'border border-white/10 ' + // subtle hairline
+              'shadow-xl shadow-black/50 ' + // deeper drop-shadow
+              'rounded-xl',
+
+            footer: 'bg-[#1A1A1A]/60 border-t border-white/10', // make footer match box
+          },
         }}
       />
     </div>
