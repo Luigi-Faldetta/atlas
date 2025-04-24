@@ -18,7 +18,7 @@ export default function SignInPage() {
           elements: {
             card: 'backdrop-blur bg-white/10 border border-white/10 shadow-xl rounded-xl',
           },
-          variables: { colorPrimary: '#3b82f6' },
+          variables: { colorPrimary: '#2F4D46' },
         }}
       />
     </div>
