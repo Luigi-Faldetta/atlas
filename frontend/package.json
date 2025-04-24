@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.17.0",
+    "@clerk/themes": "^2.2.36",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/primitive": "^1.1.1",

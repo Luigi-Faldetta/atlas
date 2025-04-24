@@ -1,4 +1,5 @@
 import { SignIn } from '@clerk/nextjs';
+import { dark } from '@clerk/themes';
 
 export default function SignInPage() {
   return (
@@ -13,6 +14,7 @@ export default function SignInPage() {
       {/* Clerk card – customise further with the appearance prop */}
       <SignIn
         appearance={{
+          baseTheme: dark,
           elements: {
             card: 'backdrop-blur bg-white/10 border border-white/10 shadow-xl rounded-xl',
           },
