@@ -223,18 +223,19 @@ export function MainNav() {
 
             {/* Mobile User Button: Only rendered if user is signed in */}
 
-            <SignedIn>
-              <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: 'w-10 h-10',
-                    },
-                  }}
-                  afterSignOutUrl="/login"
-                />
-              </div>
-            </SignedIn>
+            {typeof window !== 'undefined' &&
+              require('@clerk/nextjs').useAuth().isSignedIn && (
+                <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+                  <UserButton
+                    appearance={{
+                      elements: {
+                        avatarBox: 'w-10 h-10',
+                      },
+                    }}
+                    afterSignOutUrl="/login"
+                  />
+                </div>
+              )}
           </div>
         </div>
       )}
