@@ -7,7 +7,11 @@ const axios = require('axios');
 const app = express();
 
 // ─── CORS CONFIG ───
-const allowedOrigins = ['http://localhost:3000', 'https://atlasnew.vercel.app'];
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://atlasnew.vercel.app',
+  'https://www.project-atlas.xyz/',
+];
 const corsOptions = {
   origin: (origin, callback) => {
     // allow requests with no origin (e.g. curl, Postman)
