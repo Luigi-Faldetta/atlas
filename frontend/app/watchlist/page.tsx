@@ -176,7 +176,7 @@ export default function WatchlistPage() {
       prop.price,
       prop.yield,
       prop.appreciation,
-      prop.aiScore,
+      prop.score,
       `"${(notes[prop.id] || '').replace(/"/g, '""')}"`, // Escape quotes in notes
     ]);
 

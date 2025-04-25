@@ -5,6 +5,7 @@ import { Property } from '@/data/mock/properties';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatPrice } from '@/lib/utils';
+import { propertyTags } from '@/data/mock/ai-features';
 
 interface PropertyCardProps {
   property: Property;
@@ -48,6 +49,9 @@ const getBackgroundStyle = (id: string): string => {
 };
 
 export default function PropertyCard({ property, onClick }: PropertyCardProps) {
+  // Get tags for this property from the propertyTags data
+  const tags = propertyTags.find(p => p.propertyId === property.id)?.tags || [];
+  
   return (
     <div 
       className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 flex flex-col" 
@@ -66,9 +70,9 @@ export default function PropertyCard({ property, onClick }: PropertyCardProps) {
         </div>
         {/* Score Badge */}
         <Badge 
-          className={`absolute top-2 right-2 ${getScoreColor(property.aiScore)} text-white text-sm font-semibold px-2.5 py-1`}
+          className={`absolute top-2 right-2 ${getScoreColor(property.score)} text-white text-sm font-semibold px-2.5 py-1`}
         >
-          {property.aiScore.toFixed(1)}
+          {property.score.toFixed(1)}
         </Badge>
       </div>
 
@@ -76,9 +80,9 @@ export default function PropertyCard({ property, onClick }: PropertyCardProps) {
       <div className="p-4 flex flex-col flex-grow">
         {/* Tags */}
         <div className="flex flex-wrap gap-1.5 mb-2">
-          {property.tags.map((tag, index) => (
-            <Badge key={index} variant="outline" className={`text-xs px-2 py-0.5 ${getTagStyle(tag)}`}>
-              {tag}
+          {tags.map((tag, index) => (
+            <Badge key={index} variant="outline" className={`text-xs px-2 py-0.5 ${getTagStyle(tag.label)}`}>
+              {tag.label}
             </Badge>
           ))}
         </div>

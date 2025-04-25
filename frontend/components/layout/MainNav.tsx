@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import {
   Home,
   LineChart,
-  Wallet,
   BarChart3,
   Search,
   Calculator,
@@ -16,6 +15,8 @@ import {
   LayoutDashboard,
   Settings,
   Star,
+  Info,
+  TrendingUp,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { UserButton, SignedIn } from '@clerk/nextjs';
@@ -43,14 +44,9 @@ const navItems = [
     icon: Star,
   },
   {
-    name: 'Analytics',
-    href: '/analytics',
-    icon: BarChart3,
-  },
-  {
-    name: 'Wallet',
-    href: '/wallet',
-    icon: Wallet,
+    name: 'Market Analysis',
+    href: '/market-analysis',
+    icon: TrendingUp,
   },
   {
     name: 'Tools',
@@ -60,7 +56,7 @@ const navItems = [
   {
     name: 'About',
     href: '/about',
-    icon: LineChart,
+    icon: Info,
   },
 ];
 

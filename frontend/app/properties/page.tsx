@@ -26,7 +26,7 @@ const filterProperties = (allProperties: Property[], filters: Filters): Property
     }
     // Score Filter
     if (filters.score !== 'all') {
-      const score = property.aiScore;
+      const score = property.score;
       if (filters.score === '9+' && score < 9) return false;
       if (filters.score === '8+' && (score < 8 || score >= 9)) return false;
       if (filters.score === '7+' && (score < 7 || score >= 8)) return false;

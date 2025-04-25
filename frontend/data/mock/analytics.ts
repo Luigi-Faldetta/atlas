@@ -1,114 +1,292 @@
-export interface HistoricalDataPoint {
-  date: string;
-  propertyValue: number;
-  tokenPrice: number;
-}
+import { v4 as uuidv4 } from 'uuid';
+import { 
+  TokenValueDataPoint, 
+  PropertyValueHistory, 
+  MarketCorrelation,
+  LiquidityMetrics,
+  Notification
+} from '@/data/types/analytics'; // Updated import path
+import { properties } from './properties';
 
-export interface PropertyValueHistory {
-  propertyId: string;
-  data: HistoricalDataPoint[];
-}
-
-// Mock property value and token price history
-export const propertyValueHistories: PropertyValueHistory[] = [
-  {
-    propertyId: 'prop-001',
-    data: [
-      { date: '2023-01-01', propertyValue: 4800000, tokenPrice: 95 },
-      { date: '2023-02-01', propertyValue: 4850000, tokenPrice: 97 },
-      { date: '2023-03-01', propertyValue: 4900000, tokenPrice: 99 },
-      { date: '2023-04-01', propertyValue: 4950000, tokenPrice: 101 },
-      { date: '2023-05-01', propertyValue: 5000000, tokenPrice: 105 }, // Example data
-      { date: '2024-01-23', propertyValue: 5100000, tokenPrice: 108 },
-      { date: '2024-02-04', propertyValue: 5120000, tokenPrice: 109 },
-      { date: '2024-02-16', propertyValue: 5150000, tokenPrice: 112 },
-      { date: '2024-02-28', propertyValue: 5180000, tokenPrice: 115 },
-      { date: '2024-03-12', propertyValue: 5200000, tokenPrice: 118 },
-      { date: '2024-03-24', propertyValue: 5250000, tokenPrice: 120 },
-      { date: '2024-04-05', propertyValue: 5300000, tokenPrice: 125 },
-      { date: '2024-04-17', propertyValue: 5350000, tokenPrice: 130 },
-    ],
-  },
-  // Add more histories for other properties
-];
-
-export interface MarketCorrelationData {
-  'Real Estate': number; // Correlation percentage
-  'Stock Market': number;
-  'Crypto Market': number;
-  'Commodities': number;
-}
-
-// Mock market correlations for properties
-export const marketCorrelations: Record<string, MarketCorrelationData> = {
-  'prop-001': {
-    'Real Estate': 75,
-    'Stock Market': 30,
-    'Crypto Market': 15,
-    'Commodities': 5,
-  },
-  // Add more correlations for other properties
-  'prop-003': { // Example for Urban Heights Residence from prototype
-    'Real Estate': 80,
-    'Stock Market': 25,
-    'Crypto Market': -10,
-    'Commodities': 10,
-  },
+// Helper to generate a series of dates (past n days)
+const generateDateSeries = (days: number): string[] => {
+  const dates: string[] = [];
+  const today = new Date();
+  
+  for (let i = days; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    dates.push(date.toISOString().split('T')[0]);
+  }
+  
+  return dates;
 };
 
-export interface OrderBookEntry {
-  price: number;
-  amount: number;
-}
+// Generate token value data points with realistic patterns
+const generateTokenValueData = (
+  property: { id: string, price: number, score: number },
+  dayCount: number
+): TokenValueDataPoint[] => {
+  const dates = generateDateSeries(dayCount);
+  const basePropertyValue = property.price * 0.85; // Start at 85% of current value
+  const currentPropertyValue = property.price;
+  const propertyGrowthRate = (currentPropertyValue / basePropertyValue) ** (1 / dayCount) - 1;
+  
+  const initialTokenValue = basePropertyValue / 1000; // Assume 1000 tokens per property
+  const volatilityFactor = 10 - property.score; // Lower score = higher volatility (1-10 scale)
+  
+  return dates.map((date, index) => {
+    // Property fundamental value grows smoothly
+    const fundamentalValue = (basePropertyValue * (1 + propertyGrowthRate) ** index) / 1000;
+    
+    // Token market value fluctuates around fundamental with varying premium
+    const dayOffset = Math.sin(index / 7) * (volatilityFactor * 0.01); // Cyclical pattern
+    const randomNoise = (Math.random() - 0.5) * 0.02 * volatilityFactor; // Random fluctuation
+    const trendFactor = Math.random() > 0.8 ? 0.1 : 0; // Occasional trend changes
+    
+    // Premium/discount ranges from -5% to +15% depending on property score
+    const basePremium = (property.score > 7) ? 0.05 : (property.score > 5) ? 0 : -0.05;
+    const premium = basePremium + dayOffset + randomNoise + (index / dayCount) * trendFactor;
+    
+    // Market value = fundamental value + premium
+    const marketValue = fundamentalValue * (1 + premium);
+    
+    // Volume correlates with premium changes
+    const volumeBase = 500 + (Math.random() * 500);
+    const volumeMultiplier = 1 + Math.abs(premium) * 5; // Higher premium/discount = higher volume
+    const volume = Math.round(volumeBase * volumeMultiplier);
+    
+    return {
+      date,
+      fundamentalValue: parseFloat(fundamentalValue.toFixed(2)),
+      marketValue: parseFloat(marketValue.toFixed(2)),
+      premium: parseFloat((premium * 100).toFixed(2)), // Convert to percentage
+      volume
+    };
+  });
+};
 
-export interface LiquidityMetricsData {
-  spread: number; // Percentage
-  marketDepth: number; // Currency value
-  volume24h: number; // Currency value
-  turnoverRate: number; // Decimal (e.g., 0.49x)
-  orderBook: {
-    asks: OrderBookEntry[]; // Price ascending
-    bids: OrderBookEntry[]; // Price descending
+// Calculate metrics based on token value data
+const calculateMetrics = (data: TokenValueDataPoint[]) => {
+  // Extract values
+  const marketValues = data.map(d => d.marketValue);
+  const fundamentalValues = data.map(d => d.fundamentalValue);
+  const premiums = data.map(d => d.premium);
+  
+  // Market returns (daily)
+  const marketReturns = marketValues.slice(1).map((value, i) => 
+    (value - marketValues[i]) / marketValues[i]
+  );
+  
+  // Fundamental returns (daily)
+  const fundamentalReturns = fundamentalValues.slice(1).map((value, i) => 
+    (value - fundamentalValues[i]) / fundamentalValues[i]
+  );
+  
+  // Volatility (standard deviation of returns)
+  const volatility = calculateStandardDeviation(marketReturns) * Math.sqrt(365) * 100;
+  
+  // Average premium
+  const averagePremium = premiums.reduce((sum, premium) => sum + premium, 0) / premiums.length;
+  
+  // Correlation between fundamental and market values
+  const valueCorrelation = calculateCorrelation(fundamentalValues, marketValues);
+  
+  // YTD appreciation
+  const propertyAppreciation = ((fundamentalValues[fundamentalValues.length - 1] - fundamentalValues[0]) / fundamentalValues[0]) * 100;
+  const tokenAppreciation = ((marketValues[marketValues.length - 1] - marketValues[0]) / marketValues[0]) * 100;
+  
+  // Sharpe ratio (assuming risk-free rate of 1%)
+  const riskFreeRate = 0.01;
+  const annualizedReturn = tokenAppreciation / 365 * data.length;
+  const sharpeRatio = (annualizedReturn - riskFreeRate) / (volatility / 100);
+  
+  return {
+    volatility: parseFloat(volatility.toFixed(2)),
+    valueCorrelation: parseFloat(valueCorrelation.toFixed(2)),
+    averagePremium: parseFloat(averagePremium.toFixed(2)),
+    priceToNav: parseFloat((100 + averagePremium).toFixed(2)),
+    sharpeRatio: parseFloat(sharpeRatio.toFixed(2)),
+    propertyAppreciation: parseFloat(propertyAppreciation.toFixed(2)),
+    tokenAppreciation: parseFloat(tokenAppreciation.toFixed(2))
   };
-}
+};
 
-// Mock liquidity metrics for properties
-export const liquidityMetrics: Record<string, LiquidityMetricsData> = {
-  'prop-001': {
-    spread: 1.27,
-    marketDepth: 96502,
-    volume24h: 19930,
-    turnoverRate: 0.49,
-    orderBook: {
-      asks: [
-        { price: 105.5, amount: 80 },
-        { price: 106.0, amount: 100 },
-        { price: 106.5, amount: 70 },
-        { price: 107.0, amount: 120 },
-        { price: 107.5, amount: 90 },
-      ],
-      bids: [
-        { price: 104.5, amount: 110 },
-        { price: 104.0, amount: 60 },
-        { price: 103.5, amount: 130 },
-        { price: 103.0, amount: 85 },
-        { price: 102.5, amount: 105 },
-      ],
+// Standard deviation helper
+const calculateStandardDeviation = (values: number[]): number => {
+  const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+  const squareDiffs = values.map(value => Math.pow(value - avg, 2));
+  const avgSquareDiff = squareDiffs.reduce((sum, val) => sum + val, 0) / squareDiffs.length;
+  return Math.sqrt(avgSquareDiff);
+};
+
+// Correlation coefficient helper
+const calculateCorrelation = (array1: number[], array2: number[]): number => {
+  const n = array1.length;
+  let sum1 = 0, sum2 = 0, sum1Sq = 0, sum2Sq = 0, pSum = 0;
+  
+  for (let i = 0; i < n; i++) {
+    sum1 += array1[i];
+    sum2 += array2[i];
+    sum1Sq += array1[i] ** 2;
+    sum2Sq += array2[i] ** 2;
+    pSum += array1[i] * array2[i];
+  }
+  
+  const num = pSum - (sum1 * sum2 / n);
+  const den = Math.sqrt((sum1Sq - sum1 ** 2 / n) * (sum2Sq - sum2 ** 2 / n));
+  
+  return den === 0 ? 0 : num / den;
+};
+
+// Generate property value histories for all properties
+export const propertyValueHistories: PropertyValueHistory[] = properties.map(property => {
+  const data = generateTokenValueData(property, 90); // 90 days of data
+  const metrics = calculateMetrics(data);
+  
+  return {
+    propertyId: property.id,
+    propertyName: property.name,
+    data,
+    metrics
+  };
+});
+
+// Generate market correlations
+export const marketCorrelations: Record<string, MarketCorrelation[]> = {};
+
+properties.forEach(property => {
+  marketCorrelations[property.id] = [
+    {
+      market: 'Real Estate',
+      weekCorrelation: parseFloat((0.3 + Math.random() * 0.4).toFixed(2)),
+      monthCorrelation: parseFloat((0.4 + Math.random() * 0.4).toFixed(2)),
+      quarterCorrelation: parseFloat((0.5 + Math.random() * 0.3).toFixed(2)),
+      yearCorrelation: parseFloat((0.6 + Math.random() * 0.3).toFixed(2))
     },
-  },
-   'prop-003': { // Example for Urban Heights Residence from prototype
-    spread: 1.27,
-    marketDepth: 96502,
-    volume24h: 19930,
-    turnoverRate: 0.49,
-    orderBook: {
-      asks: [
-        { price: 320 * 1.006, amount: 80 }, { price: 320 * 1.007, amount: 100 }, { price: 320 * 1.008, amount: 70 }, { price: 320 * 1.009, amount: 120 }, { price: 320 * 1.010, amount: 90 },
-      ],
-      bids: [
-        { price: 320 * 0.994, amount: 110 }, { price: 320 * 0.993, amount: 60 }, { price: 320 * 0.992, amount: 130 }, { price: 320 * 0.991, amount: 85 }, { price: 320 * 0.990, amount: 105 },
-      ],
+    {
+      market: 'Stock Market',
+      weekCorrelation: parseFloat((0.1 + Math.random() * 0.4).toFixed(2)),
+      monthCorrelation: parseFloat((0.2 + Math.random() * 0.4).toFixed(2)),
+      quarterCorrelation: parseFloat((0.3 + Math.random() * 0.3).toFixed(2)),
+      yearCorrelation: parseFloat((0.4 + Math.random() * 0.3).toFixed(2))
     },
+    {
+      market: 'Crypto Market',
+      weekCorrelation: parseFloat((0.2 + Math.random() * 0.6).toFixed(2)),
+      monthCorrelation: parseFloat((0.3 + Math.random() * 0.5).toFixed(2)),
+      quarterCorrelation: parseFloat((0.2 + Math.random() * 0.4).toFixed(2)),
+      yearCorrelation: parseFloat((0.1 + Math.random() * 0.3).toFixed(2))
+    },
+    {
+      market: 'Commodities',
+      weekCorrelation: parseFloat((0 + Math.random() * 0.3).toFixed(2)),
+      monthCorrelation: parseFloat((0.1 + Math.random() * 0.3).toFixed(2)),
+      quarterCorrelation: parseFloat((0.2 + Math.random() * 0.3).toFixed(2)),
+      yearCorrelation: parseFloat((0.3 + Math.random() * 0.3).toFixed(2))
+    }
+  ];
+});
+
+// Generate liquidity metrics
+export const liquidityMetrics: Record<string, LiquidityMetrics> = {};
+
+properties.forEach(property => {
+  const baseTokenPrice = property.price / 1000;
+  const score = property.score;
+  
+  // Higher score = better liquidity
+  const spread = parseFloat((0.5 + (10 - score) * 0.2 + Math.random()).toFixed(2));
+  const depth = parseFloat((score * 10000 + Math.random() * 50000).toFixed(0));
+  const averageDailyVolume = parseFloat((score * 2000 + Math.random() * 10000).toFixed(0));
+  const turnoverRate = parseFloat((0.1 + score * 0.03 + Math.random() * 0.2).toFixed(2));
+  
+  // Generate order book
+  const bids = [];
+  const asks = [];
+  
+  for (let i = 1; i <= 5; i++) {
+    const bidPrice = parseFloat((baseTokenPrice * (1 - (i * spread / 100))).toFixed(2));
+    const bidAmount = parseFloat((Math.random() * 100 + 50).toFixed(0));
+    bids.push({ price: bidPrice, amount: bidAmount });
+    
+    const askPrice = parseFloat((baseTokenPrice * (1 + (i * spread / 100))).toFixed(2));
+    const askAmount = parseFloat((Math.random() * 100 + 50).toFixed(0));
+    asks.push({ price: askPrice, amount: askAmount });
+  }
+  
+  liquidityMetrics[property.id] = {
+    spread,
+    depth,
+    averageDailyVolume,
+    turnoverRate,
+    orderBookDepth: { bids, asks }
+  };
+});
+
+// Generate notifications
+export const notifications: Notification[] = [
+  {
+    id: uuidv4(),
+    type: 'price',
+    title: 'Price Alert: Downtown Loft',
+    message: 'Downtown Loft token price increased by 5.2% in the last 24 hours',
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+    isRead: false,
+    relatedAssetId: properties[0].id,
+    importance: 'medium',
+    action: {
+      label: 'View Property',
+      url: `/property/${properties[0].id}`
+    }
   },
-  // Add more liquidity data for other properties
-}; 
+  {
+    id: uuidv4(),
+    type: 'portfolio',
+    title: 'Portfolio Update',
+    message: 'Your portfolio value increased by 2.3% this week',
+    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
+    isRead: true,
+    importance: 'medium',
+    action: {
+      label: 'View Portfolio',
+      url: '/portfolio'
+    }
+  },
+  {
+    id: uuidv4(),
+    type: 'market',
+    title: 'Market Trend Alert',
+    message: 'Commercial property tokens are showing higher than average premium to NAV',
+    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+    isRead: false,
+    importance: 'low',
+    action: {
+      label: 'View Analysis',
+      url: '/market-analysis'
+    }
+  },
+  {
+    id: uuidv4(),
+    type: 'system',
+    title: 'New Feature: Advanced Analytics',
+    message: 'Explore our new advanced analytics tools to track property value vs. token price',
+    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+    isRead: false,
+    importance: 'high',
+  },
+  {
+    id: uuidv4(),
+    type: 'price',
+    title: 'Price Alert: Harbor View Apartment',
+    message: 'Harbor View Apartment token is trading at a 7% discount to its fundamental value',
+    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+    isRead: true,
+    relatedAssetId: properties[2].id,
+    importance: 'medium',
+    action: {
+      label: 'View Property',
+      url: `/property/${properties[2].id}`
+    }
+  }
+]; 

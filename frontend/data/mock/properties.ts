@@ -1,185 +1,160 @@
-import { PropertyImageKey } from '@/components/ui/PropertyImage'; // Import the key type
-
 export interface Property {
-  id: PropertyImageKey; // Use the specific key type instead of string
+  id: string;
   name: string;
-  description: string;
   location: string;
+  score: number;
   price: number;
   yield: number;
   appreciation: number;
-  aiScore: number;
-  tags: string[];
-  sqMeters: number; // Changed from sqft for consistency with data
+  image: string;
+  sqMeters: number;
   yearBuilt: number;
   energyLabel: string;
-  status: 'Available' | 'Funding' | 'Funded';
-  // Add other fields if they exist in your actual data (e.g., bedrooms, bathrooms)
-  bedrooms?: number; // Example optional field
-  bathrooms?: number; // Example optional field
-  lotSize?: number; // Example optional field
-  propertyType?: string; // Example optional field
+  description: string;
+  active?: boolean; // Optional property to control visibility/status
 }
 
+// Reduced number of properties for better performance
 export const properties: Property[] = [
   {
-    id: 'prop-001', // This ID is a valid PropertyImageKey
-    name: 'Nordic Business Center',
-    description:
-      'State-of-the-art business center with focus on sustainability and eco-friendly design.',
-    location: 'Stockholm, Sweden',
-    price: 550000,
-    yield: 5.3,
-    appreciation: 3.5,
-    aiScore: 8.0,
-    tags: ['Eco Friendly'],
-    sqMeters: 1200,
-    yearBuilt: 2020,
-    energyLabel: 'A++',
-    status: 'Available',
-  },
-  {
-    id: 'prop-002', // This ID is a valid PropertyImageKey
-    name: 'Riverside Plaza',
-    description:
-      'Commercial property with stable long-term tenants in a prime riverside location.',
-    location: 'Berlin, Germany',
-    price: 450000,
-    yield: 4.5,
-    appreciation: 4.8,
-    aiScore: 7.9,
-    tags: ['Stable Growth', 'Prime Location'],
-    sqMeters: 600,
-    yearBuilt: 2012,
-    energyLabel: 'B',
-    status: 'Available',
-  },
-  {
-    id: 'prop-003', // This ID is a valid PropertyImageKey
-    name: 'Urban Heights Residence',
-    description:
-      'Modern apartment in the heart of Amsterdam with excellent connectivity and amenities.',
-    location: 'Amsterdam, Netherlands',
+    id: "prop1",
+    name: "Urban Heights Residence",
+    location: "Amsterdam, Netherlands",
+    score: 8.5,
     price: 320000,
     yield: 5.8,
     appreciation: 3.2,
-    aiScore: 8.5,
-    tags: ['High Yield', 'Prime Location', '+1'],
+    image: "/images/property1.jpg",
     sqMeters: 85,
     yearBuilt: 2015,
-    energyLabel: 'A',
-    status: 'Available',
+    energyLabel: "A",
+    description: "Modern apartment in the heart of Amsterdam with excellent connectivity and amenities."
   },
   {
-    id: 'prop-004', // This ID is a valid PropertyImageKey
-    name: 'Lisbon Heights',
-    description:
-      'Modern apartment complex in an up-and-coming district of Lisbon with exceptional yield performance.',
-    location: 'Lisbon, Portugal',
-    price: 480000,
-    yield: 6.3,
-    appreciation: 5.7,
-    aiScore: 8.9,
-    tags: ['High Yield', 'Stable Growth', '+1'],
-    sqMeters: 150,
-    yearBuilt: 2019,
-    energyLabel: 'A',
-    status: 'Available',
+    id: "prop2",
+    name: "Riverside Plaza",
+    location: "Berlin, Germany",
+    score: 7.9,
+    price: 450000,
+    yield: 4.5,
+    appreciation: 4.8,
+    image: "/images/property2.jpg",
+    sqMeters: 120,
+    yearBuilt: 2010,
+    energyLabel: "B",
+    description: "Spacious office space overlooking the river with high-end finishes and parking facilities."
   },
   {
-    id: 'prop-005', // This ID is a valid PropertyImageKey
-    name: 'Mediterranean Villa',
-    description:
-      'Luxury beachfront villa with high rental yield potential, perfect for vacation rentals.',
-    location: 'Barcelona, Spain',
+    id: "prop3",
+    name: "Mediterranean Villa",
+    location: "Barcelona, Spain",
+    score: 9.2,
     price: 780000,
     yield: 6.7,
     appreciation: 5.1,
-    aiScore: 9.2,
-    tags: ['High Yield', 'Stable Growth', '+2'],
-    sqMeters: 280,
-    yearBuilt: 2014,
-    energyLabel: 'B+',
-    status: 'Available',
+    image: "/images/property3.jpg",
+    sqMeters: 210,
+    yearBuilt: 2018,
+    energyLabel: "A+",
+    description: "Luxurious villa with a pool and garden, located close to the Mediterranean coast."
   },
   {
-    id: 'prop-006', // This ID is a valid PropertyImageKey
-    name: 'Parisian Elegance',
-    description:
-      'Historic apartment in central Paris with strong historical appreciation. Prestigious asset.',
-    location: 'Paris, France',
-    price: 890000,
-    yield: 4.1,
-    appreciation: 5.2,
-    aiScore: 8.8,
-    tags: ['Stable Growth', 'Prime Location', '+2'],
-    sqMeters: 105,
-    yearBuilt: 1912,
-    energyLabel: 'C',
-    status: 'Available',
+    id: "prop4",
+    name: "Nordic Business Center",
+    location: "Stockholm, Sweden",
+    score: 8.0,
+    price: 550000,
+    yield: 5.3,
+    appreciation: 3.5,
+    image: "/images/property4.jpg",
+    sqMeters: 150,
+    yearBuilt: 2012,
+    energyLabel: "A",
+    description: "Modern office building with sustainable design and excellent location near tech hub."
   },
   {
-    id: 'prop-007', // This ID is a valid PropertyImageKey
-    name: 'Central District Lofts',
-    description:
-      'Modern loft development in Vienna with exceptionally high yield. Excellent occupancy rates.',
-    location: 'Vienna, Austria',
-    price: 380000,
-    yield: 5.9,
-    appreciation: 3.8,
-    aiScore: 7.5,
-    tags: ['High Yield'],
-    sqMeters: 95,
-    yearBuilt: 2017,
-    energyLabel: 'A',
-    status: 'Available',
-  },
-  {
-    id: 'prop-008', // This ID is a valid PropertyImageKey
-    name: 'Alpine Retreat',
-    description:
-      'Luxury mountain resort property with strong historical appreciation and stability metrics.',
-    location: 'Zurich, Switzerland',
+    id: "prop5",
+    name: "Alpine Retreat",
+    location: "Zurich, Switzerland",
+    score: 9.5,
     price: 1200000,
     yield: 4.2,
     appreciation: 6.5,
-    aiScore: 9.5,
-    tags: ['Stable Growth', 'Eco Friendly', '+2'],
-    sqMeters: 320,
-    yearBuilt: 2016,
-    energyLabel: 'A+',
-    status: 'Available',
+    image: "/images/property5.jpg",
+    sqMeters: 180,
+    yearBuilt: 2019,
+    energyLabel: "A+",
+    description: "Premium residence with panoramic mountain views and high-end smart home features."
   },
   {
-    id: 'prop-009', // This ID is a valid PropertyImageKey
-    name: 'Harbor View Towers',
-    description:
-      'Modern residential tower complex offering stunning harbor views and high rental demand.',
-    location: 'Copenhagen, Denmark',
+    id: "prop6",
+    name: "Central District Lofts",
+    location: "Vienna, Austria",
+    score: 7.5,
+    price: 380000,
+    yield: 5.9,
+    appreciation: 3.8,
+    image: "/images/property6.jpg",
+    sqMeters: 95,
+    yearBuilt: 2008,
+    energyLabel: "B",
+    description: "Converted historic lofts with exposed brick and modern amenities in central district."
+  },
+  {
+    id: "prop7",
+    name: "Parisian Elegance",
+    location: "Paris, France",
+    score: 8.8,
+    price: 890000,
+    yield: 4.1,
+    appreciation: 5.2,
+    image: "/images/property7.jpg",
+    sqMeters: 115,
+    yearBuilt: 1935,
+    energyLabel: "C",
+    description: "Charming Haussmann-style apartment with high ceilings and original moldings."
+  },
+  {
+    id: "prop8",
+    name: "Harbor View Towers",
+    location: "Copenhagen, Denmark",
+    score: 8.3,
     price: 520000,
     yield: 5.4,
     appreciation: 4.3,
-    aiScore: 8.3,
-    tags: ['Eco Friendly'],
-    sqMeters: 90,
-    yearBuilt: 2019,
-    energyLabel: 'A',
-    status: 'Available',
+    image: "/images/property8.jpg",
+    sqMeters: 110,
+    yearBuilt: 2016,
+    energyLabel: "A",
+    description: "Waterfront apartment with harbor views and access to community amenities."
   },
   {
-    id: 'prop-010', // This ID is a valid PropertyImageKey
-    name: 'Green Valley Estate',
-    description:
-      'Sprawling estate focused on sustainable living and green initiatives.',
-    location: 'Dublin, Ireland',
+    id: "prop9",
+    name: "Green Valley Estate",
+    location: "Dublin, Ireland",
+    score: 7.8,
     price: 620000,
     yield: 4.9,
     appreciation: 4.6,
-    aiScore: 7.8,
-    tags: ['Stable Growth', 'Eco Friendly', '+1'],
-    sqMeters: 180,
-    yearBuilt: 2018,
-    energyLabel: 'A+',
-    status: 'Available',
+    image: "/images/property9.jpg",
+    sqMeters: 185,
+    yearBuilt: 2014,
+    energyLabel: "A",
+    description: "Family home with garden in a quiet suburb with excellent schools and transport links."
   },
+  {
+    id: "prop10",
+    name: "Lisbon Heights",
+    location: "Lisbon, Portugal",
+    score: 8.9,
+    price: 480000,
+    yield: 6.3,
+    appreciation: 5.7,
+    image: "/images/property10.jpg",
+    sqMeters: 105,
+    yearBuilt: 2017,
+    energyLabel: "A",
+    description: "Bright apartment with historic tile work and views of the Tagus river."
+  }
+  // Removed properties 11-20+ for better performance
 ];

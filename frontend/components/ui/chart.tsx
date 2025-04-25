@@ -351,3 +351,7 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
+
+// Re-export ChartComponent as default export to fix import errors
+import ChartComponentDefault from './ChartComponent';
+export default ChartComponentDefault;
