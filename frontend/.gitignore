@@ -29,3 +29,5 @@ jspm_packages/
 .idea/
 *.swp
 .next/
+# clerk configuration (can include secrets)
+/.clerk/

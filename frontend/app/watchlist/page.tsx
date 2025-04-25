@@ -393,9 +393,7 @@ export default function WatchlistPage() {
                           </TabsContent>
                           <TabsContent value="preview">
                             <div className="prose dark:prose-invert max-w-none p-3 border rounded-md min-h-[100px] bg-slate-50 dark:bg-slate-700/50">
-                              <ReactMarkdown>
-                                {currentNoteValue || '*No content yet*'}
-                              </ReactMarkdown>
+                              {React.createElement(ReactMarkdown as React.FC, {}, currentNoteValue || '*No content yet*')}
                             </div>
                           </TabsContent>
                         </Tabs>
@@ -423,9 +421,7 @@ export default function WatchlistPage() {
                       // Note Display
                       <div>
                         <div className="prose dark:prose-invert max-w-none mb-3 p-3 border rounded-md min-h-[50px] bg-slate-50 dark:bg-slate-700/50">
-                          <ReactMarkdown>
-                            {notes[property.id] || '*No notes added yet*'}
-                          </ReactMarkdown>
+                          {React.createElement(ReactMarkdown as React.FC, {}, notes[property.id] || '*No notes added yet*')}
                         </div>
                         <div className="flex justify-end">
                           <Button
