@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { Line } from 'react-chartjs-2';
 import {
@@ -11,10 +9,10 @@ import {
   Title,
   Tooltip,
   Legend,
-  ChartOptions,
+  ChartOptions, // Import ChartOptions
+  ChartData, // Import ChartData
 } from 'chart.js';
 
-// Register ChartJS components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -28,18 +26,25 @@ ChartJS.register(
 interface LineChartProps {
   title: string;
   labels: string[];
-  datasets: {
-    label: string;
-    data: number[];
-    borderColor: string;
-    backgroundColor: string;
-    fill?: boolean;
-  }[];
+  datasets: ChartData<'line'>['datasets']; // Use ChartData type
+  options?: ChartOptions<'line'>; // Add options prop with type
 }
 
-const LineChart: React.FC<LineChartProps> = ({ title, labels, datasets }) => {
-  const options: ChartOptions<'line'> = {
+const LineChart: React.FC<LineChartProps> = ({
+  title,
+  labels,
+  datasets,
+  options,
+}) => {
+  const data = {
+    labels,
+    datasets,
+  };
+
+  // Merge default options with passed options
+  const defaultOptions: ChartOptions<'line'> = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top' as const,
@@ -49,19 +54,12 @@ const LineChart: React.FC<LineChartProps> = ({ title, labels, datasets }) => {
         text: title,
       },
     },
-    scales: {
-      y: {
-        beginAtZero: true,
-      },
-    },
   };
 
-  const data = {
-    labels,
-    datasets,
-  };
+  // Deep merge might be needed for complex options, but a simple spread often works
+  const mergedOptions = { ...defaultOptions, ...options };
 
-  return <Line options={options} data={data} />;
+  return <Line options={mergedOptions} data={data} />; // Pass merged options here
 };
 
 export default LineChart;

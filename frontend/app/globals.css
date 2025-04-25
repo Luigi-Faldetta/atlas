@@ -135,8 +135,6 @@
   box-shadow: -5px 0 15px rgba(245, 158, 11, 0.5); /* Amber shadow on left side */
 }
 
-
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -193,8 +191,6 @@
   }
 }
 
-
-
 @layer base {
   * {
     @apply border-border;
@@ -202,4 +198,19 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Make Dialog Close Button SVG visible in Dark Mode (Final Attempt) */
+
+/* Remove the rule that tried to change the button's text color */
+/* .dark [role='dialog'] button.absolute.right-5.top-5 { ... } */
+
+/* Target the SVG directly and force its color/stroke */
+.dark [role='dialog'] button.absolute.right-5.top-5 svg {
+  @apply text-slate-100 stroke-slate-100 !important; /* Force text/stroke color */
+}
+
+/* Optional: Ensure button opacity is sufficient */
+.dark [role='dialog'] button.absolute.right-5.top-5 {
+  @apply opacity-90 hover:opacity-100; /* Keep opacity adjustment if needed */
 }

@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { Bar } from 'react-chartjs-2';
 import {
@@ -10,10 +8,10 @@ import {
   Title,
   Tooltip,
   Legend,
-  ChartOptions,
+  ChartOptions, // Import ChartOptions
+  ChartData, // Import ChartData
 } from 'chart.js';
 
-// Register ChartJS components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -26,18 +24,25 @@ ChartJS.register(
 interface BarChartProps {
   title: string;
   labels: string[];
-  datasets: {
-    label: string;
-    data: number[];
-    backgroundColor: string | string[];
-    borderColor?: string | string[];
-    borderWidth?: number;
-  }[];
+  datasets: ChartData<'bar'>['datasets']; // Use ChartData type
+  options?: ChartOptions<'bar'>; // Add options prop with type
 }
 
-const BarChart: React.FC<BarChartProps> = ({ title, labels, datasets }) => {
-  const options: ChartOptions<'bar'> = {
+const BarChart: React.FC<BarChartProps> = ({
+  title,
+  labels,
+  datasets,
+  options,
+}) => {
+  const data = {
+    labels,
+    datasets,
+  };
+
+  // Merge default options with passed options
+  const defaultOptions: ChartOptions<'bar'> = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top' as const,
@@ -47,19 +52,12 @@ const BarChart: React.FC<BarChartProps> = ({ title, labels, datasets }) => {
         text: title,
       },
     },
-    scales: {
-      y: {
-        beginAtZero: true,
-      },
-    },
   };
 
-  const data = {
-    labels,
-    datasets,
-  };
+  // Deep merge might be needed for complex options, but a simple spread often works
+  const mergedOptions = { ...defaultOptions, ...options };
 
-  return <Bar options={options} data={data} />;
+  return <Bar options={mergedOptions} data={data} />; // Pass merged options here
 };
 
 export default BarChart;

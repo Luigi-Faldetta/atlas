@@ -222,7 +222,7 @@ export function MainNav() {
             </nav>
 
             {/* Mobile User Button: Only rendered if user is signed in */}
-            {/* @ts-expect-error Server Component type issue with SignedIn */}
+
             <SignedIn>
               <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
                 <UserButton

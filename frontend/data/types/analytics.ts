@@ -4,7 +4,7 @@ export interface TokenValueDataPoint {
   date: string;
   fundamentalValue: number;
   marketValue: number;
-  premium: number;
+  premium?: number;
   volume: number;
 }
 
@@ -20,9 +20,9 @@ export interface PropertyValueMetrics {
 
 export interface PropertyValueHistory {
   propertyId: string;
-  propertyName: string;
+  propertyName?: string;
   data: TokenValueDataPoint[];
-  metrics: PropertyValueMetrics;
+  metrics?: PropertyValueMetrics;
 }
 
 export interface MarketCorrelation {
@@ -49,6 +49,7 @@ export interface LiquidityMetrics {
   averageDailyVolume: number;
   turnoverRate: number;
   orderBookDepth: OrderBook;
+  description?: string;
 }
 
 export interface NotificationAction {
@@ -66,4 +67,4 @@ export interface Notification {
   relatedAssetId?: string;
   importance: 'low' | 'medium' | 'high';
   action?: NotificationAction;
-} 
+}

@@ -1,24 +1,25 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Property, properties } from '@/data/mock/properties';
+import { Property } from '../properties/page'; // Import Property from properties page
+import { PropertyValueHistory } from '../../data/types/analytics'; // Keep this import for PropertyValueHistory
 import PropertyCard from '@/components/ui/PropertyCard';
 import {
   getWatchlist,
   toggleWatchlist,
   getNote,
   saveNote,
-} from '@/lib/localStorage'; // Added getNote, saveNote
+} from '@/lib/localStorage';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input'; // Added Input
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'; // Added Select
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // Added Tabs
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -29,13 +30,10 @@ import OverviewTab from '@/components/details/OverviewTab';
 import AnalyticsTab from '@/components/details/AnalyticsTab';
 import AITab from '@/components/details/AITab';
 import { propertyScoreBreakdowns, propertyTags } from '@/data/mock/ai-features';
-import {
-  propertyValueHistories,
-  marketCorrelations,
-  liquidityMetrics,
-} from '@/data/mock/analytics';
-import ReactMarkdown from 'react-markdown'; // Added for Markdown preview
-import { ExternalLink, FileDown } from 'lucide-react'; // Added icons
+// Import the function to get history, remove non-existent imports
+import { getPropertyValueHistories } from '@/data/mock/analytics';
+import ReactMarkdown from 'react-markdown';
+import { ExternalLink, FileDown } from 'lucide-react';
 
 // Define type for notes state
 type NotesState = {
@@ -45,22 +43,36 @@ type NotesState = {
 // Define type for sort options
 type SortOption = 'name' | 'price_high_low' | 'last_edited';
 
+// Helper function to extract price
+const extractPrice = (priceStr: string): number => {
+  if (!priceStr) return 0;
+  const numericString = priceStr.replace(/\D/g, '');
+  return parseInt(numericString, 10) || 0;
+};
+
 export default function WatchlistPage() {
+  const [allFetchedProperties, setAllFetchedProperties] = useState<Property[]>(
+    []
+  );
   const [watchlistIds, setWatchlistIds] = useState<string[]>([]);
   const [watchlistedProperties, setWatchlistedProperties] = useState<
     Property[]
   >([]);
+  const [analyticsHistories, setAnalyticsHistories] = useState<
+    PropertyValueHistory[]
+  >([]); // State for analytics history
   const [currentTab, setCurrentTab] = useState<'properties' | 'notes'>(
     'properties'
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('name');
   const [notes, setNotes] = useState<NotesState>({});
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null); // Track which note is being edited
-  const [currentNoteValue, setCurrentNoteValue] = useState(''); // Temp storage for editor
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [currentNoteValue, setCurrentNoteValue] = useState('');
   const [noteEditTab, setNoteEditTab] = useState<'edit' | 'preview'>('edit');
+  const [isLoading, setIsLoading] = useState(true);
 
-  // State for modal (reused)
+  // State for modal
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(
     null
   );
@@ -71,40 +83,71 @@ export default function WatchlistPage() {
 
   // --- Effects ---
   useEffect(() => {
-    const ids = getWatchlist();
-    setWatchlistIds(ids);
-    const filteredProps = properties.filter((prop) => ids.includes(prop.id));
-    setWatchlistedProperties(filteredProps);
+    async function loadData() {
+      setIsLoading(true);
+      try {
+        const ids = getWatchlist();
+        setWatchlistIds(ids);
 
-    // Load notes for watchlisted properties
-    const loadedNotes: NotesState = {};
-    ids.forEach((id) => {
-      loadedNotes[id] = getNote(id) || ''; // Load note or default to empty string
-    });
-    setNotes(loadedNotes);
-  }, []); // Load watchlist and notes on mount
+        // Fetch all properties from JSON
+        const propResponse = await fetch('/scraped_funda_properties.json');
+        if (!propResponse.ok)
+          throw new Error(`HTTP error! status: ${propResponse.status}`);
+        const propData: Property[] = await propResponse.json();
+
+        if (!Array.isArray(propData)) {
+          console.error('Fetched property data is not an array:', propData);
+          throw new Error('Invalid data format received for properties.');
+        }
+
+        const normalizedData = propData.map((p) => ({
+          ...p,
+          id: p.URL,
+        }));
+        setAllFetchedProperties(normalizedData);
+
+        const filteredProps = normalizedData.filter((prop) =>
+          ids.includes(prop.id)
+        );
+        setWatchlistedProperties(filteredProps);
+
+        // Load notes
+        const loadedNotes: NotesState = {};
+        ids.forEach((id) => {
+          loadedNotes[id] = getNote(id) || '';
+        });
+        setNotes(loadedNotes);
+
+        // Fetch analytics histories using the async function
+        const histories = await getPropertyValueHistories(); // Call the async function
+        setAnalyticsHistories(histories); // Store results in state
+      } catch (error) {
+        console.error('Error loading watchlist data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, []); // Load all data on mount
 
   // --- Filtering and Sorting ---
   const filteredAndSortedProperties = useMemo(() => {
     let filtered = watchlistedProperties.filter(
       (prop) =>
-        prop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        prop.location.toLowerCase().includes(searchQuery.toLowerCase())
+        prop.Address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        prop.address.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     switch (sortOption) {
       case 'name':
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        filtered.sort((a, b) => a.Address.localeCompare(b.Address));
         break;
       case 'price_high_low':
-        filtered.sort((a, b) => b.price - a.price);
+        filtered.sort((a, b) => extractPrice(b.Price) - extractPrice(a.Price));
         break;
-      case 'last_edited':
-        // Note: Sorting by last edited requires timestamp info not currently stored.
-        // Placeholder: Keep current order or sort by name as fallback.
-        // In a real app, saveNote would store a timestamp.
-        filtered.sort((a, b) => a.name.localeCompare(b.name)); // Fallback
-        break;
+      // case 'last_edited': // Add logic if needed
+      //   break;
       default:
         break;
     }
@@ -113,17 +156,15 @@ export default function WatchlistPage() {
 
   // --- Handlers ---
   const handleRemoveFromWatchlist = (propertyId: string) => {
-    toggleWatchlist(propertyId); // Update localStorage watchlist
+    toggleWatchlist(propertyId);
     const newIds = getWatchlist();
     setWatchlistIds(newIds);
     setWatchlistedProperties(
-      properties.filter((prop) => newIds.includes(prop.id))
+      allFetchedProperties.filter((prop) => newIds.includes(prop.id))
     );
-    // Remove note from state if property is removed
     const updatedNotes = { ...notes };
     delete updatedNotes[propertyId];
     setNotes(updatedNotes);
-    // Consider removing note from localStorage too: removeNote(propertyId);
   };
 
   const handlePropertyClick = (property: Property) => {
@@ -138,16 +179,16 @@ export default function WatchlistPage() {
   };
 
   const handleSaveNote = (propertyId: string) => {
-    saveNote(propertyId, currentNoteValue); // Save to localStorage
+    saveNote(propertyId, currentNoteValue);
     setNotes((prev) => ({ ...prev, [propertyId]: currentNoteValue }));
-    setEditingNoteId(null); // Exit editing mode
-    setCurrentNoteValue(''); // Clear temp value
+    setEditingNoteId(null);
+    setCurrentNoteValue('');
   };
 
   const handleEditNoteClick = (propertyId: string) => {
     setEditingNoteId(propertyId);
-    setCurrentNoteValue(notes[propertyId] || ''); // Load current note into editor
-    setNoteEditTab('edit'); // Start in edit mode
+    setCurrentNoteValue(notes[propertyId] || '');
+    setNoteEditTab('edit');
   };
 
   const handleCancelEdit = () => {
@@ -156,7 +197,6 @@ export default function WatchlistPage() {
   };
 
   const handleExport = () => {
-    // Basic CSV export implementation
     if (filteredAndSortedProperties.length === 0) return;
 
     const headers = [
@@ -171,19 +211,18 @@ export default function WatchlistPage() {
     ];
     const rows = filteredAndSortedProperties.map((prop) => [
       prop.id,
-      prop.name,
-      prop.location,
-      prop.price,
-      prop.yield,
-      prop.appreciation,
-      prop.score,
-      `"${(notes[prop.id] || '').replace(/"/g, '""')}"`, // Escape quotes in notes
+      prop.Address,
+      prop.address,
+      extractPrice(prop.Price),
+      prop.yearly_yield,
+      prop.yearly_appreciation_percentage,
+      prop.investment_score,
+      `"${(notes[prop.id] || '').replace(/"/g, '""')}"`,
     ]);
 
     const csvContent =
       'data:text/csv;charset=utf-8,' +
       [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
@@ -191,7 +230,6 @@ export default function WatchlistPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    console.log('Exporting watchlist...', filteredAndSortedProperties);
   };
 
   // --- Find related data for modal ---
@@ -201,17 +239,23 @@ export default function WatchlistPage() {
   const selectedPropertyTags = selectedProperty
     ? propertyTags.find((p) => p.propertyId === selectedProperty.id)
     : null;
+  // Find history from the state variable
   const selectedPropertyAnalyticsHistory = selectedProperty
-    ? propertyValueHistories.find((p) => p.propertyId === selectedProperty.id)
+    ? analyticsHistories.find((h) => h.propertyId === selectedProperty.id)
     : null;
-  const selectedPropertyAnalyticsCorrelations = selectedProperty
-    ? marketCorrelations[selectedProperty.id]
-    : null;
-  const selectedPropertyAnalyticsLiquidity = selectedProperty
-    ? liquidityMetrics[selectedProperty.id]
-    : null;
+  // Removed correlations and liquidity as they are not exported/defined in the mock
+  const selectedPropertyAnalyticsCorrelations = null;
+  const selectedPropertyAnalyticsLiquidity = null;
 
   // --- Render ---
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        Loading watchlist...
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
@@ -242,7 +286,7 @@ export default function WatchlistPage() {
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
-        {/* Search and Sort Bar (Common for both tabs if properties exist) */}
+        {/* Search and Sort Bar */}
         {watchlistedProperties.length > 0 && (
           <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow mb-6 border border-slate-200 dark:border-slate-700">
             <div className="flex flex-col md:flex-row gap-4">
@@ -284,7 +328,7 @@ export default function WatchlistPage() {
                     <SelectItem value="price_high_low">
                       Price (High to Low)
                     </SelectItem>
-                    <SelectItem value="last_edited">Last Edited</SelectItem>
+                    {/* <SelectItem value="last_edited">Last Edited</SelectItem> */}
                   </SelectContent>
                 </Select>
               </div>
@@ -294,155 +338,175 @@ export default function WatchlistPage() {
 
         {/* Properties Tab Content */}
         <TabsContent value="properties">
-          {
-            filteredAndSortedProperties.length === 0 &&
-            watchlistedProperties.length > 0 ? (
-              <div className="text-center py-10 text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-                <p>No properties match your search criteria.</p>
-              </div>
-            ) : filteredAndSortedProperties.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredAndSortedProperties.map((property) => (
-                  <div key={property.id} className="relative group">
-                    <PropertyCard
-                      property={property}
-                      onClick={() => handlePropertyClick(property)}
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveFromWatchlist(property.id);
-                      }}
-                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600 z-10"
-                      aria-label="Remove from watchlist"
-                      title="Remove from watchlist"
+          {filteredAndSortedProperties.length === 0 &&
+          watchlistedProperties.length > 0 ? (
+            <div className="text-center py-10 text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+              <p>No properties match your search criteria.</p>
+            </div>
+          ) : filteredAndSortedProperties.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredAndSortedProperties.map((property) => (
+                <div key={property.id} className="relative group">
+                  <PropertyCard
+                    property={{
+                      id: property.id,
+                      name: property.Address,
+                      location: property.address,
+                      price: extractPrice(property.Price),
+                      score: property.investment_score,
+                      yield: property.yearly_yield,
+                      appreciation:
+                        property.yearly_appreciation_percentage || 0,
+                      imagePath: property.imagePath,
+                      sqMeters: property['Living Area']
+                        ? parseFloat(property['Living Area'])
+                        : undefined,
+                      yearBuilt: property.yearBuilt,
+                      Bedrooms: property.Bedrooms,
+                      URL: property.URL,
+                      Address: property.Address,
+                      Price: property.Price,
+                      LivingArea: property['Living Area'],
+                    }}
+                    onClick={() => handlePropertyClick(property)}
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFromWatchlist(property.id);
+                    }}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600 z-10"
+                    aria-label="Remove from watchlist"
+                    title="Remove from watchlist"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : null /* Empty state handled below */
-          }
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </TabsContent>
 
         {/* Notes Tab Content */}
         <TabsContent value="notes">
-          {
-            filteredAndSortedProperties.length > 0 ? (
-              <div className="space-y-6">
-                {filteredAndSortedProperties.map((property) => (
-                  <div
-                    key={property.id}
-                    className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow border border-slate-200 dark:border-slate-700"
-                  >
-                    <div className="flex justify-between items-center mb-3">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {property.name}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {property.location}
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePropertyClick(property)}
-                      >
-                        View Property
-                        <ExternalLink className="ml-1.5 h-3 w-3" />
-                      </Button>
+          {filteredAndSortedProperties.length > 0 ? (
+            <div className="space-y-6">
+              {filteredAndSortedProperties.map((property) => (
+                <div
+                  key={property.id}
+                  className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow border border-slate-200 dark:border-slate-700"
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {property.Address}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {property.address}
+                      </p>
                     </div>
-
-                    {editingNoteId === property.id ? (
-                      // Note Editor
-                      <div>
-                        <Tabs
-                          defaultValue="edit"
-                          value={noteEditTab}
-                          onValueChange={(value) =>
-                            setNoteEditTab(value as 'edit' | 'preview')
-                          }
-                        >
-                          <TabsList className="mb-2">
-                            <TabsTrigger value="edit">Edit</TabsTrigger>
-                            <TabsTrigger value="preview">Preview</TabsTrigger>
-                          </TabsList>
-                          <TabsContent value="edit">
-                            <textarea
-                              value={currentNoteValue}
-                              onChange={(e) =>
-                                setCurrentNoteValue(e.target.value)
-                              }
-                              placeholder="Add your notes about this property..."
-                              rows={6}
-                              className="w-full mb-2 p-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-slate-50"
-                            />
-                          </TabsContent>
-                          <TabsContent value="preview">
-                            <div className="prose dark:prose-invert max-w-none p-3 border rounded-md min-h-[100px] bg-slate-50 dark:bg-slate-700/50">
-                              {React.createElement(ReactMarkdown as React.FC, {}, currentNoteValue || '*No content yet*')}
-                            </div>
-                          </TabsContent>
-                        </Tabs>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                          Formatting Tips: Use **bold**, *italic*, # Heading, -
-                          item, `code`
-                        </div>
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleCancelEdit}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleSaveNote(property.id)}
-                          >
-                            Save Notes
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      // Note Display
-                      <div>
-                        <div className="prose dark:prose-invert max-w-none mb-3 p-3 border rounded-md min-h-[50px] bg-slate-50 dark:bg-slate-700/50">
-                          {React.createElement(ReactMarkdown as React.FC, {}, notes[property.id] || '*No notes added yet*')}
-                        </div>
-                        <div className="flex justify-end">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleEditNoteClick(property.id)}
-                          >
-                            {notes[property.id] ? 'Edit Notes' : 'Add Notes'}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePropertyClick(property)}
+                    >
+                      View Property
+                      <ExternalLink className="ml-1.5 h-3 w-3" />
+                    </Button>
                   </div>
-                ))}
-              </div>
-            ) : null /* Empty state handled below */
-          }
+                  {editingNoteId === property.id ? (
+                    <div>
+                      <Tabs
+                        defaultValue="edit"
+                        value={noteEditTab}
+                        onValueChange={(value) =>
+                          setNoteEditTab(value as 'edit' | 'preview')
+                        }
+                      >
+                        <TabsList className="mb-2">
+                          <TabsTrigger value="edit">Edit</TabsTrigger>
+                          <TabsTrigger value="preview">Preview</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="edit">
+                          <textarea
+                            value={currentNoteValue}
+                            onChange={(e) =>
+                              setCurrentNoteValue(e.target.value)
+                            }
+                            placeholder="Add your notes about this property..."
+                            rows={6}
+                            className="w-full mb-2 p-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-slate-50"
+                          />
+                        </TabsContent>
+                        <TabsContent value="preview">
+                          <div className="prose dark:prose-invert max-w-none p-3 border rounded-md min-h-[100px] bg-slate-50 dark:bg-slate-700/50">
+                            {React.createElement(
+                              ReactMarkdown as React.FC,
+                              {},
+                              currentNoteValue || '*No content yet*'
+                            )}
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        Formatting Tips: Use **bold**, *italic*, # Heading, -
+                        item, `code`
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleCancelEdit}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveNote(property.id)}
+                        >
+                          Save Notes
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="prose dark:prose-invert max-w-none mb-3 p-3 border rounded-md min-h-[50px] bg-slate-50 dark:bg-slate-700/50">
+                        {React.createElement(
+                          ReactMarkdown as React.FC,
+                          {},
+                          notes[property.id] || '*No notes added yet*'
+                        )}
+                      </div>
+                      <div className="flex justify-end">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleEditNoteClick(property.id)}
+                        >
+                          {notes[property.id] ? 'Edit Notes' : 'Add Notes'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : null}
         </TabsContent>
 
-        {/* Empty Watchlist State (Common for both tabs if empty) */}
-        {watchlistedProperties.length === 0 && (
+        {/* Empty Watchlist State */}
+        {watchlistedProperties.length === 0 && !isLoading && (
           <div className="text-center py-16 text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg mt-6">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -482,17 +546,15 @@ export default function WatchlistPage() {
         )}
       </Tabs>
 
-      {/* Property Detail Modal (Reused) */}
+      {/* Property Detail Modal */}
       {selectedProperty && (
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle className="text-2xl font-semibold">
-                {selectedProperty.name}
+                {selectedProperty.Address}
               </DialogTitle>
-              {/* Maybe add subtitle: <DialogDescription>{selectedProperty.location}</DialogDescription> */}
             </DialogHeader>
-            {/* Detail Tabs (Reused from original - ensure they match your detail components) */}
             <div className="border-b border-gray-200 dark:border-gray-700 mt-2">
               <Tabs
                 value={activeDetailTab}
@@ -511,16 +573,27 @@ export default function WatchlistPage() {
             <div className="flex-grow overflow-y-auto pr-3 -mr-3 pl-1 -ml-1 py-4">
               {activeDetailTab === 'overview' && (
                 <OverviewTab
-                  property={selectedProperty}
+                  property={{
+                    id: selectedProperty.id,
+                    yield: selectedProperty.yearly_yield,
+                    appreciation:
+                      selectedProperty.yearly_appreciation_percentage,
+                    description: selectedProperty.analysis_explanation,
+                    price: extractPrice(selectedProperty.Price),
+                  }}
                   aiTagsData={selectedPropertyTags}
+                  isWatchlisted={watchlistIds.includes(selectedProperty.id)}
+                  onWatchlistToggle={() =>
+                    handleRemoveFromWatchlist(selectedProperty.id)
+                  }
                 />
               )}
               {activeDetailTab === 'analytics' && (
                 <AnalyticsTab
                   propertyId={selectedProperty.id}
                   history={selectedPropertyAnalyticsHistory}
-                  correlations={selectedPropertyAnalyticsCorrelations}
-                  liquidity={selectedPropertyAnalyticsLiquidity}
+                  correlations={selectedPropertyAnalyticsCorrelations} // Pass null
+                  liquidity={selectedPropertyAnalyticsLiquidity} // Pass null
                 />
               )}
               {activeDetailTab === 'ai' && (
@@ -537,22 +610,24 @@ export default function WatchlistPage() {
   );
 }
 
-// Helper function in localStorage (needs to be added there)
+// Ensure Property and PropertyValueHistory types are correctly defined/imported
+// Example:
 /*
-export const getNote = (propertyId: string): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(`watchlist-note-${propertyId}`);
-};
-
-export const saveNote = (propertyId: string, note: string): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(`watchlist-note-${propertyId}`, note);
-  // Could add timestamp here: localStorage.setItem(`watchlist-note-timestamp-${propertyId}`, Date.now().toString());
-};
-
-export const removeNote = (propertyId: string): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(`watchlist-note-${propertyId}`);
-  // localStorage.removeItem(`watchlist-note-timestamp-${propertyId}`);
-};
+export interface Property { ... } // As defined before
+export interface PropertyValueHistory {
+  propertyId: string;
+  data: {
+    date: string;
+    fundamentalValue: number;
+    marketValue: number; // Or tokenPrice if that's the field name
+    volume: number;
+  }[];
+  metrics?: { // Optional metrics object
+     volatility?: number;
+     priceToNav?: number;
+     valueCorrelation?: number;
+     sharpeRatio?: number;
+     // Add other metrics if generated
+  };
+}
 */
