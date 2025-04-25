@@ -49,11 +49,6 @@ const navItems = [
     icon: BarChart3,
   },
   {
-    name: 'Wallet',
-    href: '/wallet',
-    icon: Wallet,
-  },
-  {
     name: 'Tools',
     href: '/tools',
     icon: Calculator,
