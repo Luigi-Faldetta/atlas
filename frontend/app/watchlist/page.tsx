@@ -273,7 +273,7 @@ export default function WatchlistPage() {
 
       <Tabs
         value={currentTab}
-        onValueChange={(value) =>
+        onValueChange={(value: string) =>
           setCurrentTab(value as 'properties' | 'notes')
         }
         className="w-full"
@@ -315,7 +315,7 @@ export default function WatchlistPage() {
                 </label>
                 <Select
                   value={sortOption}
-                  onValueChange={(value) => setSortOption(value as SortOption)}
+                  onValueChange={(value: SortOption) => setSortOption(value)}
                 >
                   <SelectTrigger
                     id="sort-watchlist"
@@ -430,7 +430,7 @@ export default function WatchlistPage() {
                       <Tabs
                         defaultValue="edit"
                         value={noteEditTab}
-                        onValueChange={(value) =>
+                        onValueChange={(value: string) =>
                           setNoteEditTab(value as 'edit' | 'preview')
                         }
                       >
@@ -558,7 +558,7 @@ export default function WatchlistPage() {
             <div className="border-b border-gray-200 dark:border-gray-700 mt-2">
               <Tabs
                 value={activeDetailTab}
-                onValueChange={(value) =>
+                onValueChange={(value: string) =>
                   setActiveDetailTab(value as 'overview' | 'analytics' | 'ai')
                 }
                 className="w-full"

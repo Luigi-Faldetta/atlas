@@ -7,6 +7,7 @@ const isProtectedRoute = createRouteMatcher([
   '/properties(.*)',
   '/watchlist(.*)',
   '/tools(.*)',
+  '/market-analysis(.*)',
 ]);
 
 console.log(process.env.NEXT_PUBLIC_CLERK_DOMAIN);
