@@ -9,13 +9,13 @@ import {
   BarChart3,
   Search,
   Calculator,
+  Info,
   Menu,
   X,
   Building2,
   LayoutDashboard,
   Settings,
   Star,
-  Info,
   TrendingUp,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
