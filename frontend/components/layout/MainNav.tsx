@@ -10,6 +10,7 @@ import {
   BarChart3,
   Search,
   Calculator,
+  Info,
   Menu,
   X,
   Building2,
@@ -60,7 +61,7 @@ const navItems = [
   {
     name: 'About',
     href: '/about',
-    icon: LineChart,
+    icon: Info,
   },
 ];
 
