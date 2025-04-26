@@ -10,7 +10,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
   'https://atlasnew.vercel.app',
-  'https://www.project-atlas.xyz/',
+  'https://www.project-atlas.xyz',
 ];
 const corsOptions = {
   origin: (origin, callback) => {
