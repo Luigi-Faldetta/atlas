@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InvestmentAnalysis from '@/components/InvestmentAnalysis';
-import ROICalculator from '@/components/ROICalculator'; // Import the ROI Calculator component
+import ROICalculator from '@/components/ROICalculator';
+import AnalysisProgressIndicator from '@/components/AnalysisProgressIndicator'; // Import the new component
 import { Calculator, Search, ArrowRight } from 'lucide-react';
 
 // Define the type for the analysis result, including potential errors
@@ -37,23 +38,32 @@ type AnalysisResult = {
   };
 } | null;
 
+// Define the analysis stages
+const ANALYSIS_STAGES = [
+  'Fetching Property Details...',
+  'Analyzing Investment Potential...',
+  'Evaluating Market Trends...',
+  'Generating Report...',
+];
+
 export default function PropertyAnalysisPage() {
-  // Using the name from main branch
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult>(null); // Use the defined type
-  // Removed separate error and warning states, using analysisResult.error
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult>(null);
+  const [currentStageIndex, setCurrentStageIndex] = useState(0); // State for current stage index
 
-  // --- Read API base URL from environment variable (from current branch) ---
   const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
-  // Function to handle the analysis request (incorporating current branch logic)
+  // Function to simulate delay for visual effect
+  const wait = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
   const handleAnalyze = async () => {
     console.log('handleAnalyze function started!');
     setLoading(true);
-    setAnalysisResult(null); // Reset result/error before new request
+    setAnalysisResult(null); // Reset result/error
+    setCurrentStageIndex(0); // Start from the first stage
 
-    // --- Check if API_BASE is defined (from current branch) ---
     if (!API_BASE) {
       console.error(
         'Error: NEXT_PUBLIC_API_URL environment variable is not set.'
@@ -67,80 +77,78 @@ export default function PropertyAnalysisPage() {
     }
 
     try {
+      // Stage 0: Fetching
+      setCurrentStageIndex(0);
       console.log(`Attempting to fetch analysis from ${API_BASE}/analyze...`);
-      // --- Use API_BASE in fetch URL (from current branch) ---
       const response = await fetch(`${API_BASE}/analyze`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
       });
       console.log('Fetch response status:', response.status);
 
       if (!response.ok) {
-        // Try to get error detail from response body
         let errorDetail = 'Failed to analyze the property.';
         try {
           const errorData = await response.json();
-          if (errorData && errorData.detail) {
-            errorDetail = errorData.detail;
-          }
+          if (errorData && errorData.detail) errorDetail = errorData.detail;
         } catch (jsonError) {
-          // Ignore if response body is not valid JSON
           console.warn('Could not parse error response JSON:', jsonError);
         }
         throw new Error(errorDetail);
       }
 
+      // Stage 1: Analyzing (Simulated Delay)
+      setCurrentStageIndex(1);
+      await wait(1000); // Simulate analysis time
+
+      // Stage 2: Evaluating (Simulated Delay)
+      setCurrentStageIndex(2);
+      await wait(1500); // Simulate evaluation time
+
+      // Stage 3: Generating Report
+      setCurrentStageIndex(3);
       console.log('Attempting to parse response JSON...');
       const data = await response.json();
 
-      // If expected_monthly_income is not provided by the API, estimate it
+      // --- Data processing (as before) ---
       if (
         data.agent_analysis &&
         data.agent_analysis.monthly_rental_income &&
         !data.agent_analysis.expected_monthly_income
       ) {
-        // Estimate expected monthly income as 10% higher than current monthly income
         data.agent_analysis.expected_monthly_income =
           data.agent_analysis.monthly_rental_income * 1.1;
       }
-
-      // Add default property characteristics if not provided
       if (data.agent_analysis && !data.agent_analysis.characteristics) {
         data.agent_analysis.characteristics = determineCharacteristics(
           data.agent_analysis
         );
       }
-
-      // Add default score breakdown if not provided
       if (data.agent_analysis && !data.agent_analysis.risk_score) {
         const scores = generateScoreBreakdown(
           data.agent_analysis.investment_score
         );
-        data.agent_analysis = {
-          ...data.agent_analysis,
-          ...scores,
-        };
+        data.agent_analysis = { ...data.agent_analysis, ...scores };
       }
+      // --- End Data processing ---
 
-      // Log the data to verify score breakdown values are present
-      console.log('Analysis result with score breakdown:', data.agent_analysis);
-      console.log('Scraped data including price/sqm:', data.scraped_data); // Log scraped data
+      await wait(500); // Simulate report generation time
 
+      console.log('Analysis result:', data);
       setAnalysisResult(data);
+      setCurrentStageIndex(ANALYSIS_STAGES.length); // Mark as completed
     } catch (error: any) {
-      // Catch specific error type and set error in analysisResult (from current branch)
       console.error('Error during analysis fetch:', error);
       setAnalysisResult({
         error: error.message || 'Failed to analyze the property.',
-      }); // Use error message
+      });
     } finally {
-      setLoading(false);
+      setLoading(false); // Stop loading indicator only after everything (success or error)
     }
   };
 
+  // Helper functions (determineCharacteristics, generateScoreBreakdown, createSampleAnalysis) remain the same...
   // Helper function to determine property characteristics based on analysis
   const determineCharacteristics = (analysis: any) => {
     const characteristics = [];
@@ -285,6 +293,7 @@ export default function PropertyAnalysisPage() {
           <Tabs defaultValue="webscraper" className="w-full">
             <div className="border-b border-slate-200 dark:border-slate-700">
               <TabsList className="flex w-full bg-transparent p-0">
+                {/* TabsTriggers remain the same */}
                 <TabsTrigger
                   value="webscraper"
                   className="flex-1 py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 transition-all"
@@ -308,69 +317,85 @@ export default function PropertyAnalysisPage() {
 
             <TabsContent value="webscraper" className="p-6 md:p-8">
               <div className="space-y-6">
-                {/* URL Input Section */}
-                <div className="bg-slate-50 dark:bg-slate-700/30 p-6 rounded-xl">
-                  <h2 className="text-xl font-semibold mb-4 text-slate-800 dark:text-white">
-                    Analyze Property
-                  </h2>
-                  <div className="flex flex-col md:flex-row gap-3">
-                    <div className="relative flex-grow">
-                      <input
-                        type="text"
-                        placeholder="Enter property URL"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        className="w-full p-3 pr-12 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                      />
-                      {url && (
-                        <button
-                          onClick={() => setUrl('')}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                          aria-label="Clear URL input"
-                        >
-                          ×
-                        </button>
-                      )}
+                {/* URL Input Section - Conditionally render based on loading state */}
+                {!loading && (
+                  <div className="bg-slate-50 dark:bg-slate-700/30 p-6 rounded-xl">
+                    <h2 className="text-xl font-semibold mb-4 text-slate-800 dark:text-white">
+                      Analyze Property
+                    </h2>
+                    <div className="flex flex-col md:flex-row gap-3">
+                      <div className="relative flex-grow">
+                        <input
+                          type="text"
+                          placeholder="Enter property URL"
+                          value={url}
+                          onChange={(e) => setUrl(e.target.value)}
+                          className="w-full p-3 pr-12 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                        />
+                        {url && (
+                          <button
+                            onClick={() => setUrl('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            aria-label="Clear URL input"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        onClick={handleAnalyze}
+                        disabled={!url} // Only disable if no URL
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span>Analyze Property</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
                     </div>
-                    <button
-                      onClick={handleAnalyze}
-                      disabled={loading || !url}
-                      className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? (
-                        <>
-                          <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                          <span>Analyzing...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Analyze Property</span>
-                          <ArrowRight className="h-4 w-4" />
-                        </>
-                      )}
-                    </button>
+                    <div className="flex justify-between mt-3">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Paste a property listing URL to analyze investment
+                        potential using AI
+                      </p>
+                      <button
+                        onClick={createSampleAnalysis}
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Use sample data
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex justify-between mt-3">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Paste a property listing URL to analyze investment
-                      potential using AI
-                    </p>
-                    <button
-                      onClick={createSampleAnalysis}
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      Use sample data
-                    </button>
-                  </div>
-                </div>
+                )}
 
-                {/* Results Section */}
-                {analysisResult && (
+                {/* Loading Indicator Section */}
+                {loading && (
+                  <div className="mt-8">
+                    <AnalysisProgressIndicator
+                      stages={ANALYSIS_STAGES}
+                      currentStageIndex={currentStageIndex}
+                    />
+                  </div>
+                )}
+
+                {/* Results Section - Render only when not loading */}
+                {!loading && analysisResult && (
                   <div className="mt-8 animate-fadeIn">
                     {analysisResult.error ? (
                       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center">
                         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 mb-4">
-                          ×
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                            className="w-6 h-6"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                            />
+                          </svg>
                         </div>
                         <h3 className="text-lg font-medium text-red-800 dark:text-red-400 mb-2">
                           Analysis Failed
