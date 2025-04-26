@@ -8,7 +8,7 @@ import LiquidityPanel from '@/components/analytics/LiquidityPanel';
 interface Property {
   id: string;
   Address?: string;
-  Price?: number;
+  Price?: number | string; // Allow string for initial messy data
   name?: string;
   image?: string;
   ['Living Area']?: string;
@@ -47,6 +47,40 @@ interface LiquidityData {
   turnoverRate: number;
 }
 
+// Utility function to format the price
+function formatPrice(price: string | number | undefined): string {
+  if (price === null || price === undefined) return 'N/A';
+
+  // If the price is a number, format it directly
+  if (typeof price === 'number') {
+    // Check if it's NaN after potential failed conversions
+    if (isNaN(price)) return 'N/A';
+    return `€ ${price.toLocaleString('nl-NL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  }
+
+  // If the price is a string, clean it up
+  // Remove currency symbols, letters (like k.k.), and extra spaces
+  const cleanedString = String(price)
+    .replace(/€/g, '')
+    .replace(/k\.k\./gi, '')
+    .replace(/\./g, '') // Remove thousand separators (dots)
+    .replace(/,/g, '.') // Replace comma decimal separator with dot if needed (adjust based on source format)
+    .trim();
+
+  // Extract only the numeric part
+  const numericMatch = cleanedString.match(/[\d.,]+/);
+  if (!numericMatch) return 'N/A';
+
+  const numericString = numericMatch[0].replace(/,/g, ''); // Remove commas if they were separators
+
+  const numericValue = parseFloat(numericString);
+
+  if (isNaN(numericValue)) return 'N/A';
+
+  // Format the cleaned price as a number
+  return `€ ${numericValue.toLocaleString('nl-NL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
 export default function MarketAnalysisPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
@@ -81,7 +115,7 @@ export default function MarketAnalysisPage() {
           {
             id: 'mock-1',
             Address: '123 Mock St',
-            Price: 240000,
+            Price: '€€ 240.000 k.k.', // Example messy price
             name: 'Mock Property 1',
             image: '',
             ['Living Area']: '120 sqm',
@@ -241,8 +275,9 @@ export default function MarketAnalysisPage() {
               <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Living Area: {selectedProperty['Living Area'] ?? 'N/A'}
               </p>
+              {/* Use the formatPrice function here */}
               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                Price: €{selectedProperty.Price ?? 'N/A'}
+                Price: {formatPrice(selectedProperty.Price)}
               </p>
               <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
                 {selectedProperty.analysis_explanation ??
