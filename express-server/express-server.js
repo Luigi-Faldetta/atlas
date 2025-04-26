@@ -10,26 +10,42 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
   'https://atlasnew.vercel.app',
-  'https://www.project-atlas.xyz',
+  'https://www.project-atlas.xyz', // Trailing slash removed
 ];
 const corsOptions = {
   origin: (origin, callback) => {
-    // allow requests with no origin (e.g. curl, Postman)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Log the origin received from the browser/client
+    console.log(`CORS Check: Received origin: ${origin}`);
+
+    // allow requests with no origin (e.g. curl, Postman, server-to-server)
+    if (!origin) {
+      console.log('CORS Check: No origin provided, allowing.');
+      return callback(null, true);
+    }
+    // Check if the origin is in our allowed list
+    if (allowedOrigins.includes(origin)) {
+      console.log(`CORS Check: Origin ${origin} is allowed.`);
+      return callback(null, true);
+    }
+    // If not allowed, log the error and reject
+    console.error(`CORS Check: Origin ${origin} NOT ALLOWED.`);
     return callback(new Error(`Origin ${origin} not allowed by CORS`));
   },
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204, // Some legacy browsers choke on 204
 };
 
-// 1) Apply CORS to all routes
+// Apply CORS middleware using the options.
+// This should handle preflight (OPTIONS) requests automatically.
 app.use(cors(corsOptions));
 
-// 2) Handle all OPTIONS pre‑flights
-app.options('*', cors(corsOptions));
+// Remove the explicit app.options('*', ...) line.
+// app.options('*', cors(corsOptions));
 
 // ─── JSON BODY PARSER ───
+// Ensure this comes AFTER CORS middleware if CORS needs to apply to OPTIONS requests
+// which might implicitly have a content-type, though usually not an issue.
 app.use(express.json());
 
 const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://127.0.0.1:8000';
@@ -48,6 +64,8 @@ app.post('/analyze', async (req, res) => {
     console.log(`Forwarding to Python API: ${PYTHON_API_URL}/analyze`);
     const response = await axios.post(`${PYTHON_API_URL}/analyze`, { url });
     console.log(`Python API responded with status ${response.status}`);
+    // Important: Forward CORS headers from Python API if needed? Usually not for proxy.
+    // The browser only cares about CORS headers from THIS express server.
     return res.status(response.status).json(response.data);
   } catch (error) {
     console.error(
