@@ -7,10 +7,16 @@ import {
   CurrencyEuroIcon,
   ChartBarIcon,
   ScaleIcon,
+  DocumentTextIcon,
+  BookmarkIcon,
+  AcademicCapIcon,
+  ShoppingBagIcon,
+  BuildingOfficeIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import ScoreBreakdownChart from './ScoreBreakdownChart';
 import InfoModal from './InfoModal';
-import { useEffect } from 'react'; // Import useEffect for logging once
+import { useEffect, useState } from 'react'; // Import useState for the chart data
 
 type InvestmentAnalysisProps = {
   investmentScore: number;
@@ -34,6 +40,42 @@ type InvestmentAnalysisProps = {
   conditionScore?: number;
   // Property characteristics (optional)
   characteristics?: string[];
+  
+  // New props for redesign - optional with defaults in component
+  bedrooms?: number;
+  bathrooms?: number;
+  size?: number;
+  yearBuilt?: number;
+  description?: string;
+  features?: string[];
+  
+  // Nearby amenities data
+  nearbyAmenities?: {
+    schools: number;
+    groceryStores: number;
+    gyms: number;
+    restaurants: number;
+    hospitals: number;
+    parks: number;
+  };
+  
+  // Suitability scores
+  suitabilityScores?: {
+    families: number;
+    couples: number;
+    singles: number;
+  };
+  
+  // Location assessment
+  locationPros?: string[];
+  locationCons?: string[];
+  
+  // Additional financial data
+  annualRentalIncome?: number;
+  annualExpenses?: number;
+  netOperatingIncome?: number;
+  breakEvenPoint?: number;
+  fiveYearProjectedValue?: number;
 };
 
 const getScoreColor = (score: number) => {
@@ -113,6 +155,50 @@ const InvestmentAnalysis = ({
   locationScore = 8.6,
   conditionScore = 9.1,
   characteristics = [],
+  
+  // New props with defaults (mock data)
+  bedrooms = 2,
+  bathrooms = 1,
+  size = 85,
+  yearBuilt = 2010,
+  description = "Beautiful and bright apartment located in a prime area. Recently renovated with high-quality materials. Open-concept living room and kitchen. Close to public transportation, shops, and restaurants.",
+  features = ["Elevator", "Air conditioning", "Parking", "Built-in wardrobes", "Security system", "Balcony"],
+  
+  nearbyAmenities = {
+    schools: 7,
+    groceryStores: 5,
+    gyms: 3,
+    restaurants: 13,
+    hospitals: 2,
+    parks: 6
+  },
+  
+  suitabilityScores = {
+    families: 100,
+    couples: 100,
+    singles: 100
+  },
+  
+  locationPros = [
+    "7 educational institutions nearby",
+    "Good access to 5 grocery stores",
+    "15 dining options in the area",
+    "Air conditioning available",
+    "Established neighborhood"
+  ],
+  
+  locationCons = [
+    "Hospital congestion may cause noise",
+    "Larger space may require more maintenance",
+    "Tourist congestion during peak seasons",
+    "Shared elevator maintenance costs"
+  ],
+  
+  annualRentalIncome = 19200, // Default if not calculated from monthly
+  annualExpenses = 5760,
+  netOperatingIncome = 13440, // Default calculated from above defaults
+  breakEvenPoint = 23.8,
+  fiveYearProjectedValue = 380050
 }: InvestmentAnalysisProps) => {
   console.log('%%% RUNNING InvestmentAnalysis Component - VERSION CHECK %%%');
 
@@ -202,330 +288,456 @@ const InvestmentAnalysis = ({
   const weightedAverage = (investmentScore / 10).toFixed(1);
   const weightedAverageNumber = parseFloat(weightedAverage);
   const displayWeightedAverage = weightedAverage.replace('.', ',');
+  
+  // Calculate annual rental income from monthly if provided
+  const calculatedAnnualRentalIncome = monthlyRentalIncome 
+    ? monthlyRentalIncome * 12 
+    : annualRentalIncome;
+    
+  // Calculate net operating income if not provided
+  const calculatedNetOperatingIncome = 
+    calculatedAnnualRentalIncome - annualExpenses;
+  
+  // Generate projected property value data for chart
+  const [projectedValues] = useState(() => {
+    const basePrice = numericPrice || 320000; // Fallback to example price
+    const yearlyAppreciation = yearlyAppreciationPercentage || 3.5;
+    const appreciationFactor = 1 + (yearlyAppreciation / 100);
+    
+    return [
+      basePrice,
+      Math.round(basePrice * Math.pow(appreciationFactor, 1)),
+      Math.round(basePrice * Math.pow(appreciationFactor, 2)),
+      Math.round(basePrice * Math.pow(appreciationFactor, 3)),
+      Math.round(basePrice * Math.pow(appreciationFactor, 4)),
+      Math.round(basePrice * Math.pow(appreciationFactor, 5)),
+    ];
+  });
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
-      {/* Property Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-6 text-white">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-2 flex items-center">
-              <HomeIcon className="h-6 w-6 mr-2" />
-              Property Analysis
-            </h2>
-            <p className="text-white/90 text-sm mb-1">{address}</p>
-            {/* Use the formatted header price */}
-            <p className="text-xl font-semibold">{formattedHeaderPrice}</p>
-          </div>
-          <div
-            className="w-24 h-24"
-            title={`Investment Score: ${investmentScore}/100`}
-          >
-            <CircularProgressbar
-              value={investmentScore}
-              text={`${investmentScore}`}
-              strokeWidth={10}
-              styles={buildStyles({
-                textSize: '28px',
-                pathColor: scoreColor,
-                textColor: 'white',
-                trailColor: 'rgba(255,255,255,0.3)',
-              })}
-            />
-          </div>
-        </div>
+    <div className="space-y-6">
+      {/* Action Buttons - Top Right Floating */}
+      <div className="flex justify-end gap-3 mb-4">
+        <button 
+          className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onClick={() => {}}
+        >
+          <DocumentTextIcon className="h-5 w-5 mr-2" />
+          Download Report
+        </button>
+        <button 
+          className="flex items-center px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onClick={() => {}}
+        >
+          <BookmarkIcon className="h-5 w-5 mr-2" />
+          Save to Watchlist
+        </button>
       </div>
-
-      {/* Metrics Grid */}
-      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="col-span-1 md:col-span-2">
-          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center">
-            <ChartBarIcon className="h-5 w-5 mr-2" />
-            Key Investment Metrics
-          </h3>
-        </div>
-
-        {/* ROI Metrics */}
-        <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
-          <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 flex items-center">
-            Return on Investment
-            <InfoModal
-              title="Return on Investment Calculation"
-              content={
-                <div>
-                  <p className="mb-1">ROI is calculated using the formula:</p>
-                  <p className="font-mono bg-slate-100 dark:bg-slate-700 p-1 rounded text-xs mb-1">
-                    ROI = (Net Profit / Cost of Investment) × 100
-                  </p>
-                  <p>
-                    Net Profit includes rental income and property appreciation
-                    over the period, minus all expenses.
-                  </p>
-                </div>
-              }
-            />
-          </h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                5 Years
-              </p>
-              <p className="text-xl font-bold text-slate-800 dark:text-white">
-                {formatPercentage(roi5Years)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                10 Years
-              </p>
-              <p className="text-xl font-bold text-slate-800 dark:text-white">
-                {formatPercentage(roi10Years)}
-              </p>
-            </div>
+      
+      {/* Main Content - Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column - Property Details */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Property Details</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Key information about the property</p>
           </div>
-        </div>
-
-        {/* Yield Metrics */}
-        <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
-          <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 flex items-center">
-            Gross Yearly Yield
-            <InfoModal
-              title="Gross Yearly Yield Calculation"
-              content={
-                <div>
-                  <p className="mb-1">
-                    Gross Yearly Yield is calculated using the formula:
-                  </p>
-                  <p className="font-mono bg-slate-100 dark:bg-slate-700 p-1 rounded text-xs mb-1">
-                    Yield = (Annual Gross Rental Income / Property Value) × 100
-                  </p>
-                  <p>
-                    This represents the annual gross return as a percentage of
-                    the property value, before deducting operating expenses.
-                  </p>
-                </div>
-              }
-            />
-          </h4>
-          <p className="text-xl font-bold text-slate-800 dark:text-white">
-            {formatPercentage(yearlyYield)}
-          </p>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center">
-                Current Monthly Income
-                <InfoModal
-                  title="Current Monthly Income"
-                  content="The current rental income based on comparable properties in the area."
-                />
-              </div>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {monthlyRentalIncome
-                  ? formatCurrency(monthlyRentalIncome)
-                  : 'N/A'}
-              </p>
-            </div>
-            <div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center">
-                Expected Monthly Income
-                <InfoModal
-                  title="Expected Monthly Income"
-                  content="The projected rental income after potential improvements and market adjustments."
-                />
-              </div>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {expectedMonthlyIncome
-                  ? formatCurrency(expectedMonthlyIncome)
-                  : 'N/A'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Appreciation Metrics */}
-        <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
-          <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 flex items-center">
-            Yearly Appreciation
-            <InfoModal
-              title="Yearly Appreciation Calculation"
-              content={
-                <div>
-                  <p className="mb-1">
-                    Yearly Appreciation is calculated based on:
-                  </p>
-                  <ul className="list-disc pl-4 text-xs space-y-1">
-                    <li>Historical property value trends in the area</li>
-                    <li>Local economic growth forecasts</li>
-                    <li>Planned infrastructure developments</li>
-                    <li>Supply and demand dynamics in the neighborhood</li>
-                  </ul>
-                  <p className="mt-1">
-                    The annual value is calculated by applying the percentage to
-                    the property price.
-                  </p>
-                </div>
-              }
-            />
-          </h4>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xl font-bold text-slate-800 dark:text-white">
-                {formatPercentage(yearlyAppreciationPercentage)}
-              </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Annual Rate
-              </p>
-            </div>
-            <div className="h-8 border-r border-slate-300 dark:border-slate-600 mx-4"></div>
-            <div>
-              <p className="text-xl font-bold text-slate-800 dark:text-white">
-                {yearlyAppreciationValue
-                  ? formatCurrency(yearlyAppreciationValue)
-                  : 'N/A'}
-              </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Annual Value
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Price per Square Meter */}
-        <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
-          <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 flex items-center">
-            <ScaleIcon className="h-4 w-4 mr-1.5" />
-            Price per m²
-            <InfoModal
-              title="Price per Square Meter"
-              content="Calculated by dividing the property price by the living area (in square meters)."
-            />
-          </h4>
-          <p className="text-xl font-bold text-slate-800 dark:text-white">
-            {pricePerSqm
-              ? formatCurrency(pricePerSqm, {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })
-              : 'N/A'}
-          </p>
-        </div>
-
-        {/* Score Breakdown Chart */}
-        <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg col-span-1 md:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-slate-700 dark:text-slate-200 flex items-center">
-              Atlas AI Score Breakdown
-              <InfoModal
-                title="Atlas AI Score Breakdown"
-                content={
-                  <div>
-                    <p className="mb-1">
-                      The Atlas AI scoring system analyzes multiple factors to
-                      provide a comprehensive property assessment. Scores are
-                      calculated using a proprietary algorithm that evaluates:
-                    </p>
-                    <ul className="list-disc pl-4 text-xs space-y-1">
-                      <li>Risk: Investment security and market stability</li>
-                      <li>
-                        Yield: Rental income potential relative to property
-                        value
-                      </li>
-                      <li>Growth: Expected value appreciation over time</li>
-                      <li>Location: Quality of neighborhood and amenities</li>
-                      <li>
-                        Condition: Property state and maintenance requirements
-                      </li>
-                    </ul>
-                    <p className="mt-1">
-                      Each category is scored out of 10. The average shown here
-                      is derived directly from the overall Investment Score
-                      (Score/10).
-                    </p>
-                  </div>
-                }
+          
+          <div className="p-4">
+            <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">{address}</h3>
+            
+            {/* Property Image */}
+            <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg mb-4 overflow-hidden">
+              <img 
+                src="https://placehold.co/800x400/e6e6e6/999999?text=Property+Image" 
+                alt="Property" 
+                className="w-full h-full object-cover"
               />
-            </h4>
-            <div className="flex items-center">
-              <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {displayWeightedAverage}
-              </span>
-              <span className="text-sm text-slate-500 dark:text-slate-400 ml-1">
-                /10
-              </span>
+            </div>
+            
+            {/* Property Info Table */}
+            <div className="space-y-3">
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Price</span>
+                <span className="font-medium text-gray-800 dark:text-white">{formattedHeaderPrice}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Location</span>
+                <span className="font-medium text-gray-800 dark:text-white">{address.split(',').slice(-2).join(', ') || 'Barcelona, Spain'}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Size</span>
+                <span className="font-medium text-gray-800 dark:text-white">{size} m²</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Bedrooms</span>
+                <span className="font-medium text-gray-800 dark:text-white">{bedrooms}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Bathrooms</span>
+                <span className="font-medium text-gray-800 dark:text-white">{bathrooms}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Year Built</span>
+                <span className="font-medium text-gray-800 dark:text-white">{yearBuilt}</span>
+              </div>
+            </div>
+            
+            {/* Description */}
+            <div className="mt-6">
+              <h4 className="font-medium text-gray-800 dark:text-white mb-2">Description</h4>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">{description}</p>
+            </div>
+            
+            {/* Features */}
+            <div className="mt-6">
+              <h4 className="font-medium text-gray-800 dark:text-white mb-2">Features</h4>
+              <ul className="list-disc pl-5 text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                {features.map((feature, index) => (
+                  <li key={index}>{feature}</li>
+                ))}
+              </ul>
             </div>
           </div>
-          <ScoreBreakdownChart
-            scores={{
-              risk: riskScore,
-              yield: yieldScore,
-              growth: growthScore,
-              location: locationScore,
-              condition: conditionScore,
-            }}
-            weightedAverage={weightedAverageNumber}
-          />
         </div>
-
-        {/* Property Characteristics */}
-        {characteristics && characteristics.length > 0 && (
-          <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg col-span-1 md:col-span-2">
-            <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">
-              Property Characteristics
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {characteristics.map((characteristic, index) => (
-                <span
-                  key={index}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium ${getCharacteristicColor(
-                    characteristic
-                  )}`}
-                >
-                  {characteristic}
+        
+        {/* Right Column - Financial Analysis */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Financial Analysis</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Rental yield, appreciation, and ROI projections</p>
+          </div>
+          
+          <div className="p-4">
+            {/* Financial Highlights */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
+                <p className="text-xs text-blue-700 dark:text-blue-300 font-medium mb-1">Rental Yield</p>
+                <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">
+                  {formatPercentage(yearlyYield || 4.2)}
+                </p>
+              </div>
+              <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
+                <p className="text-xs text-green-700 dark:text-green-300 font-medium mb-1">Annual ROI</p>
+                <p className="text-2xl font-bold text-green-800 dark:text-green-200">
+                  {formatPercentage(roi5Years || 7.95)}
+                </p>
+              </div>
+            </div>
+            
+            {/* Projected Property Value Chart */}
+            <div className="mb-6">
+              <h4 className="font-medium text-gray-800 dark:text-white mb-2">Projected Property Value (5 Years)</h4>
+              <div className="h-48 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                {/* Chart visualization */}
+                <div className="flex h-full items-end justify-between">
+                  {projectedValues.map((value, index) => (
+                    <div key={index} className="flex flex-col items-center">
+                      <div 
+                        className="w-10 bg-emerald-400 dark:bg-emerald-500 rounded-t-sm" 
+                        style={{ height: `${(value / projectedValues[5]) * 80}%` }}
+                      ></div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">Year {index}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            {/* Financial Details */}
+            <div className="space-y-3">
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Purchase Price</span>
+                <span className="font-medium text-gray-800 dark:text-white">{formattedHeaderPrice}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Estimated Monthly Rent</span>
+                <span className="font-medium text-gray-800 dark:text-white">
+                  {monthlyRentalIncome
+                    ? formatCurrency(monthlyRentalIncome)
+                    : '€ 1.600'}
                 </span>
-              ))}
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Annual Rental Income</span>
+                <span className="font-medium text-gray-800 dark:text-white">
+                  {formatCurrency(calculatedAnnualRentalIncome, {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Annual Expenses</span>
+                <span className="font-medium text-gray-800 dark:text-white">
+                  {formatCurrency(annualExpenses, {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Net Operating Income</span>
+                <span className="font-medium text-gray-800 dark:text-white">
+                  {formatCurrency(calculatedNetOperatingIncome, {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Estimated Annual Appreciation</span>
+                <span className="font-medium text-gray-800 dark:text-white">
+                  {formatPercentage(yearlyAppreciationPercentage || 3.5)}
+                </span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">5-Year Projected Value</span>
+                <span className="font-medium text-gray-800 dark:text-white">
+                  {formatCurrency(projectedValues[5], {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Break-even Point</span>
+                <span className="font-medium text-gray-800 dark:text-white">{breakEvenPoint} years</span>
+              </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
-
-      {/* Strengths & Weaknesses */}
-      <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <h3 className="flex items-center text-lg font-semibold text-green-600 dark:text-green-400 mb-3">
-            <ArrowTrendingUpIcon className="h-5 w-5 mr-2" />
-            Strengths
-          </h3>
-          <ul className="space-y-2">
-            {strengths.map((strength, i) => (
-              <li key={i} className="flex items-start">
-                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mr-2 flex-shrink-0 text-sm">
-                  +
-                </span>
-                <span className="text-slate-700 dark:text-slate-300">
-                  {strength.replace(/^- /, '')}
-                </span>
-              </li>
-            ))}
-          </ul>
+      
+      {/* Nearby Amenities Section */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Nearby Amenities</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Essential services and facilities in this area</p>
         </div>
-
-        <div>
-          <h3 className="flex items-center text-lg font-semibold text-red-600 dark:text-red-400 mb-3">
-            <ArrowTrendingDownIcon className="h-5 w-5 mr-2" />
-            Weaknesses
-          </h3>
-          <ul className="space-y-2">
-            {weaknesses.map((weakness, i) => (
-              <li key={i} className="flex items-start">
-                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 mr-2 flex-shrink-0 text-sm">
-                  -
-                </span>
-                <span className="text-slate-700 dark:text-slate-300">
-                  {weakness.replace(/^- /, '')}
-                </span>
-              </li>
-            ))}
-          </ul>
+        
+        <div className="p-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-full">
+                <AcademicCapIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{nearbyAmenities.schools}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Schools</p>
+            </div>
+            
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-full">
+                <ShoppingBagIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{nearbyAmenities.groceryStores}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Grocery Stores</p>
+            </div>
+            
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-full">
+                <UserGroupIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{nearbyAmenities.gyms}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Gyms</p>
+            </div>
+            
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-full">
+                <BuildingOfficeIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{nearbyAmenities.restaurants}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Restaurants</p>
+            </div>
+            
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-full">
+                <HomeIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{nearbyAmenities.hospitals}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Hospitals</p>
+            </div>
+            
+            <div className="flex flex-col items-center">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-full">
+                <HomeIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{nearbyAmenities.parks}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Parks</p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">This data represents the approximate number of facilities within a 1km radius.</p>
+        </div>
+      </div>
+      
+      {/* Location and Suitability - Two Column */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Location Assessment */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Location Assessment</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Advantages and disadvantages of this location</p>
+          </div>
+          
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="flex items-center text-green-600 dark:text-green-400 font-medium mb-3">
+                  <ArrowTrendingUpIcon className="h-5 w-5 mr-2" />
+                  Pros
+                </h3>
+                <ul className="space-y-2">
+                  {locationPros.map((pro, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mr-2 flex-shrink-0 text-sm">+</span>
+                      <span className="text-gray-700 dark:text-gray-300 text-sm">{pro}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              <div>
+                <h3 className="flex items-center text-red-600 dark:text-red-400 font-medium mb-3">
+                  <ArrowTrendingDownIcon className="h-5 w-5 mr-2" />
+                  Cons
+                </h3>
+                <ul className="space-y-2">
+                  {locationCons.map((con, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 mr-2 flex-shrink-0 text-sm">-</span>
+                      <span className="text-gray-700 dark:text-gray-300 text-sm">{con}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Suitability & Score */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Suitability & Score</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Property rating and demographic fit</p>
+          </div>
+          
+          <div className="p-6">
+            <h3 className="font-medium text-gray-800 dark:text-white mb-3">Suitable for:</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                    <UserGroupIcon className="h-4 w-4 mr-1" />
+                    Families
+                  </span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white">{suitabilityScores.families}/100</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div className="bg-green-500 dark:bg-green-400 h-2 rounded-full" style={{ width: `${suitabilityScores.families}%` }}></div>
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                    <UserGroupIcon className="h-4 w-4 mr-1" />
+                    Couples
+                  </span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white">{suitabilityScores.couples}/100</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div className="bg-green-500 dark:bg-green-400 h-2 rounded-full" style={{ width: `${suitabilityScores.couples}%` }}></div>
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                    <UserGroupIcon className="h-4 w-4 mr-1" />
+                    Singles
+                  </span>
+                  <span className="text-sm font-medium text-gray-800 dark:text-white">{suitabilityScores.singles}/100</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div className="bg-green-500 dark:bg-green-400 h-2 rounded-full" style={{ width: `${suitabilityScores.singles}%` }}></div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-gray-800 dark:text-white">AI Property Score</h3>
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">{investmentScore}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">/100</span>
+                </div>
+              </div>
+              
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2">
+                <div className="bg-green-500 dark:bg-green-400 h-3 rounded-full" style={{ width: `${investmentScore}%` }}></div>
+              </div>
+              
+              <p className="text-sm text-gray-600 dark:text-gray-300">Excellent property with outstanding features and location.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Pollution Data and Local News - Two Column */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pollution Data */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Pollution Data</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Noise and air quality information for this location</p>
+          </div>
+          
+          <div className="p-6">
+            <p className="text-gray-600 dark:text-gray-300 mb-4">Enter your Pollution API key to fetch environmental data</p>
+            
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter Pollution API key"
+                className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-slate-700 text-gray-800 dark:text-white"
+              />
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">
+                Save & Fetch
+              </button>
+            </div>
+            
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+              You can get API keys from services like AirVisual, OpenAQ or similar pollution monitoring APIs.
+            </p>
+          </div>
+        </div>
+        
+        {/* Local News */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Local News</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Recent news articles about this location</p>
+          </div>
+          
+          <div className="p-6">
+            <p className="text-gray-600 dark:text-gray-300 mb-4">Enter your News API key to fetch local news articles</p>
+            
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter News API key"
+                className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-slate-700 text-gray-800 dark:text-white"
+              />
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">
+                Save & Fetch
+              </button>
+            </div>
+            
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+              You can get a free API key from NewsAPI.org
+            </p>
+          </div>
         </div>
       </div>
     </div>

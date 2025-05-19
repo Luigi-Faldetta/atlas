@@ -327,7 +327,7 @@ export default function PropertyAnalysisPage() {
                       <div className="relative flex-grow">
                         <input
                           type="text"
-                          placeholder="Enter property URL"
+                          placeholder="Enter property URL (Funda, Idealista, Fotocasa, Habitaclia)"
                           value={url}
                           onChange={(e) => setUrl(e.target.value)}
                           className="w-full p-3 pr-12 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
