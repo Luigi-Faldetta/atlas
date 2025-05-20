@@ -398,7 +398,7 @@ const InvestmentAnalysis = ({
           onClick={() => setShowFeedbackModal(true)}
         >
           <FlagIcon className="h-5 w-5 mr-2" />
-          Report Issue
+          Feedback
         </button>
       </div>
       
