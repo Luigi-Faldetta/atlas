@@ -18,6 +18,46 @@ import {
   XMarkIcon,
   QuestionMarkCircleIcon,
   LightBulbIcon,
+  ShieldCheckIcon,
+  BoltIcon,
+  TagIcon,
+  TruckIcon,
+  GlobeAltIcon,
+  ExclamationTriangleIcon,
+  WifiIcon,
+  BuildingLibraryIcon,
+  ReceiptPercentIcon,
+  SpeakerWaveIcon,
+} from '@heroicons/react/24/outline';
+import {
+  SunIcon,
+  FireIcon,
+  CalendarDaysIcon,
+} from '@heroicons/react/24/outline';
+import { // Assuming these icons might be useful for new metrics
+  UsersIcon as CommunityIcon, // For Median Household Income, Age Distribution, Social Diversity
+  BuildingStorefrontIcon, // For Cultural Venues, Local Markets
+  MapPinIcon, // For Foot Traffic, Proximity to City
+  ChatBubbleLeftRightIcon, // For Sentiment Score
+  SparklesIcon, // For Aesthetic Score
+  HeartIcon as PetIcon, // For Pet-Friendliness
+  BuildingOffice2Icon as OfficeIcon, // For Short-term rental activity (e.g. Airbnb)
+  BanknotesIcon, // For Assessed Property Value, Utility Costs
+  ClipboardDocumentListIcon, // For Number of Listings
+  WrenchScrewdriverIcon, // For Utility Costs
+  MagnifyingGlassIcon, // For general search/discovery if needed
+  InformationCircleIcon, // For generic info display
+  MapIcon, // For Proximity to City
+  BuildingLibraryIcon as CulturalIcon, // For Cultural Venues
+  UserCircleIcon, // For Age Distribution, Social Diversity
+  CurrencyDollarIcon, // For Median Household Income
+  ArchiveBoxIcon, // For Number of Listings
+  BeakerIcon, // For Social Diversity Index
+  FaceSmileIcon, // For Sentiment Score
+  PaintBrushIcon, // For Aesthetic Score
+  HomeModernIcon, // For Pet-Friendliness, Parking Space
+  FireIcon as HeatIcon, // Re-using FireIcon as HeatIcon for Urban Heat Island, if needed specifically
+  PresentationChartLineIcon, // For Market Trends
 } from '@heroicons/react/24/outline';
 import ScoreBreakdownChart from './ScoreBreakdownChart';
 import InfoModal from './InfoModal';
@@ -81,6 +121,60 @@ type InvestmentAnalysisProps = {
   netOperatingIncome?: number;
   breakEvenPoint?: number;
   fiveYearProjectedValue?: number;
+  
+  // New metrics - optional with defaults
+  buildingType?: string;
+  energyLabel?: string;
+  lotSize?: number; // in m²
+  distanceToSupermarket?: number; // in meters
+  publicTransitAccess?: boolean;
+  noisePollutionIndex?: number; // 0-100
+  airQualityIndex?: number; // 0-100
+  crimeRate?: number; // per 1000 residents
+  vacancyRate?: number; // percentage
+  propertyTaxRate?: number; // percentage
+  communityFees?: number; // monthly
+  floodRisk?: number; // percentage risk
+
+  // Newly added metrics from METRICS.md
+  // Additional Environmental Metrics
+  distanceToGreenSpaces?: number; // in meters
+  averageSunExposure?: number; // hours per day
+  urbanHeatIslandEffect?: number; // degrees Celsius difference
+  // Additional Financial Metrics
+  dscr?: number; // Debt Service Coverage Ratio (e.g., 1.25)
+  cashOnCashReturn?: number; // percentage (e.g., 8.2)
+  grm?: number; // Gross Rent Multiplier (e.g., 14.5)
+  irr?: number; // Internal Rate of Return (e.g., 12.3)
+  equityBuildup?: number; // currency (e.g., 7500)
+  // Market & Trend Metrics
+  daysOnMarket?: number; // days (e.g., 45)
+  priceHistorySummary?: string; // e.g., "Property previously sold for €280,000 in 2018."
+  neighborhoodPriceTrendSummary?: string; // e.g., "Area prices +5.5% year-over-year."
+  rentalDemandForecast?: 'High' | 'Medium' | 'Low' | string; // e.g., "High"
+
+  // --- Metrics from "Additional Proposed Metrics" ---
+  // Socio-Economic & Demographic Metrics
+  medianHouseholdIncome?: number; // currency
+  ageDistributionSummary?: string; // e.g., "Predominantly 25-45 year olds"
+  socialDiversityIndex?: number; // 0-100 score
+
+  // Local Amenities & Lifestyle Metrics
+  culturalVenuesNearby?: number; // count
+  footTrafficLevel?: 'High' | 'Medium' | 'Low' | string;
+  eventsPerMonthArea?: number; // count
+  sentimentScoreLocalReviews?: number; // 0-100 or 1-5 stars
+  publicArtAestheticScore?: number; // 0-100 score
+  petFriendlinessScore?: number; // 0-100 score
+  localMarketsNearby?: number; // count
+  parkingSpace?: 'Available' | 'Limited' | 'None' | string; // More descriptive
+  proximityToLargeCity?: { name: string; distanceKm: number; travelTimeMin: number };
+
+  // Market Activity & Property Specifics (New)
+  shortTermRentalActivity?: 'High' | 'Medium' | 'Low' | string;
+  assessedPropertyValue?: number; // currency
+  listingsNearby?: number; // count
+  estimatedUtilityCosts?: number; // currency per month
 };
 
 const getScoreColor = (score: number) => {
@@ -203,7 +297,58 @@ const InvestmentAnalysis = ({
   annualExpenses = 5760,
   netOperatingIncome = 13440, // Default calculated from above defaults
   breakEvenPoint = 23.8,
-  fiveYearProjectedValue = 380050
+  fiveYearProjectedValue = 380050,
+  
+  // New metrics with default values
+  buildingType = "Apartment",
+  energyLabel = "B",
+  lotSize = 0, // Not applicable for apartments typically
+  distanceToSupermarket = 350, // meters
+  publicTransitAccess = true,
+  noisePollutionIndex = 45, // 0-100 scale (lower is better)
+  airQualityIndex = 65, // 0-100 scale (higher is better)
+  crimeRate = 12.5, // per 1000 residents
+  vacancyRate = 3.2, // percentage
+  propertyTaxRate = 0.7, // percentage
+  communityFees = 120, // monthly in euros
+  floodRisk = 4, // percentage risk
+
+  // Defaults for newly added metrics
+  distanceToGreenSpaces = 450, // meters
+  averageSunExposure = 7.1, // hours
+  urbanHeatIslandEffect = 1.8, // °C
+  dscr = 1.3, // ratio
+  cashOnCashReturn = 7.5, // %
+  grm = 15.2, // multiplier
+  irr = 11.5, // %
+  equityBuildup = 6800, // €
+  daysOnMarket = 52, // days
+  priceHistorySummary = "Last sold for €310,000 (2019). Listed at €295,000 (2017).",
+  neighborhoodPriceTrendSummary = "Area prices +5.5% year-over-year.",
+  rentalDemandForecast = "High",
+
+  // Defaults for "Additional Proposed Metrics"
+  // Socio-Economic & Demographic Metrics
+  medianHouseholdIncome = 55000,
+  ageDistributionSummary = "Majority: 30-45 (35%), 20-29 (25%), 46-60 (20%)",
+  socialDiversityIndex = 72, // 0-100
+
+  // Local Amenities & Lifestyle Metrics
+  culturalVenuesNearby = 4, // e.g., theatres, museums
+  footTrafficLevel = "Medium",
+  eventsPerMonthArea = 12,
+  sentimentScoreLocalReviews = 85, // e.g. out of 100, or 4.3 if 1-5 stars
+  publicArtAestheticScore = 78, // 0-100
+  petFriendlinessScore = 90, // 0-100, based on parks, services
+  localMarketsNearby = 2, // e.g., farmer's markets
+  parkingSpace = "Limited street parking",
+  proximityToLargeCity = { name: "Amsterdam", distanceKm: 60, travelTimeMin: 45 },
+
+  // Market Activity & Property Specifics (New)
+  shortTermRentalActivity = "Medium",
+  assessedPropertyValue = 330000,
+  listingsNearby = 25,
+  estimatedUtilityCosts = 180, // monthly
 }: InvestmentAnalysisProps) => {
   console.log('%%% RUNNING InvestmentAnalysis Component - VERSION CHECK %%%');
 
@@ -533,7 +678,7 @@ const InvestmentAnalysis = ({
             
             <div className="p-6">
               <div className="mb-6 flex items-center justify-center">
-                <div className="w-32 h-32 relative">
+                <div className="w-32 h-32 relative" title={`Overall AI Investment Score: ${investmentScore}/100. Click the question mark for a detailed breakdown.`}>
                   <CircularProgressbar
                     value={investmentScore}
                     text={`${investmentScore}`}
@@ -585,8 +730,9 @@ const InvestmentAnalysis = ({
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div 
-                        className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full" 
+                        className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full"
                         style={{ width: `${(scoreBreakdown.rentalYield / 40) * 100}%` }}
+                        title={`Rental Yield contributes ${scoreBreakdown.rentalYield} points (out of 40 max) to the AI score. Based on ${yearlyYield || 4.2}%.`}
                       ></div>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -605,8 +751,9 @@ const InvestmentAnalysis = ({
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div 
-                        className="bg-green-500 dark:bg-green-400 h-2 rounded-full" 
+                        className="bg-green-500 dark:bg-green-400 h-2 rounded-full"
                         style={{ width: `${(scoreBreakdown.capRate / 30) * 100}%` }}
+                        title={`Cap Rate contributes ${scoreBreakdown.capRate} points (out of 30 max) to the AI score.`}
                       ></div>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -625,8 +772,9 @@ const InvestmentAnalysis = ({
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div 
-                        className="bg-purple-500 dark:bg-purple-400 h-2 rounded-full" 
+                        className="bg-purple-500 dark:bg-purple-400 h-2 rounded-full"
                         style={{ width: `${(scoreBreakdown.growthScore / 15) * 100}%` }}
+                        title={`Area Growth contributes ${scoreBreakdown.growthScore} points (out of 15 max) to the AI score. Based on ${yearlyAppreciationPercentage || 3.5}% projected appreciation.`}
                       ></div>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -645,8 +793,9 @@ const InvestmentAnalysis = ({
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div 
-                        className="bg-amber-500 dark:bg-amber-400 h-2 rounded-full" 
+                        className="bg-amber-500 dark:bg-amber-400 h-2 rounded-full"
                         style={{ width: `${(scoreBreakdown.cashFlow / 15) * 100}%` }}
+                        title={`Cash Flow contributes ${scoreBreakdown.cashFlow} points (out of 15 max) to the AI score.`}
                       ></div>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -787,13 +936,13 @@ const InvestmentAnalysis = ({
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
                 <p className="text-xs text-blue-700 dark:text-blue-300 font-medium mb-1">Rental Yield</p>
-                <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">
+                <p className="text-2xl font-bold text-blue-800 dark:text-blue-200" title={`Projected annual return from rental income: ${formatPercentage(yearlyYield || 4.2)}`}>
                   {formatPercentage(yearlyYield || 4.2)}
                 </p>
               </div>
               <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
                 <p className="text-xs text-green-700 dark:text-green-300 font-medium mb-1">Annual ROI</p>
-                <p className="text-2xl font-bold text-green-800 dark:text-green-200">
+                <p className="text-2xl font-bold text-green-800 dark:text-green-200" title={`Projected 5-year average annual Return On Investment: ${formatPercentage(roi5Years || 7.95)}`}>
                   {formatPercentage(roi5Years || 7.95)}
                 </p>
               </div>
@@ -878,6 +1027,43 @@ const InvestmentAnalysis = ({
                 <span className="text-gray-600 dark:text-gray-400">Break-even Point</span>
                 <span className="font-medium text-gray-800 dark:text-white">{breakEvenPoint} years</span>
               </div>
+              {/* Additional Financial Metrics Start Here */}
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400 flex items-center">
+                  <ScaleIcon className="h-4 w-4 mr-2" />
+                  Debt Service Coverage Ratio (DSCR)
+                </span>
+                <span className="font-medium text-gray-800 dark:text-white">{dscr?.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400 flex items-center">
+                  <CurrencyEuroIcon className="h-4 w-4 mr-2" />
+                  Cash on Cash Return
+                </span>
+                <span className="font-medium text-gray-800 dark:text-white">{formatPercentage(cashOnCashReturn)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400 flex items-center">
+                  <ChartBarIcon className="h-4 w-4 mr-2" />
+                  Gross Rent Multiplier (GRM)
+                </span>
+                <span className="font-medium text-gray-800 dark:text-white">{grm?.toFixed(1)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400 flex items-center">
+                  <ArrowTrendingUpIcon className="h-4 w-4 mr-2" />
+                  Internal Rate of Return (IRR)
+                </span>
+                <span className="font-medium text-gray-800 dark:text-white">{formatPercentage(irr)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400 flex items-center">
+                  <HomeIcon className="h-4 w-4 mr-2" />
+                  Equity Build-up (Year 1)
+                </span>
+                <span className="font-medium text-gray-800 dark:text-white">{formatCurrency(equityBuildup)}</span>
+              </div>
+              {/* Additional Financial Metrics End Here */}
             </div>
           </div>
         </div>
@@ -1008,7 +1194,11 @@ const InvestmentAnalysis = ({
                   <span className="text-sm font-medium text-gray-800 dark:text-white">{suitabilityScores.families}/100</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div className="bg-green-500 dark:bg-green-400 h-2 rounded-full" style={{ width: `${suitabilityScores.families}%` }}></div>
+                  <div 
+                    className="bg-green-500 dark:bg-green-400 h-2 rounded-full"
+                    style={{ width: `${suitabilityScores.families}%` }}
+                    title={`Suitability for families: ${suitabilityScores.families}/100`}
+                  ></div>
                 </div>
               </div>
               
@@ -1021,7 +1211,11 @@ const InvestmentAnalysis = ({
                   <span className="text-sm font-medium text-gray-800 dark:text-white">{suitabilityScores.couples}/100</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div className="bg-green-500 dark:bg-green-400 h-2 rounded-full" style={{ width: `${suitabilityScores.couples}%` }}></div>
+                  <div 
+                    className="bg-green-500 dark:bg-green-400 h-2 rounded-full"
+                    style={{ width: `${suitabilityScores.couples}%` }}
+                    title={`Suitability for couples: ${suitabilityScores.couples}/100`}
+                  ></div>
                 </div>
               </div>
               
@@ -1034,7 +1228,11 @@ const InvestmentAnalysis = ({
                   <span className="text-sm font-medium text-gray-800 dark:text-white">{suitabilityScores.singles}/100</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div className="bg-green-500 dark:bg-green-400 h-2 rounded-full" style={{ width: `${suitabilityScores.singles}%` }}></div>
+                  <div 
+                    className="bg-green-500 dark:bg-green-400 h-2 rounded-full"
+                    style={{ width: `${suitabilityScores.singles}%` }}
+                    title={`Suitability for singles: ${suitabilityScores.singles}/100`}
+                  ></div>
                 </div>
               </div>
             </div>
@@ -1123,6 +1321,498 @@ const InvestmentAnalysis = ({
           </div>
         </div>
       </div>
+      
+      {/* New section: Additional Property Metrics - Two Column */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Property Specifications */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Property Specifications</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Detailed information about property characteristics</p>
+          </div>
+          
+          <div className="p-6 space-y-3">
+            <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+              <span className="text-gray-600 dark:text-gray-400 flex items-center">
+                <HomeIcon className="h-4 w-4 mr-2" />
+                Building Type
+              </span>
+              <span className="font-medium text-gray-800 dark:text-white">{buildingType}</span>
+            </div>
+            
+            <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+              <span className="text-gray-600 dark:text-gray-400 flex items-center">
+                <BoltIcon className="h-4 w-4 mr-2" />
+                Energy Label
+              </span>
+              <span className="font-medium">
+                <span className={`px-3 py-1 rounded-full ${
+                  energyLabel === 'A' || energyLabel === 'A+' || energyLabel === 'A++' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                  energyLabel === 'B' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                  energyLabel === 'C' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                  energyLabel === 'D' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                  energyLabel === 'E' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
+                  energyLabel === 'F' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                  'bg-red-200 text-red-900 dark:bg-red-900/50 dark:text-red-500'
+                }`}>
+                  {energyLabel}
+                </span>
+              </span>
+            </div>
+            
+            {lotSize > 0 && (
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400 flex items-center">
+                  <GlobeAltIcon className="h-4 w-4 mr-2" />
+                  Lot Size
+                </span>
+                <span className="font-medium text-gray-800 dark:text-white">{lotSize} m²</span>
+              </div>
+            )}
+            
+            <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+              <span className="text-gray-600 dark:text-gray-400 flex items-center">
+                <ShoppingBagIcon className="h-4 w-4 mr-2" />
+                Distance to Supermarket
+              </span>
+              <span className="font-medium text-gray-800 dark:text-white">{distanceToSupermarket} meters</span>
+            </div>
+            
+            <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+              <span className="text-gray-600 dark:text-gray-400 flex items-center">
+                <TruckIcon className="h-4 w-4 mr-2" />
+                Public Transit Access
+              </span>
+              <span className="font-medium text-gray-800 dark:text-white">
+                {publicTransitAccess ? (
+                  <span className="text-green-600 dark:text-green-400 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Available within 300m
+                  </span>
+                ) : (
+                  <span className="text-red-600 dark:text-red-400">Not available nearby</span>
+                )}
+              </span>
+            </div>
+            
+            <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+              <span className="text-gray-600 dark:text-gray-400 flex items-center">
+                <ReceiptPercentIcon className="h-4 w-4 mr-2" />
+                Property Tax Rate
+              </span>
+              <span className="font-medium text-gray-800 dark:text-white">{propertyTaxRate}%</span>
+            </div>
+            
+            <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+              <span className="text-gray-600 dark:text-gray-400 flex items-center">
+                <BuildingLibraryIcon className="h-4 w-4 mr-2" />
+                Community Fees
+              </span>
+              <span className="font-medium text-gray-800 dark:text-white">{formatCurrency(communityFees)} / month</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Environmental & Safety Metrics */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Environmental & Safety Metrics</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Environmental factors and safety considerations</p>
+          </div>
+          
+          <div className="p-6">
+            {/* Noise Pollution */}
+            <div className="mb-6">
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                  <SpeakerWaveIcon className="h-4 w-4 mr-1" />
+                  Noise Pollution Index
+                </span>
+                <span className="text-sm font-medium text-gray-800 dark:text-white">
+                  {noisePollutionIndex}/100
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className={`h-2 rounded-full ${
+                  noisePollutionIndex <= 30 ? 'bg-green-500 dark:bg-green-400' :
+                  noisePollutionIndex <= 60 ? 'bg-yellow-500 dark:bg-yellow-400' :
+                  'bg-red-500 dark:bg-red-400'
+                }`} style={{ width: `${noisePollutionIndex}%` }} title={`Noise Pollution Index: ${noisePollutionIndex}/100. Lower is better.`}></div>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Lower is better - {
+                  noisePollutionIndex <= 30 ? 'Very quiet area' :
+                  noisePollutionIndex <= 50 ? 'Moderately quiet' :
+                  noisePollutionIndex <= 70 ? 'Average noise levels' :
+                  'High noise levels'
+                }
+              </p>
+            </div>
+            
+            {/* Air Quality Index */}
+            <div className="mb-6">
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                  <WifiIcon className="h-4 w-4 mr-1" />
+                  Air Quality Index
+                </span>
+                <span className="text-sm font-medium text-gray-800 dark:text-white">
+                  {airQualityIndex}/100
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className={`h-2 rounded-full ${
+                  airQualityIndex >= 70 ? 'bg-green-500 dark:bg-green-400' :
+                  airQualityIndex >= 40 ? 'bg-yellow-500 dark:bg-yellow-400' :
+                  'bg-red-500 dark:bg-red-400'
+                }`} style={{ width: `${airQualityIndex}%` }} title={`Air Quality Index: ${airQualityIndex}/100. Higher is better.`}></div>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Higher is better - {
+                  airQualityIndex >= 80 ? 'Excellent air quality' :
+                  airQualityIndex >= 60 ? 'Good air quality' :
+                  airQualityIndex >= 40 ? 'Moderate air quality' :
+                  'Poor air quality'
+                }
+              </p>
+            </div>
+            
+            {/* Crime Rate */}
+            <div className="mb-6">
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                  <ShieldCheckIcon className="h-4 w-4 mr-1" />
+                  Crime Rate
+                </span>
+                <span className="text-sm font-medium text-gray-800 dark:text-white">
+                  {crimeRate} per 1000 residents
+                </span>
+              </div>
+              <div className="relative pt-6">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>Low</span>
+                  <span>Area Average: 15</span>
+                  <span>High</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
+                  <div className={`absolute top-0 h-5 w-0.5 bg-black dark:bg-white`} 
+                       style={{ left: `${Math.min((crimeRate / 30) * 100, 100)}%` }}>
+                  </div>
+                  <div className="absolute -top-1 text-xs font-bold" 
+                       style={{ left: `${Math.min((crimeRate / 30) * 100, 95)}%` }}>
+                    ▼
+                  </div>
+                  <div className="flex">
+                    <div className="bg-green-500 dark:bg-green-400 h-2 w-1/3 rounded-l-full"></div>
+                    <div className="bg-yellow-500 dark:bg-yellow-400 h-2 w-1/3"></div>
+                    <div className="bg-red-500 dark:bg-red-400 h-2 w-1/3 rounded-r-full"></div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                The area has a {
+                  crimeRate <= 10 ? 'low' :
+                  crimeRate <= 20 ? 'moderate' :
+                  'high'
+                } crime rate compared to the city average.
+              </p>
+            </div>
+            
+            {/* Flood Risk */}
+            <div className="mb-6">
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                  <ExclamationTriangleIcon className="h-4 w-4 mr-1" />
+                  Flood Risk
+                </span>
+                <span className="text-sm font-medium text-gray-800 dark:text-white">
+                  {floodRisk}% risk
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className={`h-2 rounded-full ${
+                  floodRisk <= 5 ? 'bg-green-500 dark:bg-green-400' :
+                  floodRisk <= 15 ? 'bg-yellow-500 dark:bg-yellow-400' :
+                  'bg-red-500 dark:bg-red-400'
+                }`} style={{ width: `${Math.min(floodRisk * 5, 100)}%` }} title={`Flood Risk: ${floodRisk}%. Lower is better.`}></div>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {floodRisk <= 5 ? 'Minimal flood risk' :
+                 floodRisk <= 15 ? 'Moderate flood risk - insurance recommended' :
+                 'High flood risk area - special insurance required'}
+              </p>
+            </div>
+            
+            {/* Vacancy Rate */}
+            <div className="mb-6">
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                  <TagIcon className="h-4 w-4 mr-1" />
+                  Area Vacancy Rate
+                </span>
+                <span className="text-sm font-medium text-gray-800 dark:text-white">
+                  {vacancyRate}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className={`h-2 rounded-full ${
+                  vacancyRate <= 5 ? 'bg-green-500 dark:bg-green-400' :
+                  vacancyRate <= 10 ? 'bg-yellow-500 dark:bg-yellow-400' :
+                  'bg-red-500 dark:bg-red-400'
+                }`} style={{ width: `${Math.min(vacancyRate * 5, 100)}%` }} title={`Area Vacancy Rate: ${vacancyRate}%. Lower is generally better for landlords.`}></div>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {vacancyRate <= 3 ? 'Very low vacancy rate - high demand area' :
+                 vacancyRate <= 7 ? 'Average vacancy rate for the region' :
+                 'Higher than average vacancy rate'}
+              </p>
+            </div>
+            
+            {/* Additional Environmental Metrics Start Here */}
+            <div className="mb-6">
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                  <GlobeAltIcon className="h-4 w-4 mr-1" />
+                  Distance to Green Spaces
+                </span>
+                <span className="text-sm font-medium text-gray-800 dark:text-white">
+                  {distanceToGreenSpaces} m
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Proximity to parks and natural areas.
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                  <SunIcon className="h-4 w-4 mr-1" />
+                  Average Sun Exposure
+                </span>
+                <span className="text-sm font-medium text-gray-800 dark:text-white">
+                  {averageSunExposure} hrs/day
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Estimated daily sunlight.
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                  <FireIcon className="h-4 w-4 mr-1" /> {/* Or ExclamationTriangleIcon if FireIcon is not suitable */}
+                  Urban Heat Island Effect
+                </span>
+                <span className="text-sm font-medium text-gray-800 dark:text-white">
+                  +{urbanHeatIslandEffect} °C
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Temperature difference compared to rural surroundings.
+              </p>
+            </div>
+            {/* Additional Environmental Metrics End Here */}
+          </div>
+        </div>
+      </div>
+
+      {/* New Section: Market & Trend Metrics */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Market & Trend Metrics</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Insights into market conditions and trends for this area</p>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <CalendarDaysIcon className="h-4 w-4 mr-2" />
+              Days on Market (Average)
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{daysOnMarket} days</span>
+          </div>
+          
+          <div className="py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center mb-1">
+              <DocumentTextIcon className="h-4 w-4 mr-2" />
+              Price History Summary
+            </span>
+            <p className="text-sm text-gray-700 dark:text-gray-300">{priceHistorySummary}</p>
+          </div>
+          
+          <div className="py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center mb-1">
+              <ChartBarIcon className="h-4 w-4 mr-2" />
+              Neighborhood Price Trends
+            </span>
+            <p className="text-sm text-gray-700 dark:text-gray-300">{neighborhoodPriceTrendSummary}</p>
+          </div>
+          
+          <div>
+            <span className="text-gray-600 dark:text-gray-400 flex items-center mb-1">
+              <UserGroupIcon className="h-4 w-4 mr-2" /> {/* Using UserGroupIcon as UsersIcon might not be standard */}
+              Rental Demand Forecast
+            </span>
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${ 
+              rentalDemandForecast === 'High' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+              rentalDemandForecast === 'Medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+              rentalDemandForecast === 'Low' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+              'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' 
+            }`}>
+              {rentalDemandForecast}
+            </span>
+          </div>
+        </div>
+      </div>
+      {/* End New Section: Market & Trend Metrics */}
+
+      {/* --- New Section: Socio-Economic & Demographic Metrics --- */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Socio-Economic & Demographic Metrics</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Understanding the local community and economic environment</p>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <CurrencyDollarIcon className="h-4 w-4 mr-2" />
+              Median Household Income
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{formatCurrency(medianHouseholdIncome, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+          </div>
+          <div className="py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center mb-1">
+              <UserCircleIcon className="h-4 w-4 mr-2" />
+              Age Distribution
+            </span>
+            <p className="text-sm text-gray-700 dark:text-gray-300">{ageDistributionSummary}</p>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <BeakerIcon className="h-4 w-4 mr-2" />
+              Social Diversity Index
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{socialDiversityIndex}/100</span>
+          </div>
+        </div>
+      </div>
+
+      {/* --- New Section: Local Amenities & Lifestyle Metrics --- */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Local Amenities & Lifestyle Metrics</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Quality of life and local attractions</p>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <CulturalIcon className="h-4 w-4 mr-2" />
+              Cultural Venues Nearby
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{culturalVenuesNearby}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <MapPinIcon className="h-4 w-4 mr-2" />
+              Foot Traffic Level
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{footTrafficLevel}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <CalendarDaysIcon className="h-4 w-4 mr-2" />
+              Events per Month in Area
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{eventsPerMonthArea}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <FaceSmileIcon className="h-4 w-4 mr-2" />
+              Sentiment Score (Local Reviews)
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{sentimentScoreLocalReviews}/100</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <PaintBrushIcon className="h-4 w-4 mr-2" />
+              Public Art & Aesthetic Score
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{publicArtAestheticScore}/100</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <PetIcon className="h-4 w-4 mr-2" />
+              Pet-Friendliness Score
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{petFriendlinessScore}/100</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <BuildingStorefrontIcon className="h-4 w-4 mr-2" />
+              Local Markets Nearby
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{localMarketsNearby}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <HomeModernIcon className="h-4 w-4 mr-2" />
+              Parking Space
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{parkingSpace}</span>
+          </div>
+          <div className="py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center mb-1">
+              <MapIcon className="h-4 w-4 mr-2" />
+              Proximity to {proximityToLargeCity?.name || "Major City"}
+            </span>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              {proximityToLargeCity?.distanceKm} km, approx. {proximityToLargeCity?.travelTimeMin} mins drive
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* --- New Section: Market Activity & Property Specifics (New) --- */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Market Activity & Property Specifics</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Deeper dive into market dynamics and property details</p>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <OfficeIcon className="h-4 w-4 mr-2" />
+              Short-term Rental Activity
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{shortTermRentalActivity}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <BanknotesIcon className="h-4 w-4 mr-2" />
+              Assessed Property Value
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{formatCurrency(assessedPropertyValue, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <ArchiveBoxIcon className="h-4 w-4 mr-2" />
+              Number of Listings Nearby
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{listingsNearby}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 flex items-center">
+              <WrenchScrewdriverIcon className="h-4 w-4 mr-2" />
+              Estimated Utility Costs
+            </span>
+            <span className="font-medium text-gray-800 dark:text-white">{formatCurrency(estimatedUtilityCosts, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} / month</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 };
