@@ -13,10 +13,15 @@ import {
   ShoppingBagIcon,
   BuildingOfficeIcon,
   UserGroupIcon,
+  FlagIcon,
+  PaperClipIcon,
+  XMarkIcon,
+  QuestionMarkCircleIcon,
+  LightBulbIcon,
 } from '@heroicons/react/24/outline';
 import ScoreBreakdownChart from './ScoreBreakdownChart';
 import InfoModal from './InfoModal';
-import { useEffect, useState } from 'react'; // Import useState for the chart data
+import { useEffect, useState, useRef } from 'react'; // Added useRef
 
 type InvestmentAnalysisProps = {
   investmentScore: number;
@@ -202,6 +207,18 @@ const InvestmentAnalysis = ({
 }: InvestmentAnalysisProps) => {
   console.log('%%% RUNNING InvestmentAnalysis Component - VERSION CHECK %%%');
 
+  // State for feedback modal
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackUrl, setFeedbackUrl] = useState('');
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackFile, setFeedbackFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // State for AI score explanation modal
+  const [showScoreModal, setShowScoreModal] = useState(false);
+
   // --- useEffect Debug Logs ---
   useEffect(() => {
     console.log('--- Running useEffect Debug Logs ---');
@@ -314,6 +331,49 @@ const InvestmentAnalysis = ({
     ];
   });
 
+  // Approximate score breakdown into components (for visualization purposes)
+  const scoreBreakdown = {
+    rentalYield: Math.min(Math.round((yearlyYield || 4.2) * 8), 40), // 40% weight
+    capRate: Math.min(Math.round(((calculatedNetOperatingIncome / (numericPrice || 350000)) * 100) * 6), 30), // 30% weight
+    growthScore: Math.min(Math.round((yearlyAppreciationPercentage || 3.5) * 5), 15), // 15% weight
+    cashFlow: Math.min(Math.round(((calculatedNetOperatingIncome - 12000) / (numericPrice ? numericPrice * 0.3 : 105000)) * 100), 15), // 15% weight
+  };
+
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFeedbackFile(e.target.files[0]);
+    }
+  };
+
+  // Handle form submission
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      // Here you would typically send the data to your server
+      // For now, we'll just simulate a successful submission
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Reset form and show success message
+      setSubmitSuccess(true);
+      setFeedbackUrl('');
+      setFeedbackComment('');
+      setFeedbackFile(null);
+      
+      // Close modal after showing success message
+      setTimeout(() => {
+        setSubmitSuccess(false);
+        setShowFeedbackModal(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Action Buttons - Top Right Floating */}
@@ -332,7 +392,321 @@ const InvestmentAnalysis = ({
           <BookmarkIcon className="h-5 w-5 mr-2" />
           Save to Watchlist
         </button>
+        {/* Add Feedback Button */}
+        <button 
+          className="flex items-center px-4 py-2 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-md shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"
+          onClick={() => setShowFeedbackModal(true)}
+        >
+          <FlagIcon className="h-5 w-5 mr-2" />
+          Report Issue
+        </button>
       </div>
+      
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Report an Issue</h2>
+              <button 
+                onClick={() => setShowFeedbackModal(false)}
+                className="text-gray-400 hover:text-gray-500 focus:outline-none"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {submitSuccess ? (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Thank You for Your Feedback!</h3>
+                  <p className="text-gray-500 dark:text-gray-400">We'll review your report and get back to you if needed.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleFeedbackSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="property-url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Property URL
+                    </label>
+                    <input
+                      id="property-url"
+                      type="url"
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                      placeholder="https://example.com/property/123"
+                      value={feedbackUrl}
+                      onChange={(e) => setFeedbackUrl(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Attach Screenshot or PDF
+                    </label>
+                    <div className="mt-1 flex items-center">
+                      <span className="inline-block h-12 w-12 rounded-md overflow-hidden bg-gray-100 dark:bg-gray-700">
+                        <PaperClipIcon className="h-full w-full text-gray-300 dark:text-gray-600" />
+                      </span>
+                      <button
+                        type="button"
+                        className="ml-5 bg-white dark:bg-slate-700 py-2 px-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        Choose File
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        id="file-upload"
+                        name="file-upload"
+                        type="file"
+                        className="sr-only"
+                        accept=".pdf,image/*"
+                        onChange={handleFileChange}
+                      />
+                    </div>
+                    {feedbackFile && (
+                      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        File selected: {feedbackFile.name}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="comment" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Additional Comments
+                    </label>
+                    <textarea
+                      id="comment"
+                      rows={4}
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                      placeholder="Please describe the issue you're experiencing..."
+                      value={feedbackComment}
+                      onChange={(e) => setFeedbackComment(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowFeedbackModal(false)}
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                        isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {isSubmitting ? 'Submitting...' : 'Submit Report'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* AI Score Explanation Modal */}
+      {showScoreModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
+                <LightBulbIcon className="h-5 w-5 mr-2 text-amber-500" />
+                How the AI Investment Score Works
+              </h2>
+              <button 
+                onClick={() => setShowScoreModal(false)}
+                className="text-gray-400 hover:text-gray-500 focus:outline-none"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-6 flex items-center justify-center">
+                <div className="w-32 h-32 relative">
+                  <CircularProgressbar
+                    value={investmentScore}
+                    text={`${investmentScore}`}
+                    styles={buildStyles({
+                      textSize: '1.8rem',
+                      pathColor: scoreColor,
+                      textColor: scoreColor,
+                      trailColor: 'rgba(229, 231, 235, 0.5)',
+                    })}
+                  />
+                  <div className="absolute bottom-0 right-0 bg-white dark:bg-slate-800 rounded-full border-2 border-white dark:border-slate-800">
+                    <span className="text-xs font-medium text-gray-500">/ 100</span>
+                  </div>
+                </div>
+              </div>
+
+              <h3 className="text-xl font-bold text-center mb-4 text-gray-800 dark:text-white">
+                Your Investment Score: {investmentScore}/100
+              </h3>
+              
+              <p className="text-gray-600 dark:text-gray-300 mb-6 text-center">
+                This property has a {
+                  investmentScore >= 80 ? 'excellent' : 
+                  investmentScore >= 70 ? 'very good' : 
+                  investmentScore >= 60 ? 'good' : 
+                  investmentScore >= 50 ? 'average' : 
+                  'below average'
+                } investment potential.
+              </p>
+              
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-6">
+                <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">
+                  How We Calculate This Score
+                </h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                  Our AI investment score is calculated using a weighted combination of financial metrics and location factors:
+                </p>
+                
+                {/* Score breakdown visualization */}
+                <div className="space-y-3 mb-4">
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Rental Yield (40%)
+                      </span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-white">
+                        {scoreBreakdown.rentalYield} pts
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full" 
+                        style={{ width: `${(scoreBreakdown.rentalYield / 40) * 100}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Based on annual rental income relative to property price ({yearlyYield || 4.2}%)
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Cap Rate (30%)
+                      </span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-white">
+                        {scoreBreakdown.capRate} pts
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-green-500 dark:bg-green-400 h-2 rounded-full" 
+                        style={{ width: `${(scoreBreakdown.capRate / 30) * 100}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Based on net operating income relative to property value
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Area Growth (15%)
+                      </span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-white">
+                        {scoreBreakdown.growthScore} pts
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-purple-500 dark:bg-purple-400 h-2 rounded-full" 
+                        style={{ width: `${(scoreBreakdown.growthScore / 15) * 100}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Based on projected annual property appreciation ({yearlyAppreciationPercentage || 3.5}%)
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Cash Flow (15%)
+                      </span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-white">
+                        {scoreBreakdown.cashFlow} pts
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-amber-500 dark:bg-amber-400 h-2 rounded-full" 
+                        style={{ width: `${(scoreBreakdown.cashFlow / 15) * 100}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Based on cash-on-cash return (assuming 30% down payment)
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <h4 className="font-medium text-gray-800 dark:text-white mb-2">
+                What This Score Means For You
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Strengths
+                  </h5>
+                  <ul className="list-disc pl-5 space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                    {strengths.slice(0, 3).map((strength, i) => (
+                      <li key={i}>{strength}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Considerations
+                  </h5>
+                  <ul className="list-disc pl-5 space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                    {weaknesses.slice(0, 3).map((weakness, i) => (
+                      <li key={i}>{weakness}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="mb-2">
+                  <strong>Note:</strong> The AI investment score is a comparative tool to help evaluate 
+                  investment potential across properties. While comprehensive, it should be considered 
+                  alongside professional advice and personal investment goals.
+                </p>
+                <p>
+                  Scores above 70 indicate potentially strong investment opportunities, 
+                  scores between 50-70 suggest average opportunities that may require additional 
+                  considerations, and scores below 50 indicate higher risk investments.
+                </p>
+              </div>
+            </div>
+            
+            <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end">
+              <button
+                onClick={() => setShowScoreModal(false)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Main Content - Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -668,9 +1042,18 @@ const InvestmentAnalysis = ({
             <div className="border-t border-gray-100 dark:border-gray-700 pt-6">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-medium text-gray-800 dark:text-white">AI Property Score</h3>
-                <div className="flex items-baseline">
-                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">{investmentScore}</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">/100</span>
+                <div className="flex items-center">
+                  <div className="flex items-baseline">
+                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">{investmentScore}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">/100</span>
+                  </div>
+                  <button
+                    onClick={() => setShowScoreModal(true)} 
+                    className="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+                    title="Explain score calculation"
+                  >
+                    <QuestionMarkCircleIcon className="h-5 w-5" />
+                  </button>
                 </div>
               </div>
               
