@@ -62,6 +62,8 @@ import { // Assuming these icons might be useful for new metrics
 import ScoreBreakdownChart from './ScoreBreakdownChart';
 import InfoModal from './InfoModal';
 import { useEffect, useState, useRef } from 'react'; // Added useRef
+import mcpApiClient from '../lib/api/mcpClient';
+import { useAirQualityData, useLocalNews } from '../lib/api/useMcpData';
 
 type InvestmentAnalysisProps = {
   investmentScore: number;
@@ -1270,27 +1272,132 @@ const InvestmentAnalysis = ({
         {/* Pollution Data */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700 p-4">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Pollution Data</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Noise and air quality information for this location</p>
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Air Quality Data</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Air quality information for this location</p>
           </div>
           
           <div className="p-6">
-            <p className="text-gray-600 dark:text-gray-300 mb-4">Enter your Pollution API key to fetch environmental data</p>
-            
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter Pollution API key"
-                className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-slate-700 text-gray-800 dark:text-white"
-              />
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">
-                Save & Fetch
-              </button>
-            </div>
-            
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-              You can get API keys from services like AirVisual, OpenAQ or similar pollution monitoring APIs.
-            </p>
+            {/* Use the propertyIdentifier derived from address */}
+            {(() => {
+              // Generate a property identifier from the address for API calls
+              const propertyIdentifier = encodeURIComponent(address);
+              const { data: airQualityData, isLoading, error, refetch } = useAirQualityData(propertyIdentifier);
+              
+              if (isLoading) {
+                return (
+                  <div className="flex items-center justify-center py-6">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                    <span className="ml-3 text-gray-600 dark:text-gray-300">Loading air quality data...</span>
+                  </div>
+                );
+              }
+              
+              if (error) {
+                return (
+                  <div className="py-4">
+                    <div className="flex items-center text-amber-600 dark:text-amber-400 mb-3">
+                      <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
+                      <span>Unable to load air quality data</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                      There was an error loading the air quality information for this location.
+                    </p>
+                    <button 
+                      onClick={() => refetch()}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                );
+              }
+              
+              if (!airQualityData) {
+                return (
+                  <div className="text-center py-4">
+                    <div className="mb-4">
+                      <WifiIcon className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500" />
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">
+                      No air quality data is available for this location yet.
+                    </p>
+                    <button 
+                      onClick={() => refetch()}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
+                    >
+                      Refresh Data
+                    </button>
+                  </div>
+                );
+              }
+              
+              // If we have data, show it
+              return (
+                <div>
+                  {/* AQI Indicator */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Air Quality Index</p>
+                      <p className="text-3xl font-bold text-gray-800 dark:text-white">{airQualityData.aqi}</p>
+                      <p className={`text-sm font-medium ${
+                        airQualityData.aqi <= 50 ? 'text-green-600 dark:text-green-400' :
+                        airQualityData.aqi <= 100 ? 'text-yellow-600 dark:text-yellow-400' :
+                        airQualityData.aqi <= 150 ? 'text-amber-600 dark:text-amber-400' :
+                        'text-red-600 dark:text-red-400'
+                      }`}>
+                        {airQualityData.category}
+                      </p>
+                    </div>
+                    <div className="w-24 h-24 relative">
+                      <CircularProgressbar
+                        value={Math.min(airQualityData.aqi, 300)}
+                        maxValue={300}
+                        text={`${airQualityData.aqi}`}
+                        styles={buildStyles({
+                          textSize: '1.8rem',
+                          pathColor: airQualityData.aqi <= 50 ? '#10B981' : 
+                                    airQualityData.aqi <= 100 ? '#F59E0B' : 
+                                    airQualityData.aqi <= 150 ? '#F97316' : 
+                                    '#EF4444',
+                          textColor: 'gray',
+                          trailColor: 'rgba(229, 231, 235, 0.3)',
+                        })}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Pollutants */}
+                  <h4 className="font-medium text-gray-800 dark:text-white mb-3">Pollutants</h4>
+                  <div className="space-y-3 mb-4">
+                    {airQualityData.pollutants.map((pollutant, index) => (
+                      <div key={index}>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            {pollutant.name}
+                          </span>
+                          <span className="text-sm font-medium text-gray-800 dark:text-white">
+                            {pollutant.concentration} {pollutant.unit}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                          <div 
+                            className="bg-blue-500 dark:bg-blue-400 h-1.5 rounded-full"
+                            style={{ 
+                              width: `${Math.min((pollutant.concentration / 100) * 100, 100)}%` 
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <span>Location: {airQualityData.location}</span>
+                    <span>Last updated: {airQualityData.lastUpdated}</span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
         
@@ -1302,22 +1409,111 @@ const InvestmentAnalysis = ({
           </div>
           
           <div className="p-6">
-            <p className="text-gray-600 dark:text-gray-300 mb-4">Enter your News API key to fetch local news articles</p>
-            
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter News API key"
-                className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-slate-700 text-gray-800 dark:text-white"
-              />
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">
-                Save & Fetch
-              </button>
-            </div>
-            
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-              You can get a free API key from NewsAPI.org
-            </p>
+            {/* Use the propertyIdentifier derived from address */}
+            {(() => {
+              // Generate a property identifier from the address for API calls
+              const propertyIdentifier = encodeURIComponent(address);
+              // Rename data to newsArticlesArray for clarity, assuming it's NewsArticle[] on success
+              const { data: newsArticlesArray, isLoading, error: hookError, refetch } = useLocalNews(propertyIdentifier);
+              
+              if (isLoading) {
+                return (
+                  <div className="flex items-center justify-center py-6">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                    <span className="ml-3 text-gray-600 dark:text-gray-300">Loading local news...</span>
+                  </div>
+                );
+              }
+              
+              if (hookError) {
+                const errorMessage = (typeof hookError === 'object' && hookError !== null && 'message' in hookError) 
+                                     ? String((hookError as any).message) 
+                                     : typeof hookError === 'string' ? hookError : 'Failed to load news articles.';
+                const isServiceDisabledError = errorMessage.includes('News service is not enabled');
+                const displayMessage = isServiceDisabledError 
+                  ? 'News Service Not Available' 
+                  : 'Unable to load local news';
+                const detailedMessage = isServiceDisabledError
+                  ? 'The news service is currently not configured. Please check back later.'
+                  : errorMessage;
+
+                return (
+                  <div className="py-4">
+                    <div className="flex items-center text-amber-600 dark:text-amber-400 mb-3">
+                      <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
+                      <span>{displayMessage}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                      {detailedMessage}
+                    </p>
+                    <button 
+                      onClick={() => refetch()}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                );
+              }
+              
+              // If no hookError and not loading, check if newsArticlesArray is a non-empty array
+              if (Array.isArray(newsArticlesArray) && newsArticlesArray.length > 0) {
+                return (
+                  <div className="space-y-4">
+                    {newsArticlesArray.map((article, index) => (
+                      <div key={index} className="border-b border-gray-100 dark:border-gray-700 pb-4 last:border-b-0 last:pb-0">
+                        {article.imageUrl && (
+                          <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg mb-3 overflow-hidden">
+                            <img 
+                              src={article.imageUrl} 
+                              alt={article.title} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <h3 className="font-medium text-gray-800 dark:text-white mb-1 line-clamp-2">
+                          <a href={article.url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400">
+                            {article.title}
+                          </a>
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">
+                          {article.description}
+                        </p>
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                          <span>{article.source}</span>
+                          <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <button 
+                      onClick={() => window.open(`https://news.google.com/search?q=${encodeURIComponent(address)}`, '_blank')}
+                      className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md text-sm transition-colors mt-4"
+                    >
+                      View More News
+                    </button>
+                  </div>
+                );
+              }
+              
+              // Fallback: Not loading, no hookError, but not a non-empty array of articles
+              return (
+                <div className="text-center py-4">
+                  <div className="mb-4">
+                    <DocumentTextIcon className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500" />
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                    No news articles are available for this location yet.
+                  </p>
+                  <button 
+                    onClick={() => refetch()}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
+                  >
+                    Refresh News
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
