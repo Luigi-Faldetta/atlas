@@ -61,9 +61,15 @@ import { // Assuming these icons might be useful for new metrics
 } from '@heroicons/react/24/outline';
 import ScoreBreakdownChart from './ScoreBreakdownChart';
 import InfoModal from './InfoModal';
-import { useEffect, useState, useRef } from 'react'; // Added useRef
+import { useEffect, useState, useRef, useLayoutEffect } from 'react'; // Added useRef AND useLayoutEffect
 import mcpApiClient from '../lib/api/mcpClient';
 import { useAirQualityData, useLocalNews } from '../lib/api/useMcpData';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+
+// Register ScrollTrigger plugin
+gsap.registerPlugin(ScrollTrigger);
 
 type InvestmentAnalysisProps = {
   investmentScore: number;
@@ -354,6 +360,29 @@ const InvestmentAnalysis = ({
 }: InvestmentAnalysisProps) => {
   console.log('%%% RUNNING InvestmentAnalysis Component - VERSION CHECK %%%');
 
+  // GSAP Refs for animation targets
+  const mainContainerRef = useRef<HTMLDivElement>(null); // Ref for GSAP context
+  const propertyDetailsCardRef = useRef<HTMLDivElement>(null);
+  const financialAnalysisCardRef = useRef<HTMLDivElement>(null);
+  const nearbyAmenitiesSectionRef = useRef<HTMLDivElement>(null);
+  const locationAssessmentCardRef = useRef<HTMLDivElement>(null);
+  const suitabilityScoreCardRef = useRef<HTMLDivElement>(null);
+  const airQualityCardRef = useRef<HTMLDivElement>(null);
+  const localNewsCardRef = useRef<HTMLDivElement>(null);
+  const propertySpecsCardRef = useRef<HTMLDivElement>(null);
+  const environmentalSafetyCardRef = useRef<HTMLDivElement>(null);
+  const marketTrendsCardRef = useRef<HTMLDivElement>(null);
+  const socioEconomicCardRef = useRef<HTMLDivElement>(null);
+  const lifestyleMetricsCardRef = useRef<HTMLDivElement>(null);
+  const marketActivityCardRef = useRef<HTMLDivElement>(null);
+  const projectedValueChartBarsRef = useRef<HTMLDivElement>(null); // Ref for the chart bars container
+
+  // Refs for specific numerical values and progress bars
+  const investmentScoreDisplayRef = useRef<HTMLSpanElement>(null);
+  const yearlyYieldDisplayRef = useRef<HTMLParagraphElement>(null);
+  const roi5YearsDisplayRef = useRef<HTMLParagraphElement>(null);
+  const investmentScoreBarRef = useRef<HTMLDivElement>(null);
+
   // State for feedback modal
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackUrl, setFeedbackUrl] = useState('');
@@ -365,6 +394,228 @@ const InvestmentAnalysis = ({
   
   // State for AI score explanation modal
   const [showScoreModal, setShowScoreModal] = useState(false);
+
+  // --- GSAP Animations ---
+  useLayoutEffect(() => {
+    const hoverListenerCleanups: Array<() => void> = [];
+    const blurOverlayRef = mainContainerRef; // Using mainContainerRef for the overlay for now, can be a dedicated ref.
+                                          // Ideally, a dedicated ref for a specific overlay div.
+
+    // NEW: Function for focus hover effect with background blur
+    const applyHoverFocusEffect = (element: HTMLElement, pageOverlay: HTMLElement | null) => {
+      if (!element) return undefined;
+      console.log('[GSAP Hover] Applying focus effect to:', element.className.split(' ').slice(0,3).join('.') , element);
+
+      // Create or get a reference to the blur overlay
+      let overlayEl: HTMLDivElement | null = document.getElementById('page-blur-overlay-gsap') as HTMLDivElement;
+      if (!overlayEl && pageOverlay?.ownerDocument) {
+          overlayEl = pageOverlay.ownerDocument.createElement('div');
+          overlayEl.id = 'page-blur-overlay-gsap';
+          overlayEl.className = "fixed inset-0 bg-black/10 backdrop-blur-sm pointer-events-none opacity-0 z-[49]"; // z-index just below cards
+          pageOverlay.ownerDocument.body.appendChild(overlayEl); // Append to body to ensure it's behind everything
+      }
+
+
+      const onMouseEnter = () => {
+        console.log('[GSAP Hover] MouseEnter on:', element.className.split(' ').slice(0,3).join('.'), element);
+        gsap.to(element, {
+          scale: 1.03,
+          duration: 0.15, // Faster duration
+          ease: "power1.out", // Snappier ease
+          zIndex: 50 // Bring card above potential overlay
+        });
+        if (overlayEl) {
+          gsap.to(overlayEl, {
+            autoAlpha: 1,
+            duration: 0.15, // Faster duration
+            ease: "power1.out" // Snappier ease
+          });
+        }
+      };
+
+      const onMouseLeave = () => {
+        console.log('[GSAP Hover] MouseLeave from:', element.className.split(' ').slice(0,3).join('.'), element);
+        gsap.to(element, {
+          scale: 1,
+          duration: 0.15, // Faster duration
+          ease: "power1.out", // Snappier ease
+          zIndex: 'auto'
+        });
+        if (overlayEl) {
+          gsap.to(overlayEl, {
+            autoAlpha: 0,
+            duration: 0.15, // Faster duration
+            ease: "power1.out" // Snappier ease
+          });
+        }
+      };
+
+      element.addEventListener('mouseenter', onMouseEnter);
+      element.addEventListener('mouseleave', onMouseLeave);
+
+      return () => {
+        element.removeEventListener('mouseenter', onMouseEnter);
+        element.removeEventListener('mouseleave', onMouseLeave);
+        gsap.set(element, { clearProps: "scale,zIndex" });
+        // Important: Clean up the dynamically created overlay if this component unmounts
+        // However, if multiple cards are using it, only remove if it's the last one.
+        // For simplicity here, we won't remove it, but in a real app, manage its lifecycle.
+        // if (overlayEl && overlayEl.parentElement) {
+        //   overlayEl.parentElement.removeChild(overlayEl);
+        // }
+        // Or just ensure it's hidden:
+         if (overlayEl) {
+            gsap.set(overlayEl, { autoAlpha: 0 });
+         }
+      };
+    };
+
+
+    const ctx = gsap.context(() => {
+      const animateCard = (element: HTMLDivElement | null, delay: number = 0) => {
+        if (!element) return;
+        gsap.fromTo(element,
+          { autoAlpha: 0, y: 50 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.7,
+            delay,
+            scrollTrigger: {
+              trigger: element,
+              start: "top 85%",
+              toggleActions: "play none none none",
+              once: true,
+            }
+          }
+        );
+      };
+
+      const cardsToAnimate = [
+        { ref: propertyDetailsCardRef, delay: 0 },
+        { ref: financialAnalysisCardRef, delay: 0.1 },
+        { ref: nearbyAmenitiesSectionRef, delay: 0 },
+        { ref: locationAssessmentCardRef, delay: 0.1 },
+        { ref: suitabilityScoreCardRef, delay: 0.15 },
+        { ref: airQualityCardRef, delay: 0 },
+        { ref: localNewsCardRef, delay: 0.1 },
+        { ref: propertySpecsCardRef, delay: 0 },
+        { ref: environmentalSafetyCardRef, delay: 0.1 },
+        { ref: marketTrendsCardRef, delay: 0 },
+        { ref: socioEconomicCardRef, delay: 0 },
+        { ref: lifestyleMetricsCardRef, delay: 0.1 },
+        { ref: marketActivityCardRef, delay: 0.15 },
+      ];
+      cardsToAnimate.forEach(card => animateCard(card.ref.current, card.delay));
+
+      // Define refs for cards to exclude from hover effect
+      const excludedHoverRefs = [
+        nearbyAmenitiesSectionRef.current,
+        marketActivityCardRef.current,
+        lifestyleMetricsCardRef.current,
+        socioEconomicCardRef.current,
+        marketTrendsCardRef.current
+      ].filter(ref => ref !== null); // Filter out any null refs just in case
+
+      // Apply NEW hover focus effects to cards, excluding specified ones
+      cardsToAnimate.forEach(cardConfig => {
+        if (cardConfig.ref.current && !excludedHoverRefs.includes(cardConfig.ref.current)) {
+          const listenerCleanup = applyHoverFocusEffect(cardConfig.ref.current, mainContainerRef.current);
+          if (listenerCleanup) {
+            hoverListenerCleanups.push(listenerCleanup);
+          }
+        }
+      });
+
+      // Helper function for number counting
+      const animateCountUp = (element: HTMLElement | null, endValue: number, formattingOptions: { isCurrency?: boolean, isPercentage?: boolean, decimals?: number } = {}) => {
+        if (!element || endValue === null || endValue === undefined) return;
+        const { isCurrency = false, isPercentage = false, decimals = 0 } = formattingOptions;
+        
+        let startValue = 0;
+        // Attempt to parse starting value from element to avoid jump, if it's a simple number
+        const initialText = element.innerText.replace(/[^0-9.,-]+/g, '').replace(',', '.');
+        if (!isNaN(parseFloat(initialText))) {
+          startValue = parseFloat(initialText);
+        }
+
+        gsap.fromTo(element,
+          { innerText: startValue }, // Start from current text or 0
+          {
+            innerText: endValue,
+            duration: 1.5,
+            ease: "power1.out",
+            snap: { innerText: isPercentage || decimals > 0 ? Math.pow(10, -decimals) : 1 }, // Snap to appropriate decimal or whole number
+            formatter: (value: number) => {
+              const val = parseFloat(value.toFixed(decimals));
+              if (isCurrency) return formatCurrency(val, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+              if (isPercentage) return formatPercentage(val * 100); // formatPercentage expects value like 5.5 for 5.5%
+              return val.toLocaleString('nl-NL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+            },
+            scrollTrigger: {
+              trigger: element,
+              start: "top 90%",
+              toggleActions: "play none none none",
+              once: true,
+            }
+          }
+        );
+      };
+
+      // Animate key numerical values
+      if (investmentScoreDisplayRef.current) {
+        animateCountUp(investmentScoreDisplayRef.current, investmentScore, { decimals: 0 });
+      }
+      if (yearlyYieldDisplayRef.current && yearlyYield !== null) {
+        // GSAP animates the raw number; formatter handles the display (formatPercentage expects 5.5 for 5.5%)
+        animateCountUp(yearlyYieldDisplayRef.current, yearlyYield, { isPercentage: true, decimals: 1 });
+      }
+      if (roi5YearsDisplayRef.current && roi5Years !== null) {
+        animateCountUp(roi5YearsDisplayRef.current, roi5Years, { isPercentage: true, decimals: 1 });
+      }
+
+      // Animate key progress bar
+      if (investmentScoreBarRef.current && investmentScore) {
+        gsap.to(investmentScoreBarRef.current, {
+          width: `${investmentScore}%`,
+          duration: 1.5,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: investmentScoreBarRef.current.parentElement, // Trigger based on parent container
+            start: "top 85%",
+            toggleActions: "play none none none",
+            once: true,
+          }
+        });
+      }
+
+      // Animate Projected Property Value Chart Bars
+      if (projectedValueChartBarsRef.current) {
+        gsap.fromTo(projectedValueChartBarsRef.current.querySelectorAll(".chart-bar-visual"),
+          { scaleY: 0, transformOrigin: "bottom" },
+          {
+            scaleY: 1,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: projectedValueChartBarsRef.current,
+              start: "top 85%", // Start animation when top of chart is 85% in view
+              toggleActions: "play none none none",
+              once: true,
+            }
+          }
+        );
+      }
+
+    }, mainContainerRef); // Scope GSAP context to the main container
+
+    return () => {
+      ctx.revert(); // Cleanup GSAP animations and ScrollTriggers
+      hoverListenerCleanups.forEach(cleanup => cleanup()); // Cleanup hover event listeners
+    };
+  }, [investmentScore, yearlyYield, roi5Years]); // Add dependencies that, if changed, should re-run animations
+  // --- End GSAP Animations ---
 
   // --- useEffect Debug Logs ---
   useEffect(() => {
@@ -522,7 +773,18 @@ const InvestmentAnalysis = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div ref={mainContainerRef} className="space-y-6">
+      {/* 
+        It's better to have a dedicated overlay div here if not creating it dynamically.
+        Example:
+        <div 
+          id="page-blur-overlay-static" 
+          className="fixed inset-0 bg-black/10 backdrop-blur-sm pointer-events-none opacity-0 z-[49]"
+        ></div> 
+        And then get this element by ID or ref in the applyHoverFocusEffect function.
+        The dynamic creation in applyHoverFocusEffect is a fallback.
+      */}
+
       {/* Action Buttons - Top Right Floating */}
       <div className="flex justify-end gap-3 mb-4">
         <button 
@@ -862,7 +1124,7 @@ const InvestmentAnalysis = ({
       {/* Main Content - Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column - Property Details */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div ref={propertyDetailsCardRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
           <div className="border-b border-gray-200 dark:border-gray-700 p-4">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Property Details</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Key information about the property</p>
@@ -874,7 +1136,7 @@ const InvestmentAnalysis = ({
             {/* Property Image */}
             <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg mb-4 overflow-hidden">
               <img 
-                src="https://placehold.co/800x400/e6e6e6/999999?text=Property+Image" 
+                src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
                 alt="Property" 
                 className="w-full h-full object-cover"
               />
@@ -927,7 +1189,7 @@ const InvestmentAnalysis = ({
         </div>
         
         {/* Right Column - Financial Analysis */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div ref={financialAnalysisCardRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
           <div className="border-b border-gray-200 dark:border-gray-700 p-4">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Financial Analysis</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Rental yield, appreciation, and ROI projections</p>
@@ -938,13 +1200,13 @@ const InvestmentAnalysis = ({
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
                 <p className="text-xs text-blue-700 dark:text-blue-300 font-medium mb-1">Rental Yield</p>
-                <p className="text-2xl font-bold text-blue-800 dark:text-blue-200" title={`Projected annual return from rental income: ${formatPercentage(yearlyYield || 4.2)}`}>
+                <p ref={yearlyYieldDisplayRef} className="text-2xl font-bold text-blue-800 dark:text-blue-200" title={`Projected annual return from rental income: ${formatPercentage(yearlyYield || 4.2)}`}>
                   {formatPercentage(yearlyYield || 4.2)}
                 </p>
               </div>
               <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
                 <p className="text-xs text-green-700 dark:text-green-300 font-medium mb-1">Annual ROI</p>
-                <p className="text-2xl font-bold text-green-800 dark:text-green-200" title={`Projected 5-year average annual Return On Investment: ${formatPercentage(roi5Years || 7.95)}`}>
+                <p ref={roi5YearsDisplayRef} className="text-2xl font-bold text-green-800 dark:text-green-200" title={`Projected 5-year average annual Return On Investment: ${formatPercentage(roi5Years || 7.95)}`}>
                   {formatPercentage(roi5Years || 7.95)}
                 </p>
               </div>
@@ -955,11 +1217,11 @@ const InvestmentAnalysis = ({
               <h4 className="font-medium text-gray-800 dark:text-white mb-2">Projected Property Value (5 Years)</h4>
               <div className="h-48 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
                 {/* Chart visualization */}
-                <div className="flex h-full items-end justify-between">
+                <div ref={projectedValueChartBarsRef} className="flex h-full items-end justify-between">
                   {projectedValues.map((value, index) => (
                     <div key={index} className="flex flex-col items-center">
                       <div 
-                        className="w-10 bg-emerald-400 dark:bg-emerald-500 rounded-t-sm" 
+                        className="w-10 bg-emerald-400 dark:bg-emerald-500 rounded-t-sm chart-bar-visual" // Added chart-bar-visual class
                         style={{ height: `${(value / projectedValues[5]) * 80}%` }}
                       ></div>
                       <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">Year {index}</span>
@@ -1072,7 +1334,7 @@ const InvestmentAnalysis = ({
       </div>
       
       {/* Nearby Amenities Section */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+      <div ref={nearbyAmenitiesSectionRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
         <div className="border-b border-gray-200 dark:border-gray-700 p-4">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Nearby Amenities</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">Essential services and facilities in this area</p>
@@ -1135,7 +1397,7 @@ const InvestmentAnalysis = ({
       {/* Location and Suitability - Two Column */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Location Assessment */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div ref={locationAssessmentCardRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700 p-4">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Location Assessment</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Advantages and disadvantages of this location</p>
@@ -1177,7 +1439,7 @@ const InvestmentAnalysis = ({
         </div>
         
         {/* Suitability & Score */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div ref={suitabilityScoreCardRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700 p-4">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Suitability & Score</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Property rating and demographic fit</p>
@@ -1244,7 +1506,7 @@ const InvestmentAnalysis = ({
                 <h3 className="font-medium text-gray-800 dark:text-white">AI Property Score</h3>
                 <div className="flex items-center">
                   <div className="flex items-baseline">
-                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">{investmentScore}</span>
+                    <span ref={investmentScoreDisplayRef} className="text-2xl font-bold text-green-600 dark:text-green-400">{investmentScore}</span>
                     <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">/100</span>
                   </div>
                   <button
@@ -1258,7 +1520,7 @@ const InvestmentAnalysis = ({
               </div>
               
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2">
-                <div className="bg-green-500 dark:bg-green-400 h-3 rounded-full" style={{ width: `${investmentScore}%` }}></div>
+                <div ref={investmentScoreBarRef} className="bg-green-500 dark:bg-green-400 h-3 rounded-full" style={{ width: '0%' /* Initial width for animation */ }}></div>
               </div>
               
               <p className="text-sm text-gray-600 dark:text-gray-300">Excellent property with outstanding features and location.</p>
@@ -1270,7 +1532,7 @@ const InvestmentAnalysis = ({
       {/* Pollution Data and Local News - Two Column */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pollution Data */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div ref={airQualityCardRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700 p-4">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Air Quality Data</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Air quality information for this location</p>
@@ -1402,7 +1664,7 @@ const InvestmentAnalysis = ({
         </div>
         
         {/* Local News */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div ref={localNewsCardRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700 p-4">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Local News</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Recent news articles about this location</p>
@@ -1521,7 +1783,7 @@ const InvestmentAnalysis = ({
       {/* New section: Additional Property Metrics - Two Column */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Property Specifications */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div ref={propertySpecsCardRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700 p-4">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Property Specifications</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Detailed information about property characteristics</p>
@@ -1612,7 +1874,7 @@ const InvestmentAnalysis = ({
         </div>
         
         {/* Environmental & Safety Metrics */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div ref={environmentalSafetyCardRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700 p-4">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Environmental & Safety Metrics</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Environmental factors and safety considerations</p>
@@ -1817,7 +2079,7 @@ const InvestmentAnalysis = ({
       </div>
 
       {/* New Section: Market & Trend Metrics */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+      <div ref={marketTrendsCardRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
         <div className="border-b border-gray-200 dark:border-gray-700 p-4">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Market & Trend Metrics</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">Insights into market conditions and trends for this area</p>
@@ -1866,7 +2128,7 @@ const InvestmentAnalysis = ({
       {/* End New Section: Market & Trend Metrics */}
 
       {/* --- New Section: Socio-Economic & Demographic Metrics --- */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+      <div ref={socioEconomicCardRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
         <div className="border-b border-gray-200 dark:border-gray-700 p-4">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Socio-Economic & Demographic Metrics</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">Understanding the local community and economic environment</p>
@@ -1897,7 +2159,7 @@ const InvestmentAnalysis = ({
       </div>
 
       {/* --- New Section: Local Amenities & Lifestyle Metrics --- */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+      <div ref={lifestyleMetricsCardRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
         <div className="border-b border-gray-200 dark:border-gray-700 p-4">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Local Amenities & Lifestyle Metrics</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">Quality of life and local attractions</p>
@@ -1972,7 +2234,7 @@ const InvestmentAnalysis = ({
       </div>
 
       {/* --- New Section: Market Activity & Property Specifics (New) --- */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+      <div ref={marketActivityCardRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
         <div className="border-b border-gray-200 dark:border-gray-700 p-4">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Market Activity & Property Specifics</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">Deeper dive into market dynamics and property details</p>
