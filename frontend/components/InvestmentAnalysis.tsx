@@ -143,6 +143,9 @@ type InvestmentAnalysisProps = {
   propertyTaxRate?: number; // percentage
   communityFees?: number; // monthly
   floodRisk?: number; // percentage risk
+  
+  // Property image
+  propertyImage?: string | null;
 
   // Newly added metrics from METRICS.md
   // Additional Environmental Metrics
@@ -357,6 +360,9 @@ const InvestmentAnalysis = ({
   assessedPropertyValue = 330000,
   listingsNearby = 25,
   estimatedUtilityCosts = 180, // monthly
+  
+  // Property image
+  propertyImage,
 }: InvestmentAnalysisProps) => {
   console.log('%%% RUNNING InvestmentAnalysis Component - VERSION CHECK %%%');
 
@@ -1136,9 +1142,14 @@ const InvestmentAnalysis = ({
             {/* Property Image */}
             <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg mb-4 overflow-hidden">
               <img 
-                src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                src={propertyImage || "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"} 
                 alt="Property" 
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to default image if property image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.src = "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+                }}
               />
             </div>
             

@@ -126,6 +126,7 @@ class IdealistaScraper(BaseScraper):
             result = {k: 'Not found' for k in fields}
             result['URL'] = url
             result['Site'] = self.get_site_name()
+            result['Property Image'] = None
 
             def to_int(x):
                 try:
@@ -171,6 +172,29 @@ class IdealistaScraper(BaseScraper):
                 yri = to_int(yr)
                 if yri is not None:
                     result['Year Built'] = str(yri)
+                    
+                # Property Image - extract from JSON data
+                images = estate.get('images') or estate.get('photos') or estate.get('multimedia', {}).get('images', [])
+                if images and isinstance(images, list) and len(images) > 0:
+                    first_image = images[0]
+                    if isinstance(first_image, dict):
+                        # Try different possible keys for image URL
+                        img_url = first_image.get('url') or first_image.get('src') or first_image.get('href')
+                        if img_url:
+                            # Ensure it's a full URL
+                            if img_url.startswith('//'):
+                                img_url = 'https:' + img_url
+                            elif img_url.startswith('/'):
+                                img_url = 'https://img.idealista.com' + img_url
+                            result['Property Image'] = img_url
+                    elif isinstance(first_image, str):
+                        # Direct URL string
+                        img_url = first_image
+                        if img_url.startswith('//'):
+                            img_url = 'https:' + img_url
+                        elif img_url.startswith('/'):
+                            img_url = 'https://img.idealista.com' + img_url
+                        result['Property Image'] = img_url
 
             # 2) HTML fallback for address
             if result['Address'] == 'Not found':
@@ -215,6 +239,31 @@ class IdealistaScraper(BaseScraper):
                         val = m3.group(1).replace('.', '')
                         suffix = ' €' if key=='Price' else ' m²' if key=='Living Area' else ''
                         result[key] = val + suffix
+                        
+            # 6) HTML fallback for Property Image
+            if result['Property Image'] is None:
+                # Try to find the main property image in HTML
+                img_patterns = [
+                    r'<img[^>]*class="[^"]*main-photo[^"]*"[^>]*src="([^"]+)"',
+                    r'<img[^>]*class="[^"]*property-image[^"]*"[^>]*src="([^"]+)"',
+                    r'<img[^>]*data-src="([^"]+)"[^>]*class="[^"]*photo[^"]*"',
+                    r'<img[^>]*src="([^"]+)"[^>]*alt="[^"]*(?:property|inmueble)[^"]*"',
+                    r'<meta[^>]*property="og:image"[^>]*content="([^"]+)"'
+                ]
+                
+                for pattern in img_patterns:
+                    match = re.search(pattern, html, re.IGNORECASE)
+                    if match:
+                        img_url = match.group(1)
+                        # Clean up the URL
+                        if img_url.startswith('//'):
+                            img_url = 'https:' + img_url
+                        elif img_url.startswith('/'):
+                            img_url = 'https://img.idealista.com' + img_url
+                        # Validate it's actually an image URL
+                        if any(ext in img_url.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp']):
+                            result['Property Image'] = img_url
+                            break
                         
             # Extract property type
             type_patterns = [

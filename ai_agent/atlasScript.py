@@ -3,10 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from new_funda_scraper import FundaScraper  # Import the FundaScraper class
+from funda_scraper_requests import FundaScraperRequests  # Import the requests-based FundaScraper class
 from idealista_scraper import IdealistaScraper  # Import the IdealistaScraper class
-from fotocasa_scraper import FotocasaScraper  # NEW: Import the FotocasaScraper class
-from habitaclia_scraper import HabitacliaScraper  # NEW: Import the HabitacliaScraper class
+from fotocasa_scraper_requests import FotocasaScraperRequests  # NEW: Import the requests-based FotocasaScraper class
+from habitaclia_scraper_requests import HabitacliaScraperRequests  # NEW: Import the requests-based HabitacliaScraper class
 import logging
 import re
 import os
@@ -37,7 +37,7 @@ if not api_key:
 # Initialize the LangChain Chat LLM
 llm = ChatOpenAI(
     temperature=0.7,
-    model_name="gpt-4",  # Replace with your OpenAI model
+    model_name="gpt-4o",  # Using GPT-4o - the latest and most capable model
     openai_api_key=api_key,  # Replace with your OpenAI API key
 )
 
@@ -66,6 +66,22 @@ MARKET_PROMPTS = {
     - The **Monthly Rental Income** (best estimate based on the property details and Dutch rental point system).
     - The **Expected Monthly Income** after potential improvements and market adjustments (should be 5-15% higher than current rental income).
     - The **Yearly Appreciation** percentage and its corresponding value in euros.
+    
+    Additional metrics to estimate:
+    - **DSCR** (Debt Service Coverage Ratio): typical for this property type
+    - **Cash on Cash Return**: percentage return on cash invested
+    - **GRM** (Gross Rent Multiplier): property price divided by gross annual rent
+    - **IRR** (Internal Rate of Return): expected 10-year IRR percentage
+    - **Equity Buildup**: estimated annual equity gain through mortgage paydown
+    - **Days on Market**: typical for this area and property type
+    - **Property Tax Rate**: typical percentage for this location
+    - **Community Fees**: estimated monthly HOA/maintenance fees
+    - **Vacancy Rate**: typical percentage for this area
+    - **Energy Label**: estimate based on year built and Dutch standards (A-G)
+    - **Flood Risk**: percentage risk based on Netherlands location
+    - **Crime Rate**: per 1000 residents typical for this area
+    - **Noise Level**: 0-100 scale (lower is better)
+    - **Air Quality**: 0-100 scale (higher is better)
 
     The response must strictly follow this format:
 
@@ -101,6 +117,29 @@ MARKET_PROMPTS = {
 
     **Yearly Appreciation**:
     approximately <value>% (€<value>)
+    
+    **Additional Financial Metrics**:
+    DSCR: <value>
+    Cash on Cash Return: <value>%
+    GRM: <value>
+    IRR: <value>%
+    Equity Buildup: €<value> per year
+    
+    **Market Metrics**:
+    Days on Market: <value> days
+    Property Tax Rate: <value>%
+    Community Fees: €<value> monthly
+    Vacancy Rate: <value>%
+    
+    **Property Specifications**:
+    Energy Label: <letter>
+    Building Type: <type>
+    
+    **Environmental & Safety**:
+    Flood Risk: <value>%
+    Crime Rate: <value> per 1000
+    Noise Level: <value>/100
+    Air Quality: <value>/100
 
     Ensure the response strictly adheres to this format, including the exact headings, spacing, and structure. Do not include any additional text or explanations outside this format.
     """,
@@ -129,6 +168,23 @@ MARKET_PROMPTS = {
     - The **Monthly Rental Income** (best estimate for long-term rental based on the property details).
     - The **Expected Monthly Income** after potential improvements and market adjustments (should be 5-15% higher than current rental income).
     - The **Yearly Appreciation** percentage and its corresponding value in euros.
+    
+    Additional metrics to estimate:
+    - **DSCR** (Debt Service Coverage Ratio): typical for this property type
+    - **Cash on Cash Return**: percentage return on cash invested  
+    - **GRM** (Gross Rent Multiplier): property price divided by gross annual rent
+    - **IRR** (Internal Rate of Return): expected 10-year IRR percentage
+    - **Equity Buildup**: estimated annual equity gain through mortgage paydown
+    - **Days on Market**: typical for this area and property type
+    - **Property Tax Rate**: IBI tax typical percentage for this location
+    - **Community Fees**: estimated monthly community fees
+    - **Vacancy Rate**: typical percentage for this area
+    - **Energy Label**: estimate based on year built and Spanish CEE standards (A-G)
+    - **Flood Risk**: percentage risk based on Mediterranean location
+    - **Crime Rate**: per 1000 residents typical for this area
+    - **Noise Level**: 0-100 scale (lower is better)
+    - **Air Quality**: 0-100 scale (higher is better)
+    - **Tourist Activity**: High/Medium/Low for short-term rental potential
 
     The response must strictly follow this format:
 
@@ -164,6 +220,30 @@ MARKET_PROMPTS = {
 
     **Yearly Appreciation**:
     approximately <value>% (€<value>)
+    
+    **Additional Financial Metrics**:
+    DSCR: <value>
+    Cash on Cash Return: <value>%
+    GRM: <value>
+    IRR: <value>%
+    Equity Buildup: €<value> per year
+    
+    **Market Metrics**:
+    Days on Market: <value> days
+    Property Tax Rate: <value>%
+    Community Fees: €<value> monthly
+    Vacancy Rate: <value>%
+    Tourist Activity: <High/Medium/Low>
+    
+    **Property Specifications**:
+    Energy Label: <letter>
+    Building Type: <type>
+    
+    **Environmental & Safety**:
+    Flood Risk: <value>%
+    Crime Rate: <value> per 1000
+    Noise Level: <value>/100
+    Air Quality: <value>/100
 
     Ensure the response strictly adheres to this format, including the exact headings, spacing, and structure. Do not include any additional text or explanations outside this format.
     """
@@ -270,17 +350,17 @@ async def analyze(request: AnalyzeRequest):
 
         # NEW: Enhanced domain detection with Spanish scrapers
         if "funda.nl" in domain:
-            logging.info("Detected Funda URL. Using FundaScraper.")
-            scraper = FundaScraper()
+            logging.info("Detected Funda URL. Using FundaScraperRequests.")
+            scraper = FundaScraperRequests()
         elif "idealista.com" in domain:
             logging.info("Detected Idealista URL. Using IdealistaScraper.")
             scraper = IdealistaScraper()
         elif "fotocasa.es" in domain:
-            logging.info("Detected Fotocasa URL. Using FotocasaScraper.")
-            scraper = FotocasaScraper(proxy=proxy_config)
+            logging.info("Detected Fotocasa URL. Using FotocasaScraperRequests.")
+            scraper = FotocasaScraperRequests()
         elif "habitaclia.com" in domain:
-            logging.info("Detected Habitaclia URL. Using HabitacliaScraper.")
-            scraper = HabitacliaScraper(proxy=proxy_config)
+            logging.info("Detected Habitaclia URL. Using HabitacliaScraperRequests.")
+            scraper = HabitacliaScraperRequests()
         else:
             logging.error(f"Unsupported domain: {domain}")
             raise HTTPException(status_code=400, detail=f"Unsupported URL domain: {domain}. Supported domains: funda.nl, idealista.com, fotocasa.es, habitaclia.com")
@@ -293,21 +373,21 @@ async def analyze(request: AnalyzeRequest):
         scraped_data = None
         
         # NEW: Enhanced scraper handling with async support for new scrapers
-        if isinstance(scraper, FundaScraper):
-            await scraper.start() # Assuming FundaScraper needs async start
+        if isinstance(scraper, FundaScraperRequests):
+            await scraper.start() # Start the requests-based scraper
             try:
-                # Assuming scrape_property is async for FundaScraper
+                # Scrape property using requests-based scraper
                 scraped_data = await scraper.scrape_property(request.url)
             finally:
                 await scraper.close() # Ensure close is called even if scrape fails
         elif isinstance(scraper, IdealistaScraper):
-            # IdealistaScraper's scrape_property is synchronous
-            # Run the synchronous scrape_property in a thread to avoid blocking FastAPI's event loop
-            import asyncio
-            loop = asyncio.get_event_loop()
-            scraped_data = await loop.run_in_executor(None, scraper.scrape_property, request.url)
-            # No start/close needed for IdealistaScraper
-        elif isinstance(scraper, (FotocasaScraper, HabitacliaScraper)):
+            # IdealistaScraper's scrape_property is async
+            try:
+                await scraper.start()
+                scraped_data = await scraper.scrape_property(request.url)
+            finally:
+                await scraper.close()
+        elif isinstance(scraper, (FotocasaScraperRequests, HabitacliaScraperRequests)):
             # NEW: Handle new Spanish scrapers with async support
             try:
                 await scraper.start()
@@ -350,6 +430,7 @@ async def analyze(request: AnalyzeRequest):
             "bathrooms": scraped_data.get("Bathrooms", "Not available"),
             "year_built": scraped_data.get("Year Built", "Not available"),
             "price_per_sqm": price_per_sqm,
+            "property_image": scraped_data.get("Property Image", None),
         }
         logging.debug(f"Simplified data being sent to frontend (under 'scraped_data'): {simplified_data}")
 
@@ -407,6 +488,58 @@ async def analyze(request: AnalyzeRequest):
         yearly_appreciation_value_match = re.search(r"(?i)\*\*Yearly Appreciation\*\*[\s\S]*?(?:approximately\s*)?.*?\(€([\d.,]+)\)", content)
         yearly_appreciation_value = float(yearly_appreciation_value_match.group(1).replace(",", "")) if yearly_appreciation_value_match else None
 
+        # NEW: Extract additional financial metrics
+        dscr_match = re.search(r"(?i)DSCR:\s*([\d.]+)", content)
+        dscr = float(dscr_match.group(1)) if dscr_match else None
+
+        cash_on_cash_match = re.search(r"(?i)Cash on Cash Return:\s*([\d.]+)%", content)
+        cash_on_cash_return = float(cash_on_cash_match.group(1)) if cash_on_cash_match else None
+
+        grm_match = re.search(r"(?i)GRM:\s*([\d.]+)", content)
+        grm = float(grm_match.group(1)) if grm_match else None
+
+        irr_match = re.search(r"(?i)IRR:\s*([\d.]+)%", content)
+        irr = float(irr_match.group(1)) if irr_match else None
+
+        equity_buildup_match = re.search(r"(?i)Equity Buildup:\s*€([\d.,]+)\s*per year", content)
+        equity_buildup = float(equity_buildup_match.group(1).replace(",", "")) if equity_buildup_match else None
+
+        # NEW: Extract market metrics
+        days_on_market_match = re.search(r"(?i)Days on Market:\s*(\d+)\s*days", content)
+        days_on_market = int(days_on_market_match.group(1)) if days_on_market_match else None
+
+        property_tax_rate_match = re.search(r"(?i)Property Tax Rate:\s*([\d.]+)%", content)
+        property_tax_rate = float(property_tax_rate_match.group(1)) if property_tax_rate_match else None
+
+        community_fees_match = re.search(r"(?i)Community Fees:\s*€([\d.,]+)\s*monthly", content)
+        community_fees = float(community_fees_match.group(1).replace(",", "")) if community_fees_match else None
+
+        vacancy_rate_match = re.search(r"(?i)Vacancy Rate:\s*([\d.]+)%", content)
+        vacancy_rate = float(vacancy_rate_match.group(1)) if vacancy_rate_match else None
+
+        tourist_activity_match = re.search(r"(?i)Tourist Activity:\s*(\w+)", content)
+        tourist_activity = tourist_activity_match.group(1) if tourist_activity_match else None
+
+        # NEW: Extract property specifications
+        energy_label_match = re.search(r"(?i)Energy Label:\s*([A-G])", content)
+        energy_label = energy_label_match.group(1) if energy_label_match else None
+
+        building_type_match = re.search(r"(?i)Building Type:\s*(.+?)(?=\n|\*\*|$)", content)
+        building_type = building_type_match.group(1).strip() if building_type_match else None
+
+        # NEW: Extract environmental & safety metrics
+        flood_risk_match = re.search(r"(?i)Flood Risk:\s*([\d.]+)%", content)
+        flood_risk = float(flood_risk_match.group(1)) if flood_risk_match else None
+
+        crime_rate_match = re.search(r"(?i)Crime Rate:\s*([\d.]+)\s*per 1000", content)
+        crime_rate = float(crime_rate_match.group(1)) if crime_rate_match else None
+
+        noise_level_match = re.search(r"(?i)Noise Level:\s*(\d+)/100", content)
+        noise_level = int(noise_level_match.group(1)) if noise_level_match else None
+
+        air_quality_match = re.search(r"(?i)Air Quality:\s*(\d+)/100", content)
+        air_quality = int(air_quality_match.group(1)) if air_quality_match else None
+
         # If expected_monthly_income is not available, estimate it
         if expected_monthly_income is None and monthly_rental_income is not None:
             expected_monthly_income = monthly_rental_income * 1.1
@@ -434,6 +567,26 @@ async def analyze(request: AnalyzeRequest):
                 "yearly_appreciation_value": yearly_appreciation_value,
                 "strengths": strengths,
                 "weaknesses": weaknesses,
+                # NEW: Additional financial metrics
+                "dscr": dscr,
+                "cash_on_cash_return": cash_on_cash_return,
+                "grm": grm,
+                "irr": irr,
+                "equity_buildup": equity_buildup,
+                # NEW: Market metrics
+                "days_on_market": days_on_market,
+                "property_tax_rate": property_tax_rate,
+                "community_fees": community_fees,
+                "vacancy_rate": vacancy_rate,
+                "tourist_activity": tourist_activity,
+                # NEW: Property specifications
+                "energy_label": energy_label,
+                "building_type": building_type,
+                # NEW: Environmental & safety metrics
+                "flood_risk": flood_risk,
+                "crime_rate": crime_rate,
+                "noise_level": noise_level,
+                "air_quality": air_quality,
             },
         }
     except HTTPException as http_exc:

@@ -17,6 +17,7 @@ type AnalysisResult = {
     bathrooms: string;
     year_built: string;
     price_per_sqm: number | null;
+    property_image: string | null;
   };
   agent_analysis?: {
     investment_score: number;
@@ -35,6 +36,26 @@ type AnalysisResult = {
     growth_score?: number;
     location_score?: number;
     condition_score?: number;
+    // Additional financial metrics
+    dscr?: number;
+    cash_on_cash_return?: number;
+    grm?: number;
+    irr?: number;
+    equity_buildup?: number;
+    // Market metrics
+    days_on_market?: number;
+    property_tax_rate?: number;
+    community_fees?: number;
+    vacancy_rate?: number;
+    tourist_activity?: string;
+    // Property specifications
+    energy_label?: string;
+    building_type?: string;
+    // Environmental & safety metrics
+    flood_risk?: number;
+    crime_rate?: number;
+    noise_level?: number;
+    air_quality?: number;
   };
 } | null;
 
@@ -248,6 +269,7 @@ export default function PropertyAnalysisPage() {
         bathrooms: '1', // Added sample
         year_built: '1960', // Added sample
         price_per_sqm: 535000 / 68, // Added sample calculation
+        property_image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // Sample image
       },
       agent_analysis: {
         investment_score: sampleScore,
@@ -464,6 +486,32 @@ export default function PropertyAnalysisPage() {
                         conditionScore={
                           analysisResult.agent_analysis?.condition_score
                         }
+                        // Additional financial metrics
+                        dscr={analysisResult.agent_analysis?.dscr}
+                        cashOnCashReturn={analysisResult.agent_analysis?.cash_on_cash_return}
+                        grm={analysisResult.agent_analysis?.grm}
+                        irr={analysisResult.agent_analysis?.irr}
+                        equityBuildup={analysisResult.agent_analysis?.equity_buildup}
+                        // Market metrics
+                        daysOnMarket={analysisResult.agent_analysis?.days_on_market}
+                        propertyTaxRate={analysisResult.agent_analysis?.property_tax_rate}
+                        communityFees={analysisResult.agent_analysis?.community_fees}
+                        vacancyRate={analysisResult.agent_analysis?.vacancy_rate}
+                        // Property specifications
+                        energyLabel={analysisResult.agent_analysis?.energy_label}
+                        buildingType={analysisResult.agent_analysis?.building_type}
+                        // Environmental & safety metrics
+                        floodRisk={analysisResult.agent_analysis?.flood_risk}
+                        crimeRate={analysisResult.agent_analysis?.crime_rate}
+                        noisePollutionIndex={analysisResult.agent_analysis?.noise_level}
+                        airQualityIndex={analysisResult.agent_analysis?.air_quality}
+                        // Property details from scraped data
+                        bedrooms={parseInt(analysisResult.scraped_data?.bedrooms || '0') || undefined}
+                        bathrooms={parseInt(analysisResult.scraped_data?.bathrooms || '0') || undefined}
+                        yearBuilt={parseInt(analysisResult.scraped_data?.year_built || '0') || undefined}
+                        size={parseInt(analysisResult.scraped_data?.living_area?.replace(/[^\d]/g, '') || '0') || undefined}
+                        // Property image
+                        propertyImage={analysisResult.scraped_data?.property_image}
                       />
                     )}
                   </div>

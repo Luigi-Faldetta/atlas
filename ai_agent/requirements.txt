@@ -94,7 +94,6 @@ ujson==5.10.0
 undetected-chromedriver==3.5.5
 urllib3==2.3.0
 uvicorn==0.34.0
-uvloop==0.21.0
 watchfiles==1.0.4
 webdriver-manager==4.0.2
 websocket-client==1.8.0
