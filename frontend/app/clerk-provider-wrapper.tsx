@@ -10,5 +10,12 @@ export default function ClerkProviderWrapper({
   children: React.ReactNode;
 }) {
   // ClerkProvider is used in a Server Component context here
-  return <ClerkProvider>{children}</ClerkProvider>;
+  // Explicitly provide publishableKey from environment variable
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  
+  return (
+    <ClerkProvider publishableKey={publishableKey}>
+      {children}
+    </ClerkProvider>
+  );
 }

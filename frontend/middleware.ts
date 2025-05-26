@@ -10,8 +10,6 @@ const isProtectedRoute = createRouteMatcher([
   '/market-analysis(.*)',
 ]);
 
-console.log(process.env.NEXT_PUBLIC_CLERK_DOMAIN);
-
 export default clerkMiddleware(async (auth, req) => {
   const { userId, redirectToSignIn } = await auth();
 
