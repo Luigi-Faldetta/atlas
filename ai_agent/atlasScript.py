@@ -5,9 +5,12 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from new_funda_scraper import FundaScraper  # Import the FundaScraper class
 from idealista_scraper import IdealistaScraper  # Import the IdealistaScraper class
+from fotocasa_scraper import FotocasaScraper  # NEW: Import the FotocasaScraper class
+from habitaclia_scraper import HabitacliaScraper  # NEW: Import the HabitacliaScraper class
 import logging
 import re
 import os
+import json
 from dotenv import load_dotenv
 from urllib.parse import urlparse  # Import urlparse
 
@@ -38,64 +41,153 @@ llm = ChatOpenAI(
     openai_api_key=api_key,  # Replace with your OpenAI API key
 )
 
-# Define the chat prompt template
-prompt = ChatPromptTemplate.from_messages(
-    [
+# NEW: Market-specific prompts
+MARKET_PROMPTS = {
+    "dutch": """
+    You are a real estate investment analysis AI specializing in the Dutch market. Your job is to analyze the provided property data and generate a detailed investment analysis.
+    
+    Consider Dutch market factors such as:
+    - High demand for housing in major cities (Amsterdam, Rotterdam, Utrecht, The Hague)
+    - Strict rental regulations and social housing requirements
+    - Energy efficiency requirements (energy labels)
+    - Property tax (WOZ) implications
+    - Dutch rental point system for rent calculations
+    
+    The response must strictly follow the format below to ensure it can be parsed correctly by regex patterns.
+
+    1. **Property Details**:
+       - Address, price, living area, number of bedrooms, number of bathrooms, and year built.
+
+    Based on the provided data, generate:
+    - An **Investment Score** (0-100) that reflects the overall investment potential. Consider all provided details including bathrooms and year built.
+    - A detailed explanation of the score, highlighting the strengths and weaknesses of the property.
+    - An estimated **ROI (Return on Investment)** percentage for 5 years and 10 years based on reasonable assumptions about rental income and expenses.
+    - The **Yearly Yield** percentage, calculated as (Gross Annual Income / Purchase Price) * 100.
+    - The **Monthly Rental Income** (best estimate based on the property details and Dutch rental point system).
+    - The **Expected Monthly Income** after potential improvements and market adjustments (should be 5-15% higher than current rental income).
+    - The **Yearly Appreciation** percentage and its corresponding value in euros.
+
+    The response must strictly follow this format:
+
+    **Investment Score**: <score>/100
+
+    **Address**: <address>
+
+    **Score Explanation**:
+    <explanation>
+
+    **Strengths**:
+     <strength 1>
+     <strength 2>
+     <strength 3>
+
+    **Weaknesses**:
+     <weakness 1>
+     <weakness 2>
+     <weakness 3>
+
+    **Estimated ROI**:
+    ROI (5 years): <value>%
+    ROI (10 years): <value>%
+
+    **Yearly Yield**:
+    approximately <value>%
+
+    **Monthly Rental Income**:
+    approximately €<value>
+
+    **Expected Monthly Income**:
+    approximately €<value>
+
+    **Yearly Appreciation**:
+    approximately <value>% (€<value>)
+
+    Ensure the response strictly adheres to this format, including the exact headings, spacing, and structure. Do not include any additional text or explanations outside this format.
+    """,
+    
+    "spanish": """
+    You are a real estate investment analysis AI specializing in the Spanish market. Your job is to analyze the provided property data and generate a detailed investment analysis.
+    
+    Consider Spanish market factors such as:
+    - Tourism potential (coastal areas, major cities like Madrid, Barcelona, Valencia)
+    - Golden Visa eligibility (properties over €500,000)
+    - Regional tax differences between autonomous communities
+    - Seasonal rental potential (Airbnb, vacation rentals)
+    - Energy efficiency requirements and certificates
+    - Spanish property market trends and appreciation rates
+    
+    The response must strictly follow the format below to ensure it can be parsed correctly by regex patterns.
+
+    1. **Property Details**:
+       - Address, price, living area, number of bedrooms, number of bathrooms, and year built.
+
+    Based on the provided data, generate:
+    - An **Investment Score** (0-100) that reflects the overall investment potential. Consider all provided details including bathrooms and year built.
+    - A detailed explanation of the score, highlighting the strengths and weaknesses of the property.
+    - An estimated **ROI (Return on Investment)** percentage for 5 years and 10 years based on reasonable assumptions about rental income and expenses.
+    - The **Yearly Yield** percentage, calculated as (Gross Annual Income / Purchase Price) * 100.
+    - The **Monthly Rental Income** (best estimate for long-term rental based on the property details).
+    - The **Expected Monthly Income** after potential improvements and market adjustments (should be 5-15% higher than current rental income).
+    - The **Yearly Appreciation** percentage and its corresponding value in euros.
+
+    The response must strictly follow this format:
+
+    **Investment Score**: <score>/100
+
+    **Address**: <address>
+
+    **Score Explanation**:
+    <explanation>
+
+    **Strengths**:
+     <strength 1>
+     <strength 2>
+     <strength 3>
+
+    **Weaknesses**:
+     <weakness 1>
+     <weakness 2>
+     <weakness 3>
+
+    **Estimated ROI**:
+    ROI (5 years): <value>%
+    ROI (10 years): <value>%
+
+    **Yearly Yield**:
+    approximately <value>%
+
+    **Monthly Rental Income**:
+    approximately €<value>
+
+    **Expected Monthly Income**:
+    approximately €<value>
+
+    **Yearly Appreciation**:
+    approximately <value>% (€<value>)
+
+    Ensure the response strictly adheres to this format, including the exact headings, spacing, and structure. Do not include any additional text or explanations outside this format.
+    """
+}
+
+# NEW: Function to determine market based on domain
+def get_market_from_domain(domain: str) -> str:
+    """Determine the market type based on the domain"""
+    if any(dutch_domain in domain for dutch_domain in ["funda.nl"]):
+        return "dutch"
+    elif any(spanish_domain in domain for spanish_domain in ["idealista.com", "fotocasa.es", "habitaclia.com"]):
+        return "spanish"
+    else:
+        return "dutch"  # Default fallback
+
+# NEW: Create market-specific prompt template
+def create_market_prompt(market: str) -> ChatPromptTemplate:
+    """Create a market-specific prompt template"""
+    prompt_content = MARKET_PROMPTS.get(market, MARKET_PROMPTS["dutch"])
+    
+    return ChatPromptTemplate.from_messages([
         {
             "role": "system",
-            "content": """
-            You are a real estate investment analysis AI. Your job is to analyze the provided property data and generate a detailed investment analysis.
-            The response must strictly follow the format below to ensure it can be parsed correctly by regex patterns.
-
-            1. **Property Details**:
-               - Address, price, living area, number of bedrooms, number of bathrooms, and year built.
-
-            Based on the provided data, generate:
-            - An **Investment Score** (0-100) that reflects the overall investment potential. Consider all provided details including bathrooms and year built.
-            - A detailed explanation of the score, highlighting the strengths and weaknesses of the property.
-            - An estimated **ROI (Return on Investment)** percentage for 5 years and 10 years based on reasonable assumptions about rental income and expenses.
-            - The **Yearly Yield** percentage, calculated as (Gross Annual Income / Purchase Price) * 100.
-            - The **Monthly Rental Income** (best estimate based on the property details).
-            - The **Expected Monthly Income** after potential improvements and market adjustments (should be 5-15% higher than current rental income).
-            - The **Yearly Appreciation** percentage and its corresponding value in euros.
-
-            The response must strictly follow this format:
-
-            **Investment Score**: <score>/100
-
-            **Address**: <address>
-
-            **Score Explanation**:
-            <explanation>
-
-            **Strengths**:
-             <strength 1>
-             <strength 2>
-             <strength 3>
-
-            **Weaknesses**:
-             <weakness 1>
-             <weakness 2>
-             <weakness 3>
-
-            **Estimated ROI**:
-            ROI (5 years): <value>%
-            ROI (10 years): <value>%
-
-            **Yearly Yield**:
-            approximately <value>%
-
-            **Monthly Rental Income**:
-            approximately €<value>
-
-            **Expected Monthly Income**:
-            approximately €<value>
-
-            **Yearly Appreciation**:
-            approximately <value>% (€<value>)
-
-            Ensure the response strictly adheres to this format, including the exact headings, spacing, and structure. Do not include any additional text or explanations outside this format.
-            """
+            "content": prompt_content
         },
         {
             "role": "user",
@@ -109,8 +201,7 @@ prompt = ChatPromptTemplate.from_messages(
             Year Built: {year_built}
             """
         },
-    ]
-)
+    ])
 
 # Define the request model
 class AnalyzeRequest(BaseModel):
@@ -177,20 +268,31 @@ async def analyze(request: AnalyzeRequest):
              logging.warning("Proxy environment variables not fully set. Proceeding without proxy.")
         # --- End Proxy Configuration ---
 
-
+        # NEW: Enhanced domain detection with Spanish scrapers
         if "funda.nl" in domain:
             logging.info("Detected Funda URL. Using FundaScraper.")
             scraper = FundaScraper()
         elif "idealista.com" in domain:
             logging.info("Detected Idealista URL. Using IdealistaScraper.")
             scraper = IdealistaScraper()
+        elif "fotocasa.es" in domain:
+            logging.info("Detected Fotocasa URL. Using FotocasaScraper.")
+            scraper = FotocasaScraper(proxy=proxy_config)
+        elif "habitaclia.com" in domain:
+            logging.info("Detected Habitaclia URL. Using HabitacliaScraper.")
+            scraper = HabitacliaScraper(proxy=proxy_config)
         else:
             logging.error(f"Unsupported domain: {domain}")
-            raise HTTPException(status_code=400, detail=f"Unsupported URL domain: {domain}. Only funda.nl and idealista.com are supported.")
+            raise HTTPException(status_code=400, detail=f"Unsupported URL domain: {domain}. Supported domains: funda.nl, idealista.com, fotocasa.es, habitaclia.com")
+
+        # NEW: Determine market for AI analysis
+        market = get_market_from_domain(domain)
+        logging.info(f"Using {market} market analysis for domain: {domain}")
 
        # --- Scrape data using the selected scraper ---
         scraped_data = None
-        # --- Only call start/close for FundaScraper (or scrapers that need it) ---
+        
+        # NEW: Enhanced scraper handling with async support for new scrapers
         if isinstance(scraper, FundaScraper):
             await scraper.start() # Assuming FundaScraper needs async start
             try:
@@ -205,6 +307,13 @@ async def analyze(request: AnalyzeRequest):
             loop = asyncio.get_event_loop()
             scraped_data = await loop.run_in_executor(None, scraper.scrape_property, request.url)
             # No start/close needed for IdealistaScraper
+        elif isinstance(scraper, (FotocasaScraper, HabitacliaScraper)):
+            # NEW: Handle new Spanish scrapers with async support
+            try:
+                await scraper.start()
+                scraped_data = await scraper.scrape_property(request.url)
+            finally:
+                await scraper.close()
         # --- End Scraper Execution ---
 
         if not scraped_data or scraped_data.get('error'):
@@ -244,6 +353,9 @@ async def analyze(request: AnalyzeRequest):
         }
         logging.debug(f"Simplified data being sent to frontend (under 'scraped_data'): {simplified_data}")
 
+        # NEW: Use market-specific prompt
+        prompt = create_market_prompt(market)
+        
         # Format the input for the prompt
         formatted_data = prompt.format_messages(
             address=simplified_data["address"],
@@ -304,11 +416,11 @@ async def analyze(request: AnalyzeRequest):
             investment_score, address, roi_5_years, roi_10_years, yearly_yield, monthly_rental_income, expected_monthly_income, yearly_appreciation_percentage, yearly_appreciation_value, strengths, weaknesses
         )
 
-        # test comment
-
+        # NEW: Add market information to response
         # --- Return response ---
         return {
             "success": True,
+            "market": market,  # NEW: Include market information
             "scraped_data": simplified_data,
             "agent_analysis": {
                 "investment_score": investment_score,
