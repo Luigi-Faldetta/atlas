@@ -1,12 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   experimental: {
     serverActions: {
       allowedOrigins: ["localhost:3000"],
     },
-    // Removing esmExternals as it's not recommended
   },
   // Prevent module not found issues
   webpack: (config, { isServer }) => {
