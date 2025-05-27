@@ -1,38 +1,61 @@
-# Use an official Python runtime as a parent image
+# AI Agent Service Dockerfile
+# This containerizes the Python FastAPI application that handles web scraping and AI processing
+
 FROM python:3.11-slim
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
-# Copy the requirements file from the ai_agent subdirectory into the container at /app
-COPY ai_agent/requirements.txt .
-
-# Install any needed system dependencies for Playwright and then Python packages
-# Use --no-cache-dir to reduce image size
+# Install system dependencies for Playwright and web scraping
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Add system dependencies required by Playwright's browsers if needed
-    # The playwright install command below often handles this, but keep for reference
-    # Example: libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libdbus-1-3 libatspi2.0-0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libxkbcommon0 libpango-1.0-0 libcairo2 libasound2
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install --no-cache-dir -r requirements.txt \
-    # Install Playwright browsers and their dependencies *inside* the container
-    && python -m playwright install --with-deps chromium
+    # Required for Playwright browsers
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libdbus-1-3 \
+    libatspi2.0-0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libxkbcommon0 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
+    # Additional utilities
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the contents of the ai_agent subdirectory into the container at /app
-# This ensures atlasScript.py and new_funda_scraper.py are directly in /app
+# Copy requirements and install Python dependencies
+COPY ai_agent/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Playwright browsers
+RUN python -m playwright install chromium
+
+# Copy AI agent source code
 COPY ai_agent/ .
 
-# Make port 8000 available to the world outside this container
-# Render typically uses port 10000 by default, but we define 8000 here.
-# Ensure your Render service settings match this or the CMD below.
+# Create non-root user for security
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose port
 EXPOSE 8000
 
-# Define environment variable to listen on all interfaces
+# Environment variables
 ENV HOST=0.0.0.0
 ENV PORT=8000
-# You can change this to 10000 if preferred
+ENV PYTHONUNBUFFERED=1
 
-# Run uvicorn when the container launches
-# Since atlasScript.py is now directly in /app, this command is correct
-# Ensure Render's Start Command matches this (adjust port if necessary)
-CMD ["uvicorn", "atlasScript:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application
+CMD ["uvicorn", "atlasScript:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
