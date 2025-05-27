@@ -50,3 +50,103 @@ alwaysApply: true
 - **TypeScript Strictness**: "Enforce strict TypeScript typing for all components and functions to prevent runtime errors."
 - **Component Props**: "Define explicit interface or type definitions for all component props, avoiding 'any' types."
 - **Error Boundaries**: "Implement error boundaries around key application sections to prevent cascading failures."
+
+# Atlas AI Agent Engineering Rules
+
+## 🧠 Agentic AI Prompt Architecture
+
+### Core Agentic Patterns
+- **Chain-of-Thought Reasoning**: "Structure all AI agent prompts to include explicit reasoning steps: Problem Analysis → Strategy Formation → Step-by-Step Execution → Validation → Final Output"
+- **Self-Reflection Mechanisms**: "Implement self-correction patterns where agents evaluate their own outputs and iterate: Initial Response → Self-Critique → Refinement → Final Answer"
+- **Multi-Step Decomposition**: "Break complex tasks into discrete, manageable steps with clear success criteria for each phase"
+- **Context-Aware Adaptation**: "Design prompts that adapt behavior based on input complexity, domain specificity, and user expertise level"
+
+### Structured Prompt Templates
+- **System Role Definition**: "Begin every agent prompt with a clear, specific role definition that includes expertise domain, behavioral constraints, and output expectations"
+- **Input Processing Framework**: "Structure input analysis with: Context Extraction → Key Information Identification → Assumption Validation → Processing Strategy Selection"
+- **Output Format Specification**: "Define exact output formats with structured sections, required fields, and validation criteria to ensure consistent, parseable responses"
+- **Error Handling Protocols**: "Include explicit error handling instructions: Input Validation → Fallback Strategies → Error Communication → Recovery Procedures"
+
+## 🔄 Dynamic Execution Patterns
+
+### Adaptive Reasoning Chains
+- **Progressive Complexity**: "Start with simple analysis and progressively add complexity based on available data quality and completeness"
+- **Multi-Perspective Analysis**: "Implement multiple viewpoint evaluation: Technical Analysis → Market Context → Risk Assessment → Opportunity Identification"
+- **Confidence Scoring**: "Include confidence levels for each analysis component with explicit reasoning for uncertainty areas"
+- **Iterative Refinement**: "Design prompts for iterative improvement: Initial Analysis → Feedback Integration → Enhanced Analysis → Final Recommendation"
+
+### Tool Integration Strategies
+- **Tool Selection Logic**: "Implement intelligent tool selection based on task requirements: Data Availability Assessment → Tool Capability Matching → Execution Strategy → Result Validation"
+- **Sequential Tool Chaining**: "Design workflows where tool outputs feed into subsequent analysis steps with proper data transformation and validation"
+- **Parallel Processing Patterns**: "Structure prompts to handle multiple data sources simultaneously while maintaining coherent analysis integration"
+- **Fallback Mechanisms**: "Include alternative analysis paths when primary tools fail or data is insufficient"
+
+## 📊 Domain-Specific Intelligence
+
+### Real Estate Investment Analysis
+- **Market Context Integration**: "Incorporate location-specific factors: Local regulations, market trends, demographic data, economic indicators, and seasonal patterns"
+- **Multi-Metric Evaluation**: "Structure analysis to cover: Financial metrics (ROI, yield, cash flow) → Risk factors (market volatility, liquidity) → Growth potential (appreciation, development plans)"
+- **Comparative Analysis Framework**: "Include benchmarking against: Similar properties, market averages, historical performance, and investment alternatives"
+- **Scenario Planning**: "Generate multiple scenarios: Conservative, optimistic, and stress-test conditions with probability assessments"
+
+### Data Quality Assessment
+- **Source Reliability Scoring**: "Evaluate and score data sources based on: Recency, accuracy, completeness, and source authority"
+- **Gap Identification**: "Explicitly identify missing data points and their impact on analysis reliability"
+- **Assumption Documentation**: "Clearly state all assumptions made due to data limitations with confidence intervals"
+- **Validation Cross-Checks**: "Implement consistency checks across multiple data points and flag discrepancies"
+
+## 🎯 Execution Optimization
+
+### Performance Monitoring
+- **Response Time Tracking**: "Monitor and optimize prompt execution time while maintaining analysis quality"
+- **Accuracy Validation**: "Implement feedback loops to validate agent predictions against actual outcomes"
+- **User Satisfaction Metrics**: "Track user engagement and satisfaction with agent responses for continuous improvement"
+- **Error Rate Monitoring**: "Monitor and categorize errors: Input parsing, analysis logic, output formatting, and tool integration failures"
+
+### Continuous Learning Patterns
+- **Feedback Integration**: "Design prompts to incorporate user feedback and historical performance data"
+- **Pattern Recognition**: "Implement learning from successful analysis patterns and common failure modes"
+- **Domain Knowledge Updates**: "Structure prompts to accommodate new market data, regulatory changes, and industry developments"
+- **Personalization Adaptation**: "Adapt analysis style and depth based on user expertise level and preferences"
+
+## 🛡️ Quality Assurance Framework
+
+### Validation Protocols
+- **Multi-Layer Verification**: "Implement validation at: Input sanitization → Processing logic → Output formatting → Final review stages"
+- **Consistency Checks**: "Ensure analysis consistency across: Similar properties, time periods, and market conditions"
+- **Bias Detection**: "Include explicit bias checking for: Geographic preferences, property type favoritism, and market timing assumptions"
+- **Uncertainty Quantification**: "Clearly communicate confidence levels and potential error margins for all predictions"
+
+### Error Prevention
+- **Input Validation**: "Implement comprehensive input checking: Data format validation, range checking, and completeness verification"
+- **Logic Verification**: "Include reasoning validation steps to ensure logical consistency in analysis chains"
+- **Output Sanitization**: "Validate all outputs for: Format compliance, numerical accuracy, and logical coherence"
+- **Graceful Degradation**: "Design fallback analysis methods when primary approaches fail or data is insufficient"
+
+## 🔧 Implementation Guidelines
+
+### Prompt Engineering Best Practices
+- **Modular Design**: "Structure prompts as composable modules: System instructions, task-specific logic, output formatting, and validation rules"
+- **Version Control**: "Maintain prompt versioning with clear change logs and performance impact assessment"
+- **A/B Testing Framework**: "Implement systematic testing of prompt variations with quantitative performance metrics"
+- **Documentation Standards**: "Document all prompt components with: Purpose, expected inputs/outputs, performance characteristics, and known limitations"
+
+### Integration Patterns
+- **API Design**: "Structure agent APIs with: Clear input schemas, standardized output formats, error handling, and rate limiting"
+- **Caching Strategies**: "Implement intelligent caching for: Repeated analyses, market data, and computation-heavy operations"
+- **Scalability Considerations**: "Design prompts and workflows to handle: High request volumes, concurrent processing, and resource optimization"
+- **Security Protocols**: "Include security measures for: Input sanitization, output validation, and sensitive data handling"
+
+## 📈 Advanced Agentic Capabilities
+
+### Meta-Cognitive Functions
+- **Self-Assessment**: "Include agent self-evaluation of analysis quality and confidence levels"
+- **Strategy Selection**: "Implement dynamic strategy selection based on problem complexity and available resources"
+- **Learning Integration**: "Design prompts to incorporate lessons from previous analyses and user feedback"
+- **Goal Alignment**: "Ensure agent behavior aligns with user objectives and ethical guidelines"
+
+### Collaborative Intelligence
+- **Multi-Agent Coordination**: "Structure prompts for collaboration between specialized agents (market analysis, financial modeling, risk assessment)"
+- **Human-AI Collaboration**: "Design interaction patterns that leverage human expertise while maximizing AI capabilities"
+- **Knowledge Synthesis**: "Implement patterns for combining insights from multiple sources and analysis approaches"
+- **Consensus Building**: "Include mechanisms for resolving conflicting analyses and building coherent recommendations"
