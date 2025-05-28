@@ -3,3 +3,158 @@ description:
 globs:
 alwaysApply: false
 ---
+# Rapid Prototyping Rules for Beer Test Phase
+
+## 🚀 Speed-First Development Principles
+
+### MVP Focus Strategy
+- **Core Features Only**: Implement essential agentic patterns first, defer optimization
+- **Quick Wins**: Prioritize features that provide immediate user value
+- **Iterative Approach**: Build → Test → Learn → Iterate in 2-3 day cycles
+- **Technical Debt Acceptance**: Accept temporary shortcuts for rapid validation
+
+### Code Quality Balance
+```python
+# GOOD for beer test: Quick implementation with basic validation
+async def analyze_property_mvp(self, url: str) -> Dict[str, Any]:
+    """MVP implementation focusing on core functionality"""
+    try:
+        data = await self.scrape_property(url)
+        analysis = await self.basic_ai_analysis(data)
+        return {"status": "success", "analysis": analysis}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+# AVOID for beer test: Over-engineered solution
+class ComplexPropertyAnalysisOrchestrator:
+    """Too complex for initial validation phase"""
+    # Multiple inheritance, complex patterns, etc.
+```
+
+## 🔄 Rapid Iteration Patterns
+
+### User Feedback Integration
+- **Immediate Implementation**: Apply user feedback within 24-48 hours
+- **A/B Testing**: Test prompt variations with real users
+- **Quick Surveys**: Embed feedback collection directly in the interface
+- **Usage Analytics**: Track user behavior patterns for optimization
+
+### Testing Strategy for Speed
+```python
+# Focus on integration tests over unit tests during beer test
+def test_end_to_end_property_analysis():
+    """Test complete user workflow"""
+    result = agent.analyze_property("https://example.com/property")
+    assert result["status"] == "success"
+    assert "investment_score" in result["analysis"]
+    assert result["analysis"]["investment_score"] > 0
+
+# Skip complex unit tests for now
+# def test_complex_internal_logic(): # DEFER
+```
+
+## 📊 Performance Monitoring for Rapid Feedback
+
+### Essential Metrics Only
+- **Response Time**: Track analysis completion time
+- **Success Rate**: Monitor analysis completion percentage
+- **User Satisfaction**: Simple 1-5 rating system
+- **Error Frequency**: Count and categorize failures
+
+### Quick Monitoring Setup
+```python
+# Simple performance tracking
+import time
+from functools import wraps
+
+def track_performance(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        start_time = time.time()
+        try:
+            result = await func(*args, **kwargs)
+            duration = time.time() - start_time
+            log_metric("analysis_duration", duration)
+            log_metric("analysis_success", 1)
+            return result
+        except Exception as e:
+            log_metric("analysis_error", 1)
+            raise
+    return wrapper
+```
+
+## 🛠️ Development Workflow for Beer Test
+
+### Daily Development Cycle
+1. **Morning**: Review user feedback from previous day
+2. **Implementation**: Focus on highest-impact improvements
+3. **Testing**: Quick validation with internal team
+4. **Deployment**: Push changes to beta environment
+5. **Evening**: Collect and analyze user feedback
+
+### Code Review Simplified
+- **Focus Areas**: User experience, core functionality, error handling
+- **Skip**: Code style nitpicks, performance micro-optimizations
+- **Checklist**:
+  - [ ] Does this improve user experience?
+  - [ ] Does this work for the core use case?
+  - [ ] Does this handle errors gracefully?
+  - [ ] Can users understand the output?
+
+## 🎯 User-Centric Development
+
+### Feature Prioritization
+1. **Must Have**: Core property analysis with basic agentic patterns
+2. **Should Have**: Multi-market support, confidence scoring
+3. **Could Have**: Advanced metrics, detailed explanations
+4. **Won't Have**: Complex optimization, edge case handling
+
+### User Testing Integration
+```python
+# Embed feedback collection in the analysis flow
+async def analyze_with_feedback_collection(self, property_data):
+    analysis = await self.analyze_property(property_data)
+    
+    # Add feedback prompt to response
+    analysis["feedback_request"] = {
+        "question": "How useful was this analysis? (1-5)",
+        "follow_up": "What would make this more helpful?",
+        "endpoint": "/api/feedback"
+    }
+    
+    return analysis
+```
+
+## 🚨 Error Handling for User Experience
+
+### Graceful Degradation
+- **Primary Analysis Fails**: Provide basic metrics with clear limitations
+- **Scraping Issues**: Allow manual data input with guided prompts
+- **AI Service Down**: Show cached similar property analysis
+- **Timeout**: Provide partial results with completion estimate
+
+### User-Friendly Error Messages
+```python
+ERROR_MESSAGES = {
+    "scraping_failed": "We couldn't access this property listing. Please check the URL or try again later.",
+    "analysis_timeout": "Analysis is taking longer than expected. We'll email you the results when complete.",
+    "insufficient_data": "We found limited information for this property. Here's what we could analyze:",
+    "service_unavailable": "Our analysis service is temporarily unavailable. Please try again in a few minutes."
+}
+```
+
+## 📈 Success Metrics for Beer Test
+
+### User Engagement Indicators
+- **Session Duration**: >5 minutes indicates engagement
+- **Analysis Completion**: >80% completion rate target
+- **Return Usage**: >30% users return within a week
+- **Feedback Participation**: >50% users provide feedback
+
+### Technical Performance Targets
+- **Response Time**: <30 seconds for 90% of analyses
+- **Success Rate**: >90% successful analysis completion
+- **Error Recovery**: <10 seconds to provide fallback response
+- **Uptime**: >95% system availability during testing hours
+
+This rule ensures rapid development velocity while maintaining focus on user value and core agentic AI functionality during the critical beer test validation phase.

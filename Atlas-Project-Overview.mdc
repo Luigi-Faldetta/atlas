@@ -3,3 +3,92 @@ description:
 globs:
 alwaysApply: false
 ---
+# Atlas Real Estate AI Agent - Project Overview
+
+## 🎯 Project Vision
+Transform real estate investment analysis through advanced agentic AI that provides sophisticated, context-aware property evaluations with chain-of-thought reasoning and self-reflection capabilities.
+
+## 🏗️ Architecture Principles
+- **Agentic AI Design**: Implement chain-of-thought reasoning, self-reflection, and multi-step decomposition
+- **Context-Aware Adaptation**: Dynamic behavior based on data quality, market type, and user expertise
+- **Modular Prompt Engineering**: Composable, versioned prompt templates with validation protocols
+- **Multi-Market Intelligence**: Specialized knowledge for Dutch, Spanish, and international markets
+- **Quality Assurance Framework**: Comprehensive validation, error handling, and performance monitoring
+
+## 📋 Development Phases
+
+### Phase 1: Foundation & Core Architecture (Current)
+**Objective**: Establish enhanced agentic AI framework and core prompt engineering patterns
+**Duration**: 2-3 weeks
+**Key Deliverables**:
+- Enhanced atlas.mdc with agentic patterns
+- Structured prompt template system
+- Base agent architecture with context management
+- Initial market-specific intelligence modules
+
+### Phase 2: Advanced Agent Implementation
+**Objective**: Implement sophisticated agentic capabilities and multi-perspective analysis
+**Duration**: 3-4 weeks  
+**Key Deliverables**:
+- Chain-of-thought reasoning implementation
+- Self-reflection and validation mechanisms
+- Multi-perspective analysis framework (technical, market, risk, opportunity)
+- Advanced error handling and fallback strategies
+
+### Phase 3: Beer Test & Validation (Target Phase)
+**Objective**: Rapid prototyping, user testing, and iterative improvement
+**Duration**: 2-3 weeks
+**Key Deliverables**:
+- MVP with core agentic patterns
+- User feedback integration system
+- Performance baseline establishment
+- Automated testing framework for prompts
+
+### Phase 4: Market Intelligence & Optimization
+**Objective**: Enhance domain-specific knowledge and optimize performance
+**Duration**: 3-4 weeks
+**Key Deliverables**:
+- Advanced market-specific calculations (WOZ, Golden Visa, etc.)
+- Comparative analysis and benchmarking
+- Performance optimization and token efficiency
+- Advanced metrics implementation (DSCR, IRR, etc.)
+
+### Phase 5: Production & Scaling
+**Objective**: Production deployment with monitoring and continuous improvement
+**Duration**: 2-3 weeks
+**Key Deliverables**:
+- Production-ready deployment
+- Monitoring and analytics dashboard
+- Continuous learning integration
+- Team collaboration features
+
+## 🛠️ Technology Stack
+- **AI Framework**: LangChain with OpenAI GPT-4o
+- **Backend**: FastAPI with async/await patterns
+- **Frontend**: Next.js with TypeScript
+- **Data Processing**: Pandas, asyncio for concurrent operations
+- **Testing**: pytest for agent validation, custom prompt testing framework
+- **Deployment**: Docker containers with environment-specific configurations
+
+## 📊 Success Metrics
+- **Analysis Quality**: >85% accuracy in investment score predictions
+- **Response Time**: <30 seconds for comprehensive property analysis
+- **User Satisfaction**: >4.5/5 rating from beta testers
+- **Token Efficiency**: <5000 tokens per analysis on average
+- **Error Rate**: <5% analysis failures with successful fallback recovery
+
+## 🔄 Quality Assurance
+- **Automated Testing**: Prompt validation, numerical consistency, integration tests
+- **Code Review**: Atlas.mdc compliance, agentic pattern implementation
+- **Performance Monitoring**: Token usage, response time, accuracy tracking
+- **User Feedback**: Continuous integration of user testing insights
+
+## 🚀 Beer Test Phase Focus
+The beer test phase (Phase 3) will specifically validate:
+1. **Core Agentic Patterns**: Chain-of-thought reasoning effectiveness
+2. **User Experience**: Intuitive interaction with AI agent analysis
+3. **Analysis Quality**: Accuracy and usefulness of investment recommendations
+4. **Performance**: Response time and system reliability under user load
+5. **Adaptability**: Context-aware behavior across different property types and markets
+
+This overview serves as the foundation for all subsequent phase planning and execution, ensuring alignment with agentic AI principles and rapid development velocity.

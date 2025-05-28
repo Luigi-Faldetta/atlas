@@ -1,5 +1,183 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+# Atlas AI Agent Development Rules
+
+## 🧠 Agentic AI Development Patterns
+
+### Core Development Principles
+- **Chain-of-Thought Implementation**: Structure all AI agent code to include explicit reasoning steps in prompts
+- **Self-Reflection Mechanisms**: Implement validation and iterative improvement in agent responses
+- **Multi-Step Decomposition**: Break complex AI tasks into discrete, manageable components
+- **Context-Aware Adaptation**: Design prompts that adapt based on data quality and user expertise
+
+### Prompt Engineering Standards
+- **Modular Design**: Structure prompts as composable modules with clear separation of concerns
+- **Version Control**: Maintain prompt versioning with performance impact assessment
+- **Validation Protocols**: Include multi-layer verification for input, processing, and output
+- **Error Handling**: Implement comprehensive fallback strategies and recovery procedures
+
+## 🔄 Code Organization for AI Agents
+
+### File Structure Requirements
+```
+ai_agent/
+├── prompts/
+│   ├── enhanced_agent_prompts.py     # Structured prompt templates
+│   ├── market_specific_prompts.py    # Domain-specific prompts
+│   └── validation_prompts.py         # Self-reflection patterns
+├── agents/
+│   ├── enhanced_atlas_agent.py       # Main agent implementation
+│   ├── context_manager.py            # Adaptive context handling
+│   └── quality_assessor.py           # Analysis quality validation
+├── scrapers/
+│   ├── base_scraper.py               # Abstract scraper interface
+│   └── market_scrapers/              # Market-specific implementations
+└── tests/
+    ├── prompt_tests/                 # Prompt validation tests
+    └── agent_integration_tests/      # End-to-end agent tests
+```
+
+### Naming Conventions
+- **Agent Classes**: `Enhanced[Purpose]Agent` (e.g., `EnhancedAtlasAgent`)
+- **Prompt Templates**: `[Domain][Purpose]Prompts` (e.g., `RealEstateAnalysisPrompts`)
+- **Context Classes**: `[Purpose]Context` (e.g., `AgentContext`, `MarketContext`)
+- **Validation Functions**: `validate_[component]` (e.g., `validate_numerical_consistency`)
+
+## 📊 Real Estate Domain Intelligence
+
+### Market-Specific Implementation
+- **Dutch Market**: Implement WOZ tax calculations, energy label requirements, rental point system
+- **Spanish Market**: Include Golden Visa eligibility, regional tax differences, tourism potential
+- **Data Quality Scoring**: Automatic assessment based on completeness, accuracy, and recency
+- **Comparative Analysis**: Benchmark against similar properties and market averages
+
+### Financial Metrics Requirements
+```python
+# Required metrics for all property analyses
+REQUIRED_METRICS = [
+    "investment_score",      # 0-100 scale
+    "roi_5_year",           # 5-year ROI percentage
+    "roi_10_year",          # 10-year ROI percentage
+    "yearly_yield",         # Annual yield percentage
+    "monthly_rental",       # Estimated monthly rental income
+    "confidence_scores"     # Confidence levels for each metric
+]
+
+# Advanced metrics for detailed analysis
+ADVANCED_METRICS = [
+    "dscr",                 # Debt Service Coverage Ratio
+    "cash_on_cash_return",  # Cash-on-cash return percentage
+    "grm",                  # Gross Rent Multiplier
+    "irr",                  # Internal Rate of Return
+    "equity_buildup"        # Annual equity gain
+]
+```
+
+## 🛡️ Quality Assurance Framework
+
+### Testing Requirements
+- **Prompt Validation Tests**: Verify prompt structure and output format consistency
+- **Agent Response Tests**: Validate numerical accuracy and logical consistency
+- **Integration Tests**: Test complete analysis workflow from data input to final output
+- **Performance Tests**: Monitor response time and token usage efficiency
+
+### Code Quality Standards
+```python
+# Example: Proper error handling for AI agents
+async def analyze_property_enhanced(self, property_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Enhanced property analysis with comprehensive error handling
+    Following atlas.mdc: Chain-of-thought reasoning and self-reflection
+    """
+    try:
+        # Step 1: Validate input data
+        if not self.validate_input_data(property_data):
+            raise ValueError("Invalid property data provided")
+        
+        # Step 2: Create adaptive context
+        context = self.create_agent_context(property_data)
+        
+        # Step 3: Execute analysis with fallback
+        result = await self.execute_analysis_with_fallback(context, property_data)
+        
+        # Step 4: Validate and assess quality
+        validated_result = self.validate_and_assess_quality(result, context)
+        
+        return validated_result
+        
+    except Exception as e:
+        self.logger.error(f"Analysis failed: {str(e)}")
+        return await self.fallback_analysis(property_data)
+```
+
+### Documentation Standards
+- **Function Docstrings**: Include purpose, atlas.mdc rule reference, input/output specifications
+- **Class Documentation**: Explain agentic patterns implemented and usage examples
+- **Prompt Documentation**: Document prompt structure, expected outputs, and validation criteria
+- **API Documentation**: Clear schemas for all agent endpoints and response formats
+
+## 🔧 Development Workflow Integration
+
+### Commit Message Format
+```
+feat(agent): implement chain-of-thought reasoning for property analysis
+
+- Add structured prompt templates following atlas.mdc patterns
+- Implement self-reflection mechanisms for quality validation
+- Include confidence scoring for all analysis components
+- Add fallback strategies for incomplete data scenarios
+
+Refs: atlas.mdc agentic patterns, enhanced_agent_prompts.py
+```
+
+### Code Review Checklist
+- [ ] Follows atlas.mdc agentic patterns (chain-of-thought, self-reflection)
+- [ ] Implements proper error handling and fallback mechanisms
+- [ ] Includes confidence scoring and quality assessment
+- [ ] Has comprehensive test coverage for prompt validation
+- [ ] Documents prompt structure and expected outputs
+- [ ] Validates numerical consistency and logical coherence
+- [ ] Implements market-specific intelligence where applicable
+
+### Performance Monitoring
+- **Token Usage Tracking**: Monitor prompt length and context efficiency
+- **Response Time Metrics**: Track analysis completion time by complexity level
+- **Accuracy Validation**: Compare predictions against actual market outcomes
+- **User Satisfaction**: Track engagement and feedback on agent responses
+
+## 🚀 Beer Test Phase Specific Rules
+
+### Rapid Prototyping Standards
+- **MVP Focus**: Implement core agentic patterns first, optimize later
+- **Iterative Testing**: Test each prompt component independently before integration
+- **User Feedback Integration**: Rapid incorporation of user testing insights
+- **Performance Baselines**: Establish minimum acceptable response quality thresholds
+
+### Testing Automation
+```python
+# Example: Automated prompt testing for beer test phase
+class PromptValidationTest:
+    def test_chain_of_thought_structure(self):
+        """Validate that prompts include explicit reasoning steps"""
+        prompt = self.agent.build_analysis_prompt(self.test_data)
+        assert "STEP 1:" in prompt
+        assert "STEP 2:" in prompt
+        assert "VALIDATION:" in prompt
+    
+    def test_self_reflection_mechanism(self):
+        """Ensure prompts include self-critique and refinement"""
+        prompt = self.agent.build_analysis_prompt(self.test_data)
+        assert "SELF-CRITIQUE" in prompt
+        assert "REFINEMENT PROCESS" in prompt
+    
+    def test_confidence_scoring(self):
+        """Verify confidence levels are included in responses"""
+        result = await self.agent.analyze_property(self.test_data)
+        assert "confidence_scores" in result
+        assert all(0 <= score <= 100 for score in result["confidence_scores"].values())
+```
+
+This rule ensures that all Atlas AI agent development follows the enhanced agentic patterns while maintaining rapid development velocity for the beer test phase.

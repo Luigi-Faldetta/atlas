@@ -1,5 +1,162 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+# Phase 3: Beer Test & Validation - Definition
+
+## 🎯 Phase Objectives
+Rapidly prototype and validate core agentic AI patterns through user testing, establishing performance baselines and iterative improvement cycles for the Atlas real estate investment analysis agent.
+
+## 📋 Scope & Deliverables
+
+### Core MVP Features
+- **Enhanced Agentic Agent**: Functional implementation with chain-of-thought reasoning
+- **Multi-Market Support**: Basic Dutch and Spanish market analysis capabilities  
+- **Context-Aware Adaptation**: Dynamic behavior based on data quality and user expertise
+- **Self-Reflection Validation**: Built-in quality assessment and confidence scoring
+- **Fallback Mechanisms**: Robust error handling and recovery procedures
+
+### User Testing Framework
+- **Beta User Onboarding**: Streamlined process for real estate professionals
+- **Feedback Collection System**: Structured feedback forms and usage analytics
+- **A/B Testing Infrastructure**: Compare different prompt strategies and agent behaviors
+- **Performance Monitoring**: Real-time tracking of response quality and user satisfaction
+
+### Technical Validation
+- **Prompt Testing Suite**: Automated validation of agentic patterns
+- **Integration Testing**: End-to-end workflow validation from URL input to analysis output
+- **Performance Benchmarking**: Response time, token usage, and accuracy metrics
+- **Error Rate Monitoring**: Comprehensive logging and analysis of failure modes
+
+## 🚀 Tasks & Implementation Plan
+
+### Week 1: MVP Development & Core Patterns
+**Task 1.1**: Implement Enhanced Atlas Agent
+- [ ] Create `EnhancedAtlasAgent` class with agentic patterns
+- [ ] Implement chain-of-thought reasoning in prompts
+- [ ] Add self-reflection and validation mechanisms
+- [ ] Include confidence scoring for all analysis components
+
+**Task 1.2**: Context Management System
+- [ ] Develop `AgentContext` for adaptive behavior
+- [ ] Implement data quality assessment algorithms
+- [ ] Create market type detection and specialization
+- [ ] Add user expertise level adaptation
+
+**Task 1.3**: Prompt Template System
+- [ ] Build modular prompt components following atlas.mdc patterns
+- [ ] Create market-specific prompt variations
+- [ ] Implement prompt versioning and A/B testing capability
+- [ ] Add validation protocols for prompt outputs
+
+### Week 2: User Testing Infrastructure & Integration
+**Task 2.1**: Beta Testing Platform
+- [ ] Set up user onboarding and authentication system
+- [ ] Create feedback collection interface
+- [ ] Implement usage analytics and monitoring
+- [ ] Design A/B testing framework for prompt variations
+
+**Task 2.2**: Integration & API Development
+- [ ] Integrate enhanced agent with existing FastAPI backend
+- [ ] Update frontend to display agentic analysis results
+- [ ] Implement real-time feedback collection
+- [ ] Add performance monitoring dashboard
+
+**Task 2.3**: Testing & Validation Suite
+- [ ] Create automated prompt validation tests
+- [ ] Implement integration tests for complete analysis workflow
+- [ ] Set up performance benchmarking tools
+- [ ] Develop error tracking and analysis system
+
+### Week 3: User Testing & Iterative Improvement
+**Task 3.1**: Beta User Testing
+- [ ] Recruit 10-15 real estate professionals for testing
+- [ ] Conduct structured testing sessions with property analysis tasks
+- [ ] Collect quantitative and qualitative feedback
+- [ ] Monitor system performance under user load
+
+**Task 3.2**: Rapid Iteration Cycles
+- [ ] Analyze user feedback and identify improvement areas
+- [ ] Implement prompt refinements based on user insights
+- [ ] Optimize agent behavior for common use cases
+- [ ] Validate improvements through follow-up testing
+
+**Task 3.3**: Performance Optimization
+- [ ] Optimize token usage and response times
+- [ ] Improve error handling based on real-world usage patterns
+- [ ] Enhance confidence scoring accuracy
+- [ ] Refine fallback mechanisms
+
+## 🎯 Success Criteria & Definition of Done
+
+### Functional Requirements
+- [ ] **Core Analysis Capability**: Agent successfully analyzes 95% of submitted property URLs
+- [ ] **Agentic Pattern Implementation**: All analyses include chain-of-thought reasoning and self-reflection
+- [ ] **Context Adaptation**: Agent behavior adapts appropriately to data quality and market type
+- [ ] **Error Handling**: Graceful fallback for failed analyses with clear user communication
+
+### Performance Requirements
+- [ ] **Response Time**: <30 seconds for 90% of property analyses
+- [ ] **Token Efficiency**: Average <5000 tokens per comprehensive analysis
+- [ ] **Accuracy Baseline**: >80% user satisfaction with analysis quality and relevance
+- [ ] **System Reliability**: <5% error rate with successful fallback recovery
+
+### User Experience Requirements
+- [ ] **Intuitive Interface**: Users can successfully complete property analysis without training
+- [ ] **Clear Communication**: Analysis results are understandable to real estate professionals
+- [ ] **Confidence Indicators**: Users understand the reliability of different analysis components
+- [ ] **Actionable Insights**: Recommendations are specific and implementable
+
+### Technical Requirements
+- [ ] **Automated Testing**: 100% test coverage for core agentic patterns
+- [ ] **Monitoring Integration**: Real-time performance and error tracking
+- [ ] **Documentation**: Complete API documentation and user guides
+- [ ] **Scalability**: System handles 50+ concurrent users without degradation
+
+## ⚠️ Risks & Mitigation Strategies
+
+### Technical Risks
+**Risk**: Prompt complexity leads to inconsistent outputs
+**Mitigation**: Implement comprehensive prompt validation testing and iterative refinement
+
+**Risk**: Token usage exceeds budget constraints
+**Mitigation**: Optimize prompt efficiency and implement usage monitoring with alerts
+
+**Risk**: Integration issues with existing scraper systems
+**Mitigation**: Maintain backward compatibility and implement gradual migration strategy
+
+### User Experience Risks
+**Risk**: Analysis results are too complex for target users
+**Mitigation**: Conduct early user testing and simplify presentation based on feedback
+
+**Risk**: Response times are too slow for practical use
+**Mitigation**: Implement performance optimization and consider analysis complexity reduction
+
+### Business Risks
+**Risk**: User feedback indicates insufficient value proposition
+**Mitigation**: Focus on core use cases and iterate based on user priorities
+
+## 📊 Metrics & Monitoring
+
+### Key Performance Indicators
+- **User Engagement**: Session duration, analysis completion rate, return usage
+- **Analysis Quality**: User ratings, feedback sentiment, accuracy validation
+- **System Performance**: Response time distribution, error rates, token usage
+- **Agentic Effectiveness**: Chain-of-thought clarity, self-reflection accuracy, confidence calibration
+
+### Monitoring Dashboard
+- Real-time system performance metrics
+- User feedback aggregation and sentiment analysis
+- Prompt performance comparison (A/B testing results)
+- Error tracking and resolution status
+
+## 🔄 Phase Completion Criteria
+This phase is considered complete when:
+1. All success criteria are met with documented evidence
+2. User testing validates core value proposition with >4.0/5 satisfaction rating
+3. Technical performance meets established benchmarks
+4. Comprehensive documentation and handoff materials are prepared for Phase 4
+5. Lessons learned and improvement recommendations are documented for future phases
+
+The beer test phase serves as the critical validation point for the Atlas agentic AI approach, ensuring that advanced prompt engineering patterns translate into real user value and system reliability.

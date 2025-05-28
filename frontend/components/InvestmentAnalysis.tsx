@@ -1,63 +1,62 @@
+"use client";
+
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import {
+  HomeIcon,
+  MapPinIcon,
+  CurrencyDollarIcon,
+  CalendarDaysIcon,
+  ChartBarIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
-  HomeIcon,
-  CurrencyEuroIcon,
-  ChartBarIcon,
-  ScaleIcon,
-  DocumentTextIcon,
-  BookmarkIcon,
+  UserGroupIcon,
   AcademicCapIcon,
   ShoppingBagIcon,
   BuildingOfficeIcon,
-  UserGroupIcon,
-  FlagIcon,
-  PaperClipIcon,
-  XMarkIcon,
   QuestionMarkCircleIcon,
-  LightBulbIcon,
-  ShieldCheckIcon,
-  BoltIcon,
-  TagIcon,
-  TruckIcon,
-  GlobeAltIcon,
+  XMarkIcon,
+  DocumentTextIcon,
+  BookmarkIcon,
+  FlagIcon,
   ExclamationTriangleIcon,
   WifiIcon,
-  BuildingLibraryIcon,
+  BoltIcon,
+  GlobeAltIcon,
+  TruckIcon,
   ReceiptPercentIcon,
+  BuildingLibraryIcon,
   SpeakerWaveIcon,
+  ShieldExclamationIcon,
+  UserCircleIcon,
+  BeakerIcon,
+  FaceSmileIcon,
+  PaintBrushIcon,
+  BuildingStorefrontIcon,
+  HomeModernIcon,
+  MapIcon,
+  BanknotesIcon,
+  ArchiveBoxIcon,
+  WrenchScrewdriverIcon,
+  SparklesIcon,
+  LightBulbIcon,
+  ShieldCheckIcon,
+  PaperClipIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 import {
   SunIcon,
   FireIcon,
-  CalendarDaysIcon,
+  ScaleIcon,
+  PresentationChartLineIcon,
 } from '@heroicons/react/24/outline';
 import { // Assuming these icons might be useful for new metrics
   UsersIcon as CommunityIcon, // For Median Household Income, Age Distribution, Social Diversity
-  BuildingStorefrontIcon, // For Cultural Venues, Local Markets
-  MapPinIcon, // For Foot Traffic, Proximity to City
-  ChatBubbleLeftRightIcon, // For Sentiment Score
-  SparklesIcon, // For Aesthetic Score
-  HeartIcon as PetIcon, // For Pet-Friendliness
+  BuildingLibraryIcon as CulturalIcon, // For Cultural Venues
   BuildingOffice2Icon as OfficeIcon, // For Short-term rental activity (e.g. Airbnb)
-  BanknotesIcon, // For Assessed Property Value, Utility Costs
   ClipboardDocumentListIcon, // For Number of Listings
-  WrenchScrewdriverIcon, // For Utility Costs
   MagnifyingGlassIcon, // For general search/discovery if needed
   InformationCircleIcon, // For generic info display
-  MapIcon, // For Proximity to City
-  BuildingLibraryIcon as CulturalIcon, // For Cultural Venues
-  UserCircleIcon, // For Age Distribution, Social Diversity
-  CurrencyDollarIcon, // For Median Household Income
-  ArchiveBoxIcon, // For Number of Listings
-  BeakerIcon, // For Social Diversity Index
-  FaceSmileIcon, // For Sentiment Score
-  PaintBrushIcon, // For Aesthetic Score
-  HomeModernIcon, // For Pet-Friendliness, Parking Space
-  FireIcon as HeatIcon, // Re-using FireIcon as HeatIcon for Urban Heat Island, if needed specifically
-  PresentationChartLineIcon, // For Market Trends
 } from '@heroicons/react/24/outline';
 import ScoreBreakdownChart from './ScoreBreakdownChart';
 import InfoModal from './InfoModal';
@@ -185,7 +184,38 @@ type InvestmentAnalysisProps = {
   shortTermRentalActivity?: 'High' | 'Medium' | 'Low' | string;
   assessedPropertyValue?: number; // currency
   listingsNearby?: number; // count
-  estimatedUtilityCosts?: number; // currency per month
+  estimatedUtilityCosts?: number; // currency per month;
+
+  // Enhanced Agentic Features (NEW)
+  isEnhancedAnalysis?: boolean;
+  agenticFeatures?: {
+    chainOfThought?: boolean;
+    selfReflection?: boolean;
+    confidenceScoring?: boolean;
+    qualityValidation?: boolean;
+  };
+  reasoningProcess?: string;
+  selfReflection?: string;
+  confidenceScores?: {
+    [key: string]: number;
+  };
+  analysisContext?: {
+    market_type?: string;
+    data_quality_score?: number;
+    complexity_level?: string;
+    confidence_threshold?: number;
+  };
+  validation?: {
+    quality_score?: number;
+    validation_notes?: string[];
+    confidence_calibration?: number;
+  };
+  metadata?: {
+    analysis_type?: string;
+    market_specialization?: string;
+    timestamp?: string;
+    agentic_patterns?: string[];
+  };
 };
 
 const getScoreColor = (score: number) => {
@@ -363,6 +393,35 @@ const InvestmentAnalysis = ({
   
   // Property image
   propertyImage,
+
+  // Enhanced Agentic Features (NEW)
+  isEnhancedAnalysis = false,
+  agenticFeatures = {
+    chainOfThought: false,
+    selfReflection: false,
+    confidenceScoring: false,
+    qualityValidation: false,
+  },
+  reasoningProcess = "",
+  selfReflection = "",
+  confidenceScores = {},
+  analysisContext = {
+    market_type: "",
+    data_quality_score: 0,
+    complexity_level: "",
+    confidence_threshold: 0,
+  },
+  validation = {
+    quality_score: 0,
+    validation_notes: [],
+    confidence_calibration: 0,
+  },
+  metadata = {
+    analysis_type: "",
+    market_specialization: "",
+    timestamp: "",
+    agentic_patterns: [],
+  },
 }: InvestmentAnalysisProps) => {
   console.log('%%% RUNNING InvestmentAnalysis Component - VERSION CHECK %%%');
 
@@ -816,6 +875,171 @@ const InvestmentAnalysis = ({
           Feedback
         </button>
       </div>
+
+      {/* Enhanced AI Analysis Features Section */}
+      {isEnhancedAnalysis && (
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl shadow-lg border border-purple-200 dark:border-purple-700 mb-6">
+          <div className="border-b border-purple-200 dark:border-purple-700 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-lg mr-3">
+                  <SparklesIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-purple-800 dark:text-purple-200">Enhanced AI Analysis</h2>
+                  <p className="text-sm text-purple-600 dark:text-purple-300">Advanced agentic AI with transparent reasoning</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                {analysisContext?.market_type && (
+                  <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
+                    {analysisContext.market_type.charAt(0).toUpperCase() + analysisContext.market_type.slice(1)} Market
+                  </span>
+                )}
+                {validation?.quality_score && validation.quality_score > 0 && (
+                  <span className="px-3 py-1 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">
+                    Quality: {validation.quality_score}/100
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6">
+            {/* Agentic Features Status */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="flex items-center">
+                <div className={`w-3 h-3 rounded-full mr-2 ${agenticFeatures?.chainOfThought ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Chain-of-Thought</span>
+              </div>
+              <div className="flex items-center">
+                <div className={`w-3 h-3 rounded-full mr-2 ${agenticFeatures?.selfReflection ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Self-Reflection</span>
+              </div>
+              <div className="flex items-center">
+                <div className={`w-3 h-3 rounded-full mr-2 ${agenticFeatures?.confidenceScoring ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Confidence Scoring</span>
+              </div>
+              <div className="flex items-center">
+                <div className={`w-3 h-3 rounded-full mr-2 ${agenticFeatures?.qualityValidation ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Quality Validation</span>
+              </div>
+            </div>
+
+            {/* Analysis Context */}
+            {analysisContext && (analysisContext.data_quality_score && analysisContext.data_quality_score > 0 || analysisContext.complexity_level) && (
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 mb-4">
+                <h4 className="font-medium text-gray-800 dark:text-white mb-2">Analysis Context</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                  {analysisContext.data_quality_score && analysisContext.data_quality_score > 0 && (
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">Data Quality:</span>
+                      <span className="ml-2 font-medium text-gray-800 dark:text-white">{analysisContext.data_quality_score}/100</span>
+                    </div>
+                  )}
+                  {analysisContext.complexity_level && (
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">Complexity:</span>
+                      <span className="ml-2 font-medium text-gray-800 dark:text-white capitalize">{analysisContext.complexity_level}</span>
+                    </div>
+                  )}
+                  {analysisContext.confidence_threshold && analysisContext.confidence_threshold > 0 && (
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">Confidence Threshold:</span>
+                      <span className="ml-2 font-medium text-gray-800 dark:text-white">{analysisContext.confidence_threshold}%</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Confidence Scores */}
+            {confidenceScores && Object.keys(confidenceScores).length > 0 && (
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 mb-4">
+                <h4 className="font-medium text-gray-800 dark:text-white mb-3">Confidence Levels</h4>
+                <div className="space-y-3">
+                  {Object.entries(confidenceScores).map(([key, confidence]) => (
+                    <div key={key}>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                          {key.replace(/_/g, ' ').replace(' confidence', '')}
+                        </span>
+                        <span className="text-sm font-medium text-gray-800 dark:text-white">{confidence}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${
+                            confidence >= 80 ? 'bg-green-500' : 
+                            confidence >= 60 ? 'bg-yellow-500' : 
+                            'bg-red-500'
+                          }`}
+                          style={{ width: `${confidence}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Chain of Thought Reasoning */}
+            {reasoningProcess && reasoningProcess.length > 0 && (
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 mb-4">
+                <h4 className="font-medium text-gray-800 dark:text-white mb-2 flex items-center">
+                  <LightBulbIcon className="h-5 w-5 mr-2 text-amber-500" />
+                  AI Reasoning Process
+                </h4>
+                <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line max-h-48 overflow-y-auto">
+                  {reasoningProcess}
+                </div>
+              </div>
+            )}
+
+            {/* Self-Reflection */}
+            {selfReflection && selfReflection.length > 0 && (
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 mb-4">
+                <h4 className="font-medium text-gray-800 dark:text-white mb-2 flex items-center">
+                  <ShieldCheckIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  AI Self-Reflection
+                </h4>
+                <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line max-h-48 overflow-y-auto">
+                  {selfReflection}
+                </div>
+              </div>
+            )}
+
+            {/* Validation Notes */}
+            {validation?.validation_notes && validation.validation_notes.length > 0 && (
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
+                <h4 className="font-medium text-gray-800 dark:text-white mb-2 flex items-center">
+                  <ExclamationTriangleIcon className="h-5 w-5 mr-2 text-amber-500" />
+                  Quality Validation Notes
+                </h4>
+                <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                  {validation.validation_notes.map((note, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="inline-block w-2 h-2 bg-amber-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                      {note}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Analysis Metadata */}
+            {metadata?.timestamp && (
+              <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-700">
+                <div className="flex justify-between items-center text-xs text-purple-600 dark:text-purple-400">
+                  <span>Enhanced Analysis Generated: {new Date(metadata.timestamp).toLocaleString()}</span>
+                  {metadata.analysis_type && (
+                    <span className="capitalize">Type: {metadata.analysis_type}</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       
       {/* Feedback Modal */}
       {showFeedbackModal && (
@@ -1312,7 +1536,7 @@ const InvestmentAnalysis = ({
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400 flex items-center">
-                  <CurrencyEuroIcon className="h-4 w-4 mr-2" />
+                  <CurrencyDollarIcon className="h-4 w-4 mr-2" />
                   Cash on Cash Return
                 </span>
                 <span className="font-medium text-gray-800 dark:text-white">{formatPercentage(cashOnCashReturn)}</span>
@@ -2213,7 +2437,7 @@ const InvestmentAnalysis = ({
           </div>
           <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
             <span className="text-gray-600 dark:text-gray-400 flex items-center">
-              <PetIcon className="h-4 w-4 mr-2" />
+              <HomeModernIcon className="h-4 w-4 mr-2" />
               Pet-Friendliness Score
             </span>
             <span className="font-medium text-gray-800 dark:text-white">{petFriendlinessScore}/100</span>
