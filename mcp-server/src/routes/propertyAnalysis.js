@@ -27,6 +27,27 @@ router.get(
   propertyAnalysisController.getLocalNews
 );
 
+// NEW: Endpoint: /api/v1/property-analysis/:propertyIdentifier/demographics
+router.get(
+  '/:propertyIdentifier/demographics', 
+  rateLimiter.standard,
+  propertyAnalysisController.getDemographics
+);
+
+// NEW: Endpoint: /api/v1/property-analysis/:propertyIdentifier/lifestyle
+router.get(
+  '/:propertyIdentifier/lifestyle', 
+  rateLimiter.standard,
+  propertyAnalysisController.getLifestyle
+);
+
+// NEW: Endpoint: /api/v1/property-analysis/:propertyIdentifier/market-activity
+router.get(
+  '/:propertyIdentifier/market-activity', 
+  rateLimiter.standard,
+  propertyAnalysisController.getMarketActivity
+);
+
 // Endpoint: /api/v1/property-analysis/:propertyIdentifier/financials
 router.get(
   '/:propertyIdentifier/financials', 
@@ -53,6 +74,21 @@ router.get(
   '/:propertyIdentifier/full', 
   rateLimiter.strict,
   propertyAnalysisController.getFullAnalysis
+);
+
+// NEW: Enhanced analysis endpoints with ChatGPT web browsing integration
+// Endpoint: /api/v1/property-analysis/:propertyIdentifier/enhanced
+router.get(
+  '/:propertyIdentifier/enhanced', 
+  rateLimiter.strict, // Use strict rate limiting for resource-intensive operations
+  propertyAnalysisController.getEnhancedAnalysis
+);
+
+// NEW: Endpoint: /api/v1/property-analysis/:propertyIdentifier/market-research
+router.get(
+  '/:propertyIdentifier/market-research', 
+  rateLimiter.standard,
+  propertyAnalysisController.getMarketResearch
 );
 
 /*

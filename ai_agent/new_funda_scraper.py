@@ -36,7 +36,7 @@ class FundaScraper:
                 },
             )
         else:
-            self.browser = await self.playwright.chromium.launch(headless=False)
+            self.browser = await self.playwright.chromium.launch(headless=True)
 
         # Create a browser context with ignore_https_errors=True
         self.context = await self.browser.new_context(ignore_https_errors=True)
@@ -49,6 +49,10 @@ class FundaScraper:
         :param url: The URL of the Funda property page.
         :return: A dictionary containing property data.
         """
+        # Auto-start browser if not already started
+        if not self.page:
+            await self.start()
+            
         try:
             # Navigate to the URL
             await self.page.goto(url, timeout=60000)  # Wait up to 60 seconds for the page to load
@@ -111,17 +115,26 @@ class FundaScraper:
             except Exception as e:
                 print(f"Could not extract year built: {e}")  # Log error if extraction fails
 
-            return {
-                "Address": address,
-                "Price": price,
-                "Living Area": living_area,
-                "Bedrooms": bedrooms,
-                "Bathrooms": bathrooms,
-                "Year Built": year_built,  # Add year built to the result
+            # Normalize field names to match expected format
+            result = {
+                "address": address,
+                "price": price,
+                "size": living_area,
+                "bedrooms": bedrooms,
+                "bathrooms": bathrooms,
+                "year_built": year_built,
+                "features": features,
+                "property_type": "apartment"  # Default for funda
             }
+            
+            # Clean up
+            await self.close()
+            
+            return result
 
         except Exception as e:
             print(f"Error extracting property data: {e}")
+            await self.close()  # Clean up on error
             return None
 
     async def close(self):

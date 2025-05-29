@@ -6,12 +6,7 @@ const axios = require('axios');
 
 const app = express();
 
-// ─── CORS CONFIG ───
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://atlasnew.vercel.app',
-  'https://www.project-atlas.xyz', // Trailing slash removed
-];
+// ─── CORS CONFIG (PERMISSIVE FOR RAPID PROTOTYPING) ───
 const corsOptions = {
   origin: (origin, callback) => {
     // Log the origin received from the browser/client
@@ -22,26 +17,37 @@ const corsOptions = {
       console.log('CORS Check: No origin provided, allowing.');
       return callback(null, true);
     }
-    // Check if the origin is in our allowed list
-    if (allowedOrigins.includes(origin)) {
-      console.log(`CORS Check: Origin ${origin} is allowed.`);
+
+    // Allow localhost for development
+    if (origin.includes('localhost')) {
+      console.log(`CORS Check: Localhost origin ${origin} is allowed.`);
       return callback(null, true);
     }
-    // If not allowed, log the error and reject
-    console.error(`CORS Check: Origin ${origin} NOT ALLOWED.`);
-    return callback(new Error(`Origin ${origin} not allowed by CORS`));
+
+    // Allow all Vercel domains for rapid prototyping
+    if (origin.includes('vercel.app') || origin.includes('project-atlas.xyz')) {
+      console.log(`CORS Check: Vercel/Production origin ${origin} is allowed.`);
+      return callback(null, true);
+    }
+
+    // Allow ngrok domains (for testing)
+    if (origin.includes('ngrok-free.app') || origin.includes('loca.lt')) {
+      console.log(`CORS Check: Tunnel origin ${origin} is allowed.`);
+      return callback(null, true);
+    }
+
+    // For rapid prototyping, be more permissive
+    console.log(`CORS Check: Allowing origin ${origin} for rapid prototyping.`);
+    return callback(null, true);
   },
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 204, // Some legacy browsers choke on 204
+  credentials: true,
+  optionsSuccessStatus: 204,
 };
 
-// Apply CORS middleware using the options.
-// This should handle preflight (OPTIONS) requests automatically.
+// Apply CORS middleware
 app.use(cors(corsOptions));
-
-// Remove the explicit app.options('*', ...) line.
-// app.options('*', cors(corsOptions));
 
 // ─── JSON BODY PARSER ───
 // Ensure this comes AFTER CORS middleware if CORS needs to apply to OPTIONS requests

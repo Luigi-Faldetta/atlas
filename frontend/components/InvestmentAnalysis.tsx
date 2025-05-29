@@ -216,6 +216,33 @@ type InvestmentAnalysisProps = {
     timestamp?: string;
     agentic_patterns?: string[];
   };
+  
+  // NEW: Enhanced translation and processing metadata
+  translationMetadata?: {
+    source_language: string;
+    translation_confidence: number;
+    currency_standardized: {
+      currency: string;
+      symbol: string;
+      original_price: string;
+      standardized_price: number;
+    };
+    localization_applied: boolean;
+    market_context: {
+      market_name: string;
+      primary_currency: string;
+      key_considerations: string;
+      typical_fees: string;
+      market_characteristics: string;
+    };
+  };
+  
+  processingMetadata?: {
+    total_processing_time: number;
+    timestamp: string;
+    version: string;
+    features_enabled: string[];
+  };
 };
 
 const getScoreColor = (score: number) => {
@@ -227,22 +254,27 @@ const getScoreColor = (score: number) => {
 // --- UPDATED formatCurrency ---
 const formatCurrency = (
   value: number | null,
-  options?: Intl.NumberFormatOptions // Note: style and currency options here will be ignored
+  options?: Intl.NumberFormatOptions, // Note: style and currency options here will be ignored
+  translationMetadata?: any // Add as parameter
 ) => {
   if (value === null || value === undefined) return 'N/A';
-
-  // 1. Format the number using 'decimal' style and 'nl-NL' locale
-  const numberFormatter = new Intl.NumberFormat('nl-NL', {
-    style: 'decimal',
-    minimumFractionDigits: options?.minimumFractionDigits ?? 2,
-    maximumFractionDigits: options?.maximumFractionDigits ?? 2,
-  });
-  const formattedNumber = numberFormatter.format(value);
-
-  // 2. Manually prepend the Euro sign with a space
-  const finalOutput = `€ ${formattedNumber}`;
-  // console.log(`formatCurrency Input: ${value}, Output: ${finalOutput}`); // Optional debug
-  return finalOutput;
+  
+  // Enhanced currency formatting with market context
+  const currencySymbol = translationMetadata?.currency_standardized?.symbol || '€';
+  const currency = translationMetadata?.currency_standardized?.currency || 'EUR';
+  
+  // Format based on detected market
+  if (currency === 'EUR') {
+    return new Intl.NumberFormat('en-EU', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
+  
+  // Fallback formatting
+  return `${currencySymbol}${value.toLocaleString()}`;
 };
 
 // --- UPDATED formatPercentage ---
@@ -422,6 +454,10 @@ const InvestmentAnalysis = ({
     timestamp: "",
     agentic_patterns: [],
   },
+  
+  // NEW: Enhanced translation and processing metadata
+  translationMetadata,
+  processingMetadata,
 }: InvestmentAnalysisProps) => {
   console.log('%%% RUNNING InvestmentAnalysis Component - VERSION CHECK %%%');
 
@@ -459,6 +495,27 @@ const InvestmentAnalysis = ({
   
   // State for AI score explanation modal
   const [showScoreModal, setShowScoreModal] = useState(false);
+
+  // NEW: Enhanced data accuracy indicators
+  const [showTranslationInfo, setShowTranslationInfo] = useState(false);
+  const [dataAccuracyScore, setDataAccuracyScore] = useState(0);
+
+  // Calculate data accuracy score based on translation confidence and processing metadata
+  useEffect(() => {
+    if (translationMetadata) {
+      const translationConfidence = translationMetadata.translation_confidence || 0;
+      const hasStandardizedPrice = translationMetadata.currency_standardized?.standardized_price > 0;
+      const hasMarketContext = !!translationMetadata.market_context;
+      
+      let accuracy = translationConfidence * 100;
+      if (hasStandardizedPrice) accuracy += 10;
+      if (hasMarketContext) accuracy += 5;
+      
+      setDataAccuracyScore(Math.min(accuracy, 100));
+    } else {
+      setDataAccuracyScore(85); // Default for non-translated data
+    }
+  }, [translationMetadata]);
 
   // --- GSAP Animations ---
   useLayoutEffect(() => {
@@ -613,7 +670,7 @@ const InvestmentAnalysis = ({
             snap: { innerText: isPercentage || decimals > 0 ? Math.pow(10, -decimals) : 1 }, // Snap to appropriate decimal or whole number
             formatter: (value: number) => {
               const val = parseFloat(value.toFixed(decimals));
-              if (isCurrency) return formatCurrency(val, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+              if (isCurrency) return formatCurrency(val, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }, translationMetadata);
               if (isPercentage) return formatPercentage(val * 100); // formatPercentage expects value like 5.5 for 5.5%
               return val.toLocaleString('nl-NL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
             },
@@ -761,7 +818,7 @@ const InvestmentAnalysis = ({
       ? formatCurrency(numericPrice, {
           minimumFractionDigits: 0,
           maximumFractionDigits: 0,
-        })
+        }, translationMetadata)
       : price; // Fallback to raw price string if parsing fails
 
   const scoreColor = getScoreColor(investmentScore);
@@ -851,28 +908,31 @@ const InvestmentAnalysis = ({
       */}
 
       {/* Action Buttons - Top Right Floating */}
-      <div className="flex justify-end gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mb-4">
         <button 
-          className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex items-center justify-center px-2 py-1.5 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
           onClick={() => {}}
         >
-          <DocumentTextIcon className="h-5 w-5 mr-2" />
-          Download Report
+          <DocumentTextIcon className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2" />
+          <span className="hidden sm:inline ml-1 sm:ml-0">Download Report</span>
+          <span className="sm:hidden ml-1">Report</span>
         </button>
         <button 
-          className="flex items-center px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex items-center justify-center px-2 py-1.5 sm:px-4 sm:py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
           onClick={() => {}}
         >
-          <BookmarkIcon className="h-5 w-5 mr-2" />
-          Save to Watchlist
+          <BookmarkIcon className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2" />
+          <span className="hidden sm:inline ml-1 sm:ml-0">Save to Watchlist</span>
+          <span className="sm:hidden ml-1">Watchlist</span>
         </button>
         {/* Add Feedback Button */}
         <button 
-          className="flex items-center px-4 py-2 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-md shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"
+          className="flex items-center justify-center px-2 py-1.5 sm:px-4 sm:py-2 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-md shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs sm:text-sm"
           onClick={() => setShowFeedbackModal(true)}
         >
-          <FlagIcon className="h-5 w-5 mr-2" />
-          Feedback
+          <FlagIcon className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2" />
+          <span className="hidden sm:inline ml-1 sm:ml-0">Feedback</span>
+          <span className="sm:hidden ml-1">Feedback</span>
         </button>
       </div>
 
@@ -2505,6 +2565,282 @@ const InvestmentAnalysis = ({
           </div>
         </div>
       </div>
+
+      {/* NEW: Enhanced Header with Translation Info */}
+      <div className="text-center border-b border-gray-200 pb-6">
+        <div className="flex items-center justify-center space-x-4 mb-4">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Investment Analysis
+          </h1>
+          
+          {/* NEW: Data Accuracy Badge */}
+          {translationMetadata && (
+            <div className="flex items-center space-x-2">
+              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                dataAccuracyScore >= 90 ? 'bg-green-100 text-green-800' :
+                dataAccuracyScore >= 80 ? 'bg-yellow-100 text-yellow-800' :
+                'bg-red-100 text-red-800'
+              }`}>
+                Data Accuracy: {dataAccuracyScore.toFixed(0)}%
+              </div>
+              
+              {translationMetadata.source_language !== 'en' && (
+                <div className="flex items-center space-x-1 px-2 py-1 bg-blue-50 rounded-full">
+                  <GlobeAltIcon className="h-4 w-4 text-blue-600" />
+                  <span className="text-xs text-blue-800 font-medium">
+                    Translated from {translationMetadata.source_language.toUpperCase()}
+                  </span>
+                </div>
+              )}
+              
+              <button
+                onClick={() => setShowTranslationInfo(!showTranslationInfo)}
+                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                title="View translation details"
+              >
+                <InformationCircleIcon className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* NEW: Translation Details Panel */}
+        {showTranslationInfo && translationMetadata && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg text-left">
+            <h3 className="font-semibold text-gray-800 mb-3 flex items-center">
+              <GlobeAltIcon className="h-5 w-5 mr-2 text-blue-600" />
+              Translation & Data Processing Details
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <strong className="text-gray-700">Source Language:</strong>
+                <span className="ml-2 text-gray-600">
+                  {translationMetadata.source_language?.toUpperCase() || 'Unknown'}
+                </span>
+              </div>
+              
+              <div>
+                <strong className="text-gray-700">Translation Confidence:</strong>
+                <span className="ml-2 text-gray-600">
+                  {(translationMetadata.translation_confidence * 100).toFixed(1)}%
+                </span>
+              </div>
+              
+              <div>
+                <strong className="text-gray-700">Market Context:</strong>
+                <span className="ml-2 text-gray-600">
+                  {translationMetadata.market_context?.market_name || 'International'}
+                </span>
+              </div>
+              
+              <div>
+                <strong className="text-gray-700">Currency Standardized:</strong>
+                <span className="ml-2 text-gray-600">
+                  {translationMetadata.currency_standardized?.currency} 
+                  ({translationMetadata.currency_standardized?.symbol})
+                </span>
+              </div>
+              
+              {translationMetadata.currency_standardized?.original_price && (
+                <div className="col-span-1 md:col-span-2">
+                  <strong className="text-gray-700">Price Conversion:</strong>
+                  <span className="ml-2 text-gray-600">
+                    "{translationMetadata.currency_standardized.original_price}" → 
+                    {formatCurrency(translationMetadata.currency_standardized.standardized_price)}
+                  </span>
+                </div>
+              )}
+              
+              {translationMetadata.market_context?.key_considerations && (
+                <div className="col-span-1 md:col-span-2">
+                  <strong className="text-gray-700">Market Considerations:</strong>
+                  <span className="ml-2 text-gray-600">
+                    {translationMetadata.market_context.key_considerations}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          {translationMetadata?.market_context?.market_name && (
+            <span className="font-medium text-blue-600">
+              {translationMetadata.market_context.market_name} Analysis •{' '}
+            </span>
+          )}
+          Comprehensive property evaluation with enhanced data accuracy and multilingual support
+        </p>
+      </div>
+
+      {/* Enhanced Investment Summary with Market Context */}
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+            <PresentationChartLineIcon className="h-7 w-7 mr-3 text-blue-600" />
+            Investment Summary
+          </h2>
+          
+          {/* NEW: Market-specific badge */}
+          {translationMetadata?.market_context && (
+            <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+              {translationMetadata.market_context.market_name}
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+          {/* Investment Score */}
+          <div className="text-center">
+            <div className="relative w-24 h-24 mx-auto mb-4">
+              <CircularProgressbar
+                value={investmentScore}
+                text={`${investmentScore}`}
+                styles={buildStyles({
+                  textSize: '20px',
+                  pathColor: getScoreColor(investmentScore),
+                  textColor: getScoreColor(investmentScore),
+                  trailColor: '#f3f4f6',
+                  backgroundColor: '#f9fafb',
+                })}
+              />
+            </div>
+            <h3 className="font-semibold text-gray-800">Investment Score</h3>
+            <p className="text-sm text-gray-600">Overall Rating</p>
+          </div>
+
+          {/* 5-Year ROI with enhanced formatting */}
+          <div className="text-center">
+            <div className="text-3xl font-bold text-green-600 mb-2">
+              {formatPercentage(roi5Years)}
+            </div>
+            <h3 className="font-semibold text-gray-800">5-Year ROI</h3>
+            <p className="text-sm text-gray-600">Total Return</p>
+            {translationMetadata?.market_context?.typical_fees && (
+              <p className="text-xs text-gray-500 mt-1">
+                *Excl. {translationMetadata.market_context.typical_fees}
+              </p>
+            )}
+          </div>
+
+          {/* 10-Year ROI with enhanced formatting */}
+          <div className="text-center">
+            <div className="text-3xl font-bold text-blue-600 mb-2">
+              {formatPercentage(roi10Years)}
+            </div>
+            <h3 className="font-semibold text-gray-800">10-Year ROI</h3>
+            <p className="text-sm text-gray-600">Total Return</p>
+            {translationMetadata?.market_context?.typical_fees && (
+              <p className="text-xs text-gray-500 mt-1">
+                *Excl. {translationMetadata.market_context.typical_fees}
+              </p>
+            )}
+          </div>
+
+          {/* Yearly Yield with enhanced formatting */}
+          <div className="text-center">
+            <div className="text-3xl font-bold text-yellow-600 mb-2">
+              {formatPercentage(yearlyYield)}
+            </div>
+            <h3 className="font-semibold text-gray-800">Yearly Yield</h3>
+            <p className="text-sm text-gray-600">Total Return</p>
+            {translationMetadata?.market_context?.typical_fees && (
+              <p className="text-xs text-gray-500 mt-1">
+                *Excl. {translationMetadata.market_context.typical_fees}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Price Display with enhanced formatting */}
+      <div className="text-center">
+        <div className="text-2xl font-bold text-gray-900 mb-2">
+          {numericPrice && numericPrice > 0
+            ? formatCurrency(numericPrice, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              }, translationMetadata)
+            : price || 'Price not available'}
+        </div>
+        <p className="text-gray-600">
+          {address || 'Address not available'}
+        </p>
+        {pricePerSqm && (
+          <p className="text-sm text-gray-500 mt-1">
+            {formatCurrency(pricePerSqm, { minimumFractionDigits: 0, maximumFractionDigits: 0 }, translationMetadata)} per m²
+          </p>
+        )}
+      </div>
+
+      {/* Monthly Rental Income */}
+      <div className="text-center">
+        <div className="text-2xl font-bold text-blue-600 mb-2">
+          {monthlyRentalIncome !== null && monthlyRentalIncome > 0
+            ? formatCurrency(monthlyRentalIncome, undefined, translationMetadata)
+            : 'N/A'}
+        </div>
+        <h3 className="font-semibold text-gray-800">Monthly Rental</h3>
+        <p className="text-sm text-gray-600">Estimated Income</p>
+      </div>
+
+      {/* Annual Rental Income */}
+      <div className="text-center">
+        <div className="text-xl font-semibold text-gray-800 mb-2">
+          {formatCurrency(calculatedAnnualRentalIncome, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          }, translationMetadata)}
+        </div>
+        <h3 className="font-semibold text-gray-800">Annual Rental Income</h3>
+      </div>
+
+      <div className="text-center">
+        <div className="text-xl font-semibold text-gray-800 mb-2">
+          {formatCurrency(annualExpenses, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          }, translationMetadata)}
+        </div>
+        <h3 className="font-semibold text-gray-800">Annual Expenses</h3>
+      </div>
+
+      <div className="text-center">
+        <div className="text-xl font-semibold text-green-600 mb-2">
+          {formatCurrency(calculatedNetOperatingIncome, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          }, translationMetadata)}
+        </div>
+        <h3 className="font-semibold text-gray-800">Net Operating Income</h3>
+      </div>
+
+      {/* 5-Year Projected Value */}
+      <div className="text-center">
+        <div className="text-xl font-semibold text-blue-600 mb-2">
+          {formatCurrency(projectedValues[5], {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          }, translationMetadata)}
+        </div>
+        <h3 className="font-semibold text-gray-800">5-Year Value</h3>
+        <p className="text-sm text-gray-600">Projected</p>
+      </div>
+
+      {/* Update other currency displays */}
+      <span className="font-medium text-gray-800 dark:text-white">{formatCurrency(equityBuildup, undefined, translationMetadata)}</span>
+
+      <span className="font-medium text-gray-800 dark:text-white">{formatCurrency(communityFees, undefined, translationMetadata)} / month</span>
+
+      <span className="font-medium text-gray-800 dark:text-white">{formatCurrency(medianHouseholdIncome, { minimumFractionDigits: 0, maximumFractionDigits: 0 }, translationMetadata)}</span>
+
+      <span className="font-medium text-gray-800 dark:text-white">{formatCurrency(assessedPropertyValue, { minimumFractionDigits: 0, maximumFractionDigits: 0 }, translationMetadata)}</span>
+
+      <span className="font-medium text-gray-800 dark:text-white">{formatCurrency(estimatedUtilityCosts, { minimumFractionDigits: 0, maximumFractionDigits: 0 }, translationMetadata)} / month</span>
+
+      {/* Translation panel price conversion */}
+      {translationMetadata?.currency_standardized?.standardized_price && formatCurrency(translationMetadata.currency_standardized.standardized_price, undefined, translationMetadata)}
 
     </div>
   );

@@ -4,6 +4,11 @@ const geocodingService = require('../services/geocodingService');
 const airQualityService = require('../services/airQualityService');
 const newsService = require('../services/newsService');
 const propertyDataService = require('../services/propertyDataService');
+const demographicsService = require('../services/demographicsService');
+const lifestyleService = require('../services/lifestyleService');
+const marketActivityService = require('../services/marketActivityService');
+const webEnhancedDataService = require('../services/webEnhancedDataService');
+const realEstateApiService = require('../services/realEstateApiService');
 
 // Helper function to parse a property identifier into components
 const parsePropertyIdentifier = async (propertyIdentifier) => {
@@ -26,10 +31,25 @@ const getSummary = async (req, res) => {
     // Parse the property identifier
     const property = await parsePropertyIdentifier(propertyIdentifier);
     
-    // Fetch data from news service only since airQuality is disabled
-    const localNews = await newsService.getLocalNews(property.address);
+    // Fetch data from all enhanced services
+    const [
+      airQuality,
+      localNews,
+      demographics,
+      lifestyle,
+      marketActivity
+    ] = await Promise.all([
+      airQualityService.getComprehensiveAirQuality(property.address, {
+        latitude: property.latitude,
+        longitude: property.longitude
+      }),
+      newsService.getLocalNews(property.address),
+      demographicsService.getComprehensiveDemographics(property.address),
+      lifestyleService.getComprehensiveLifestyle(property.address),
+      marketActivityService.getComprehensiveMarketActivity(property.address)
+    ]);
     
-    // Prepare the response
+    // Prepare the enhanced response
     const response = {
       property: {
         identifier: propertyIdentifier,
@@ -39,8 +59,12 @@ const getSummary = async (req, res) => {
           longitude: property.longitude
         }
       },
-      airQuality: null,  // Air quality service is disabled
-      localNews: localNews
+      airQuality: airQuality,
+      localNews: localNews,
+      demographics: demographics,
+      lifestyle: lifestyle,
+      marketActivity: marketActivity,
+      lastUpdated: new Date().toISOString()
     };
     
     return res.status(StatusCodes.OK).json(response);
@@ -53,45 +77,23 @@ const getSummary = async (req, res) => {
   }
 };
 
-// Get air quality data for a property
+// Get air quality data for a property (enhanced)
 const getAirQuality = async (req, res) => {
   try {
     const { propertyIdentifier } = req.params;
     
     logger.info(`Getting air quality for property: ${propertyIdentifier}`);
     
-    // For demo/testing, return sample data
-    // In production, you would use the airQualityService
-    const sampleAirQuality = {
-      aqi: 42,
-      category: 'Good',
-      pollutants: [
-        {
-          name: 'PM2.5',
-          concentration: 8.2,
-          unit: 'μg/m³'
-        },
-        {
-          name: 'PM10',
-          concentration: 16.4,
-          unit: 'μg/m³'
-        },
-        {
-          name: 'O3',
-          concentration: 32.1,
-          unit: 'ppb'
-        },
-        {
-          name: 'NO2',
-          concentration: 12.3,
-          unit: 'ppb'
-        }
-      ],
-      location: decodeURIComponent(propertyIdentifier),
-      lastUpdated: new Date().toISOString()
-    };
+    // Parse the property identifier
+    const property = await parsePropertyIdentifier(propertyIdentifier);
     
-    return res.status(StatusCodes.OK).json(sampleAirQuality);
+    // Get comprehensive air quality data
+    const airQualityData = await airQualityService.getComprehensiveAirQuality(
+      property.address,
+      { latitude: property.latitude, longitude: property.longitude }
+    );
+    
+    return res.status(StatusCodes.OK).json(airQualityData);
   } catch (error) {
     logger.error('Error getting air quality data:', error);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -126,6 +128,90 @@ const getLocalNews = async (req, res) => {
     logger.error('Error getting local news:', error);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       message: 'Failed to retrieve local news',
+      error: error.message
+    });
+  }
+};
+
+// NEW: Get demographics data for a property
+const getDemographics = async (req, res) => {
+  try {
+    const { propertyIdentifier } = req.params;
+    
+    logger.info(`Getting demographics data for property: ${propertyIdentifier}`);
+    
+    // Parse the property identifier
+    const property = await parsePropertyIdentifier(propertyIdentifier);
+    
+    // Get comprehensive demographics data
+    const demographicsData = await demographicsService.getComprehensiveDemographics(
+      property.address,
+      { latitude: property.latitude, longitude: property.longitude }
+    );
+    
+    return res.status(StatusCodes.OK).json(demographicsData);
+  } catch (error) {
+    logger.error('Error getting demographics data:', error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: 'Failed to retrieve demographics data',
+      error: error.message
+    });
+  }
+};
+
+// NEW: Get lifestyle data for a property
+const getLifestyle = async (req, res) => {
+  try {
+    const { propertyIdentifier } = req.params;
+    
+    logger.info(`Getting lifestyle data for property: ${propertyIdentifier}`);
+    
+    // Parse the property identifier
+    const property = await parsePropertyIdentifier(propertyIdentifier);
+    
+    // Get comprehensive lifestyle data
+    const lifestyleData = await lifestyleService.getComprehensiveLifestyle(
+      property.address,
+      { latitude: property.latitude, longitude: property.longitude }
+    );
+    
+    return res.status(StatusCodes.OK).json(lifestyleData);
+  } catch (error) {
+    logger.error('Error getting lifestyle data:', error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: 'Failed to retrieve lifestyle data',
+      error: error.message
+    });
+  }
+};
+
+// NEW: Get market activity data for a property
+const getMarketActivity = async (req, res) => {
+  try {
+    const { propertyIdentifier } = req.params;
+    
+    logger.info(`Getting market activity data for property: ${propertyIdentifier}`);
+    
+    // Parse the property identifier
+    const property = await parsePropertyIdentifier(propertyIdentifier);
+    
+    // Extract property details from query parameters if available
+    const propertyDetails = {
+      currentPrice: req.query.price ? parseFloat(req.query.price) : null,
+      size: req.query.size ? parseFloat(req.query.size) : 85 // Default 85 m²
+    };
+    
+    // Get comprehensive market activity data
+    const marketActivityData = await marketActivityService.getComprehensiveMarketActivity(
+      property.address,
+      propertyDetails
+    );
+    
+    return res.status(StatusCodes.OK).json(marketActivityData);
+  } catch (error) {
+    logger.error('Error getting market activity data:', error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: 'Failed to retrieve market activity data',
       error: error.message
     });
   }
@@ -408,6 +494,178 @@ const getFullAnalysis = async (req, res) => {
   }
 };
 
+// NEW: Get enhanced property analysis using web scraping + ChatGPT + APIs
+const getEnhancedAnalysis = async (req, res) => {
+  try {
+    const { propertyIdentifier } = req.params;
+    const { propertyUrl } = req.query; // Optional property listing URL for web scraping
+    
+    logger.info(`Getting enhanced analysis for property: ${propertyIdentifier}`);
+    
+    // Parse the property identifier
+    const property = await parsePropertyIdentifier(propertyIdentifier);
+    
+    // Fetch enhanced data from multiple sources in parallel
+    const [
+      webEnhancedData,
+      apiData,
+      airQuality,
+      localNews,
+      demographics,
+      lifestyle,
+      marketActivity
+    ] = await Promise.allSettled([
+      // Web scraping + ChatGPT analysis (if URL provided)
+      propertyUrl ? 
+        webEnhancedDataService.getEnhancedPropertyData(propertyUrl, property.address) : 
+        Promise.resolve(null),
+      // Real estate APIs integration
+      realEstateApiService.getComprehensivePropertyData(property.address, {
+        latitude: property.latitude,
+        longitude: property.longitude
+      }),
+      // Existing MCP services
+      airQualityService.getComprehensiveAirQuality(property.address, {
+        latitude: property.latitude,
+        longitude: property.longitude
+      }),
+      newsService.getLocalNews(property.address),
+      demographicsService.getComprehensiveDemographics(property.address),
+      lifestyleService.getComprehensiveLifestyle(property.address),
+      marketActivityService.getComprehensiveMarketActivity(property.address)
+    ]);
+
+    // Combine all data sources
+    const enhancedResponse = {
+      property: {
+        identifier: propertyIdentifier,
+        address: property.address,
+        coordinates: {
+          latitude: property.latitude,
+          longitude: property.longitude
+        }
+      },
+      webEnhanced: webEnhancedData.status === 'fulfilled' ? webEnhancedData.value : null,
+      apiData: apiData.status === 'fulfilled' ? apiData.value : null,
+      airQuality: airQuality.status === 'fulfilled' ? airQuality.value : null,
+      localNews: localNews.status === 'fulfilled' ? localNews.value : null,
+      demographics: demographics.status === 'fulfilled' ? demographics.value : null,
+      lifestyle: lifestyle.status === 'fulfilled' ? lifestyle.value : null,
+      marketActivity: marketActivity.status === 'fulfilled' ? marketActivity.value : null,
+      // Add data quality and source tracking
+      dataQuality: {
+        sourcesUsed: [],
+        confidenceScore: 0,
+        lastUpdated: new Date().toISOString()
+      },
+      lastUpdated: new Date().toISOString()
+    };
+
+    // Calculate data quality metrics
+    enhancedResponse.dataQuality = calculateDataQuality(enhancedResponse);
+    
+    return res.status(StatusCodes.OK).json(enhancedResponse);
+  } catch (error) {
+    logger.error('Error getting enhanced property analysis:', error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: 'Failed to retrieve enhanced property analysis',
+      error: error.message
+    });
+  }
+};
+
+// NEW: Get market research using web search + ChatGPT
+const getMarketResearch = async (req, res) => {
+  try {
+    const { propertyIdentifier } = req.params;
+    
+    logger.info(`Getting market research for: ${propertyIdentifier}`);
+    
+    // Parse the property identifier
+    const property = await parsePropertyIdentifier(propertyIdentifier);
+    
+    // Get market research using web-enhanced service
+    const marketResearch = await webEnhancedDataService.getMarketResearch(property.address);
+    
+    // Get comparables from real estate APIs
+    const comparables = await realEstateApiService.getMarketComparables(property.address);
+    
+    const response = {
+      property: {
+        identifier: propertyIdentifier,
+        address: property.address
+      },
+      marketResearch: marketResearch,
+      comparables: comparables,
+      lastUpdated: new Date().toISOString()
+    };
+    
+    return res.status(StatusCodes.OK).json(response);
+  } catch (error) {
+    logger.error('Error getting market research:', error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: 'Failed to retrieve market research',
+      error: error.message
+    });
+  }
+};
+
+// Helper function to calculate data quality metrics
+const calculateDataQuality = (response) => {
+  const sources = [];
+  let totalConfidence = 0;
+  let sourceCount = 0;
+
+  // Check each data source and add to quality metrics
+  if (response.webEnhanced) {
+    sources.push(`web_enhanced_${response.webEnhanced.source}`);
+    if (response.webEnhanced.confidence) {
+      totalConfidence += response.webEnhanced.confidence;
+      sourceCount++;
+    }
+  }
+
+  if (response.apiData) {
+    sources.push(...response.apiData.sources.map(s => `api_${s}`));
+    sourceCount += response.apiData.sources.length;
+    totalConfidence += 0.8; // Assume high confidence for API data
+  }
+
+  if (response.airQuality) {
+    sources.push('mcp_air_quality');
+    sourceCount++;
+    totalConfidence += 0.7;
+  }
+
+  if (response.demographics) {
+    sources.push('mcp_demographics');
+    sourceCount++;
+    totalConfidence += 0.7;
+  }
+
+  if (response.lifestyle) {
+    sources.push('mcp_lifestyle');
+    sourceCount++;
+    totalConfidence += 0.7;
+  }
+
+  if (response.marketActivity) {
+    sources.push('mcp_market_activity');
+    sourceCount++;
+    totalConfidence += 0.7;
+  }
+
+  const averageConfidence = sourceCount > 0 ? totalConfidence / sourceCount : 0;
+
+  return {
+    sourcesUsed: sources,
+    sourceCount: sourceCount,
+    confidenceScore: Math.round(averageConfidence * 100) / 100,
+    dataCompleteness: Math.min((sourceCount / 6) * 100, 100), // Max 6 expected sources
+    lastUpdated: new Date().toISOString()
+  };
+};
+
 module.exports = {
   getSummary,
   getAirQuality,
@@ -415,5 +673,10 @@ module.exports = {
   getFinancials,
   getPropertyDetails,
   getNeighborhood,
-  getFullAnalysis
+  getFullAnalysis,
+  getDemographics,
+  getLifestyle,
+  getMarketActivity,
+  getEnhancedAnalysis,
+  getMarketResearch
 }; 
