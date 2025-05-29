@@ -107,8 +107,22 @@ You are a real estate data analyst. Extract the following information from this 
 Property Address: ${address}
 Listing Content: ${scrapedData.content}
 
+STEP 1: Extract Basic Property Details
+STEP 2: Identify Property Features and Amenities  
+STEP 3: Create Marketing Description
+STEP 4: Calculate Market Metrics
+VALIDATION: Ensure all extracted data is logical and consistent
+
 Extract and calculate these specific fields:
 {
+  "description": "string (clean, professional property description 2-3 sentences)",
+  "features": string[] (specific property features like 'Elevator', 'Parking', 'Balcony', etc.),
+  "bedrooms": number,
+  "bathrooms": number,
+  "size": number (in square meters),
+  "yearBuilt": number,
+  "buildingType": "string (Apartment, House, etc.)",
+  "energyLabel": "string (A, B, C, D, E, F, G)",
   "walkScore": number (0-100, estimate based on mentioned amenities),
   "bikeScore": number (0-100, estimate based on cycling infrastructure mentions),
   "transitScore": number (0-100, estimate based on public transport mentions),
@@ -137,6 +151,10 @@ Extract and calculate these specific fields:
   "localInsights": string[] (key insights about the area)
 }
 
+SELF-CRITIQUE: Review the extracted description and features for accuracy and completeness.
+REFINEMENT PROCESS: Ensure description is engaging but factual, features are specific and valuable.
+
+Focus especially on creating a compelling but accurate description and comprehensive features list.
 Only include data that can be reasonably inferred from the content. Use null for unavailable data.
 Return only valid JSON.
 `;
@@ -146,7 +164,7 @@ Return only valid JSON.
         messages: [
           {
             role: 'system',
-            content: 'You are a professional real estate data analyst. Extract information accurately and return only valid JSON.'
+            content: 'You are a professional real estate data analyst with expertise in property marketing and feature identification. Extract information accurately following chain-of-thought reasoning and return only valid JSON.'
           },
           {
             role: 'user',

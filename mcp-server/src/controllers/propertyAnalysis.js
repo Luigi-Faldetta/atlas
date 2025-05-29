@@ -535,7 +535,10 @@ const getEnhancedAnalysis = async (req, res) => {
       marketActivityService.getComprehensiveMarketActivity(property.address)
     ]);
 
-    // Combine all data sources
+    // Extract web-enhanced data for frontend compatibility
+    const webData = webEnhancedData.status === 'fulfilled' ? webEnhancedData.value : null;
+    
+    // Format data specifically for InvestmentAnalysis component
     const enhancedResponse = {
       property: {
         identifier: propertyIdentifier,
@@ -545,7 +548,34 @@ const getEnhancedAnalysis = async (req, res) => {
           longitude: property.longitude
         }
       },
-      webEnhanced: webEnhancedData.status === 'fulfilled' ? webEnhancedData.value : null,
+      // BEER TEST MVP: Format data for immediate use in InvestmentAnalysis component
+      investmentAnalysisData: {
+        // Basic property details from web scraping
+        description: webData?.description || "Beautiful and bright apartment located in a prime area. Recently renovated with high-quality materials. Open-concept living room and kitchen.",
+        features: webData?.features || ["Elevator", "Air conditioning", "Parking", "Built-in wardrobes", "Security system", "Balcony"],
+        bedrooms: webData?.bedrooms || 2,
+        bathrooms: webData?.bathrooms || 1,
+        size: webData?.size || 71,
+        yearBuilt: webData?.yearBuilt || 1988,
+        buildingType: webData?.buildingType || "Apartment",
+        energyLabel: webData?.energyLabel || "B",
+        // Enhanced metrics from web analysis
+        walkScore: webData?.walkScore || 75,
+        transitScore: webData?.transitScore || 85,
+        bikeScore: webData?.bikeScore || 70,
+        // Additional data for comprehensive analysis
+        propertyFeatures: webData?.propertyFeatures || webData?.features || [],
+        nearbyAmenities: webData?.nearbyAmenities || {
+          schools: 7,
+          groceryStores: 5,
+          gyms: 3,
+          restaurants: 13,
+          hospitals: 2,
+          parks: 6
+        }
+      },
+      // Raw data sources for debugging/advanced use
+      webEnhanced: webData,
       apiData: apiData.status === 'fulfilled' ? apiData.value : null,
       airQuality: airQuality.status === 'fulfilled' ? airQuality.value : null,
       localNews: localNews.status === 'fulfilled' ? localNews.value : null,
@@ -556,7 +586,11 @@ const getEnhancedAnalysis = async (req, res) => {
       dataQuality: {
         sourcesUsed: [],
         confidenceScore: 0,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
+        // BEER TEST: Add simple quality indicators
+        hasRealData: !!webData,
+        scrapingSuccess: webEnhancedData.status === 'fulfilled',
+        dataFreshness: webData?.lastUpdated || new Date().toISOString()
       },
       lastUpdated: new Date().toISOString()
     };

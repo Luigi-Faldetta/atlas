@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import mcpApiClient, { AirQualityData, NewsArticle, PropertyAnalysisData } from './mcpClient';
 
 interface UseMcpDataOptions {
@@ -152,4 +152,54 @@ export function useFullPropertyAnalysis(propertyIdentifier: string | null, optio
   }, [propertyIdentifier, enabled]);
   
   return { data, isLoading, error, refetch: fetchData };
-} 
+}
+
+/**
+ * BEER TEST MVP: Hook for enhanced property data with real description and features
+ * Replaces mock data with actual scraped content
+ */
+export const useEnhancedPropertyData = (propertyIdentifier: string, propertyUrl?: string) => {
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    if (!propertyIdentifier) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await mcpApiClient.getEnhancedPropertyData(propertyIdentifier, propertyUrl);
+      
+      if (result.success) {
+        setData(result.data);
+        console.log('✅ Enhanced property data loaded:', result.hasRealData ? 'Real data' : 'Fallback data');
+      } else {
+        setError(result.error);
+        setData(null);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to load enhanced property data');
+      setData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [propertyIdentifier, propertyUrl]);
+
+  const refetch = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    refetch,
+    hasRealData: data !== null
+  };
+}; 

@@ -107,6 +107,36 @@ class MCPApiClient {
       throw error;
     }
   }
+
+  // BEER TEST MVP: Get enhanced property data with real description and features
+  async getEnhancedPropertyData(propertyIdentifier: string, propertyUrl?: string): Promise<any> {
+    try {
+      const encodedIdentifier = encodeURIComponent(propertyIdentifier);
+      const urlParams = propertyUrl ? `?propertyUrl=${encodeURIComponent(propertyUrl)}` : '';
+      
+      const response = await this.client.get(`/property-analysis/${encodedIdentifier}/enhanced${urlParams}`);
+      const data = response.data;
+      
+      // RAPID PROTOTYPING: Return formatted data for immediate frontend use
+      return {
+        success: true,
+        data: data.investmentAnalysisData, // Pre-formatted for component
+        rawData: data, // Full response for debugging
+        dataQuality: data.dataQuality,
+        hasRealData: data.dataQuality?.hasRealData || false
+      };
+    } catch (error: any) {
+      console.error('Error fetching enhanced property data:', error);
+      
+      // BEER TEST: Graceful fallback for rapid testing
+      return {
+        success: false,
+        error: error.message || 'Unknown error occurred',
+        data: null,
+        hasRealData: false
+      };
+    }
+  }
 }
 
 // Create a singleton instance

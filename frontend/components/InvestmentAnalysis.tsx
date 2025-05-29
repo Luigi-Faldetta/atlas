@@ -64,7 +64,7 @@ import ScoreBreakdownChart from './ScoreBreakdownChart';
 import InfoModal from './InfoModal';
 import { useEffect, useState, useRef, useLayoutEffect } from 'react'; // Added useRef AND useLayoutEffect
 import mcpApiClient from '../lib/api/mcpClient';
-import { useAirQualityData, useLocalNews } from '../lib/api/useMcpData';
+import { useAirQualityData, useLocalNews, useEnhancedPropertyData } from '../lib/api/useMcpData';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import DataQualityIndicator from './DataQualityIndicator';
@@ -463,6 +463,25 @@ const InvestmentAnalysis = ({
   processingMetadata,
 }: InvestmentAnalysisProps) => {
   console.log('%%% RUNNING InvestmentAnalysis Component - VERSION CHECK %%%');
+
+  // BEER TEST MVP: Fetch real property data to replace mock description and features
+  const propertyIdentifier = encodeURIComponent(address);
+  const {
+    data: enhancedData,
+    isLoading: isLoadingEnhanced,
+    error: enhancedError,
+    hasRealData
+  } = useEnhancedPropertyData(propertyIdentifier);
+
+  // Use real data if available, fallback to props/defaults
+  const actualDescription = enhancedData?.description || description;
+  const actualFeatures = enhancedData?.features || features;
+  const actualBedrooms = enhancedData?.bedrooms || bedrooms;
+  const actualBathrooms = enhancedData?.bathrooms || bathrooms;
+  const actualSize = enhancedData?.size || size;
+  const actualYearBuilt = enhancedData?.yearBuilt || yearBuilt;
+  const actualBuildingType = enhancedData?.buildingType || buildingType;
+  const actualEnergyLabel = enhancedData?.energyLabel || energyLabel;
 
   // GSAP Refs for animation targets
   const mainContainerRef = useRef<HTMLDivElement>(null); // Ref for GSAP context
@@ -1477,11 +1496,11 @@ const InvestmentAnalysis = ({
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Size</span>
-                <span className="font-medium text-gray-800 dark:text-white">{size} m²</span>
+                <span className="font-medium text-gray-800 dark:text-white">{actualSize} m²</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Bedrooms</span>
-                <span className="font-medium text-gray-800 dark:text-white">{bedrooms}</span>
+                <span className="font-medium text-gray-800 dark:text-white">{actualBedrooms}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Bathrooms</span>
@@ -2118,7 +2137,7 @@ const InvestmentAnalysis = ({
                 <HomeIcon className="h-4 w-4 mr-2" />
                 Building Type
               </span>
-              <span className="font-medium text-gray-800 dark:text-white">{buildingType}</span>
+              <span className="font-medium text-gray-800 dark:text-white">{actualBuildingType}</span>
             </div>
             
             <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
@@ -2128,15 +2147,15 @@ const InvestmentAnalysis = ({
               </span>
               <span className="font-medium">
                 <span className={`px-3 py-1 rounded-full ${
-                  energyLabel === 'A' || energyLabel === 'A+' || energyLabel === 'A++' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                  energyLabel === 'B' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                  energyLabel === 'C' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                  energyLabel === 'D' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
-                  energyLabel === 'E' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
-                  energyLabel === 'F' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                  actualEnergyLabel === 'A' || actualEnergyLabel === 'A+' || actualEnergyLabel === 'A++' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                  actualEnergyLabel === 'B' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                  actualEnergyLabel === 'C' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                  actualEnergyLabel === 'D' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                  actualEnergyLabel === 'E' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
+                  actualEnergyLabel === 'F' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
                   'bg-red-200 text-red-900 dark:bg-red-900/50 dark:text-red-500'
                 }`}>
-                  {energyLabel}
+                  {actualEnergyLabel}
                 </span>
               </span>
             </div>
