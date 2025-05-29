@@ -595,3 +595,28 @@ async def analyze(request: AnalyzeRequest):
     except Exception as e:
         logging.error("Error analyzing property: %s", str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=f"An internal server error occurred: {str(e)}")
+
+
+# Add health endpoint for Docker health checks
+@app.get("/health")
+async def health():
+    """Health check endpoint for Docker containers"""
+    return {"status": "healthy", "message": "AI Agent is running", "service": "atlas-ai-agent"}
+
+
+@app.get("/")
+async def root():
+    """Root endpoint with service information"""
+    return {
+        "message": "Atlas AI Agent - Real Estate Analysis Service",
+        "status": "running",
+        "version": "1.0.0",
+        "endpoints": {
+            "analyze": "/analyze",
+            "health": "/health",
+            "docs": "/docs",
+            "openapi": "/openapi.json"
+        },
+        "supported_markets": ["dutch", "spanish"],
+        "platforms": ["funda.nl", "idealista.com", "fotocasa.es", "habitaclia.com"]
+    }

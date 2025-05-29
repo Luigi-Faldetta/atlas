@@ -9,8 +9,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (bcryptjs doesn't require native compilation)
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -32,7 +32,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE 5000
 
 # Environment variables
-ENV NODE_ENV=production
+ENV NODE_ENV=development
 ENV PORT=5000
 
 # Start the application

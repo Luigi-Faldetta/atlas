@@ -135,7 +135,7 @@ export function MainNav() {
               item.href === '/'
                 ? pathname === item.href
                 : pathname === item.href ||
-                  pathname.startsWith(item.href + '/');
+                  (pathname && pathname.startsWith(item.href + '/'));
             const Icon = item.icon;
             return (
               <Link
@@ -252,7 +252,7 @@ export function MainNav() {
                 item.href === '/'
                   ? pathname === item.href
                   : pathname === item.href ||
-                    pathname.startsWith(item.href + '/');
+                    (pathname && pathname.startsWith(item.href + '/'));
               const Icon = item.icon;
               return (
                 <Link

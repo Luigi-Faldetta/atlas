@@ -48,7 +48,7 @@ app.use(cors(corsOptions));
 // which might implicitly have a content-type, though usually not an issue.
 app.use(express.json());
 
-const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://127.0.0.1:8000';
+const PYTHON_API_URL = process.env.AI_AGENT_URL || 'http://127.0.0.1:8000';
 
 // ─── ANALYZE ENDPOINT ───
 app.post('/analyze', async (req, res) => {
@@ -78,6 +78,31 @@ app.post('/analyze', async (req, res) => {
       'Error communicating with analysis service';
     return res.status(statusCode).json({ detail });
   }
+});
+
+// ─── HEALTH ENDPOINT ───
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy', 
+    message: 'Express Proxy is running',
+    service: 'atlas-express-proxy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ─── ROOT ENDPOINT ───
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'Atlas Express Proxy - Analysis Request Router',
+    status: 'running',
+    version: '1.0.0',
+    endpoints: {
+      analyze: '/analyze',
+      health: '/health'
+    },
+    proxy_target: PYTHON_API_URL
+  });
 });
 
 // ─── START SERVER ───

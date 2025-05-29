@@ -61,7 +61,7 @@ export interface ProjectedReturns {
 }
 
 const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+  process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001';
 
 // Mock data for frontend
 export const mockProperties: Property[] = [

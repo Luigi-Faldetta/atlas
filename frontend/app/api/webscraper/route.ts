@@ -9,7 +9,7 @@ const openai = new OpenAI({
 
 // Define the URL for our scraper service
 const SCRAPER_SERVICE_URL =
-  process.env.SCRAPER_SERVICE_URL || 'http://localhost:5000';
+  process.env.SCRAPER_SERVICE_URL || 'http://localhost:5001';
 
 // Mock data for property analysis for Spanish properties (fallback)
 const mockSpanishPropertyData = {

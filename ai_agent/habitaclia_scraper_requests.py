@@ -63,14 +63,42 @@ class HabitacliaScraperRequests:
     async def scrape_property(self, url: str) -> Optional[Dict[str, Any]]:
         """
         Scrape property data from Habitaclia using requests and BeautifulSoup.
+        Enhanced with proxy fallback for 402 errors.
         """
         try:
             # Add random delay to mimic human behavior
             time.sleep(random.uniform(2, 5))
             
-            # Make the request with SSL verification disabled for proxy compatibility
-            response = self.session.get(url, timeout=30, verify=False)
-            response.raise_for_status()
+            # Try with proxy first
+            response = None
+            try:
+                response = self.session.get(url, timeout=30, verify=False)
+                response.raise_for_status()
+            except requests.HTTPError as e:
+                if response and response.status_code == 402:
+                    self.logger.warning(f"Proxy failed with 402 error, trying without proxy for Habitaclia")
+                    # Create a new session without proxy for fallback
+                    fallback_session = requests.Session()
+                    fallback_session.headers.update({
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'es-ES,es;q=0.9,en-US,en;q=0.8',
+                        'Accept-Encoding': 'gzip, deflate',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1',
+                    })
+                    
+                    try:
+                        response = fallback_session.get(url, timeout=30, verify=False)
+                        response.raise_for_status()
+                        self.logger.info("Successfully accessed Habitaclia without proxy")
+                    except Exception as fallback_error:
+                        self.logger.error(f"Fallback also failed: {fallback_error}")
+                        raise e  # Re-raise original error
+                    finally:
+                        fallback_session.close()
+                else:
+                    raise e  # Re-raise for other HTTP errors
             
             # Parse the HTML
             soup = BeautifulSoup(response.content, 'html.parser')

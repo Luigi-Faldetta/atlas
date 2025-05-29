@@ -9,11 +9,15 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies including ngrok for external access
+RUN npm install
 
 # Copy source code
 COPY . .
+
+# Create startup script that runs both Express and ngrok
+COPY start-with-ngrok.sh .
+RUN chmod +x start-with-ngrok.sh
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
@@ -33,4 +37,4 @@ ENV NODE_ENV=production
 ENV PORT=5001
 
 # Start the application
-CMD ["npm", "start"] 
+CMD ["./start-with-ngrok.sh"] 

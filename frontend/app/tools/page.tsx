@@ -56,6 +56,32 @@ type AnalysisResult = {
     crime_rate?: number;
     noise_level?: number;
     air_quality?: number;
+    // Enhanced agentic features
+    reasoning_process?: string;
+    self_reflection?: string;
+    financial_metrics?: {
+      [key: string]: {
+        value: number;
+        confidence: number;
+      };
+    };
+    analysis_context?: {
+      market_type?: string;
+      data_quality_score?: number;
+      complexity_level?: string;
+      confidence_threshold?: number;
+    };
+    validation?: {
+      quality_score?: number;
+      validation_notes?: string[];
+      confidence_calibration?: number;
+    };
+    metadata?: {
+      analysis_type?: string;
+      market_specialization?: string;
+      timestamp?: string;
+      agentic_patterns?: string[];
+    };
   };
 } | null;
 
@@ -169,7 +195,6 @@ export default function PropertyAnalysisPage() {
     }
   };
 
-  // Helper functions (determineCharacteristics, generateScoreBreakdown, createSampleAnalysis) remain the same...
   // Helper function to determine property characteristics based on analysis
   const determineCharacteristics = (analysis: any) => {
     const characteristics = [];
@@ -199,40 +224,73 @@ export default function PropertyAnalysisPage() {
       ) {
         characteristics.push('Eco Friendly');
       }
-    }
-
-    if (analysis.yearly_yield && analysis.yearly_yield > 5) {
-      characteristics.push('High Yield');
-    } else if (analysis.yearly_yield && analysis.yearly_yield > 3) {
-      characteristics.push('Moderate Yield');
-    }
-
-    if (analysis.weaknesses) {
-      if (
-        analysis.weaknesses.some(
-          (w: string) =>
-            w.toLowerCase().includes('supply') ||
-            w.toLowerCase().includes('availability')
-        )
-      ) {
-        characteristics.push('Limited Supply');
-      }
 
       if (
-        analysis.weaknesses.some((w: string) =>
-          w.toLowerCase().includes('demand')
+        analysis.strengths.some((s: string) =>
+          s.toLowerCase().includes('transport')
         )
       ) {
-        characteristics.push('High Demand');
+        characteristics.push('Well Connected');
       }
     }
 
-    // Ensure we have at least some characteristics
-    if (characteristics.length < 2) {
-      characteristics.push('Residential Property');
+    if (analysis.investment_score > 75) {
+      characteristics.push('High Investment Grade');
     }
 
-    return characteristics;
+    return characteristics.length > 0 ? characteristics : ['Standard Property'];
+  };
+
+  // Helper function to determine if enhanced analysis features should be shown
+  const isEnhancedAnalysis = (analysisResult: AnalysisResult): boolean => {
+    if (!analysisResult?.agent_analysis) return false;
+    
+    return !!(
+      analysisResult.agent_analysis.reasoning_process ||
+      analysisResult.agent_analysis.self_reflection ||
+      analysisResult.agent_analysis.analysis_context ||
+      analysisResult.agent_analysis.validation ||
+      analysisResult.agent_analysis.metadata?.agentic_patterns?.length
+    );
+  };
+
+  // Helper function to extract confidence scores from enhanced analysis
+  const extractConfidenceScores = (analysisResult: AnalysisResult): { [key: string]: number } => {
+    if (!analysisResult?.agent_analysis?.financial_metrics) return {};
+    
+    const confidenceScores: { [key: string]: number } = {};
+    
+    Object.entries(analysisResult.agent_analysis.financial_metrics).forEach(([key, metric]) => {
+      if (typeof metric === 'object' && metric.confidence !== undefined) {
+        confidenceScores[key + '_confidence'] = metric.confidence;
+      }
+    });
+    
+    // Add some default confidence scores if available
+    if (analysisResult.agent_analysis.validation?.confidence_calibration) {
+      confidenceScores.overall_confidence = analysisResult.agent_analysis.validation.confidence_calibration;
+    }
+    
+    return confidenceScores;
+  };
+
+  // Helper function to determine agentic features status
+  const getAgenticFeatures = (analysisResult: AnalysisResult) => {
+    if (!analysisResult?.agent_analysis) {
+      return {
+        chainOfThought: false,
+        selfReflection: false,
+        confidenceScoring: false,
+        qualityValidation: false,
+      };
+    }
+
+    return {
+      chainOfThought: !!analysisResult.agent_analysis.reasoning_process,
+      selfReflection: !!analysisResult.agent_analysis.self_reflection,
+      confidenceScoring: !!analysisResult.agent_analysis.financial_metrics,
+      qualityValidation: !!analysisResult.agent_analysis.validation,
+    };
   };
 
   // Helper function to generate score breakdown based on investment score
@@ -292,6 +350,94 @@ export default function PropertyAnalysisPage() {
         ],
         characteristics: ['Stable Growth', 'Prime Location', 'High Demand'],
         ...scores,
+        // Enhanced agentic features for sample data
+        reasoning_process: `STEP 1: INITIAL ASSESSMENT
+Analyzing property at Aragohof 4-1, 1098 RR Amsterdam
+- Property type: Residential apartment
+- Location: Southeast Amsterdam, established neighborhood
+- Price point: €535,000 for 68m² indicates €7,868/m²
+- Market context: Dutch residential market with strong fundamentals
+
+STEP 2: MARKET ANALYSIS
+Dutch Market Factors:
+- WOZ value assessment: Likely around €490,000-€580,000 range
+- Energy label: Older building (1960) may need improvements
+- Rental point system: 68m² + location should yield 120+ points
+- Transfer tax: 2% for buyers under 35, 10.4% for investors
+
+STEP 3: FINANCIAL MODELING
+Rental Income Estimation:
+- Market rent: €1,400-€1,700/month based on location and size
+- Annual yield: 3.2-3.8% gross yield potential
+- Operating expenses: ~30% of gross income
+- Net yield: 2.2-2.7% after expenses
+
+STEP 4: SELF-CRITIQUE
+Potential Issues with Analysis:
+- Limited recent comparable sales data
+- Property age may require maintenance considerations
+- Market volatility in Amsterdam housing market
+- Public transport accessibility assessment needed
+
+STEP 5: CONFIDENCE ASSESSMENT
+Overall confidence: 78% based on available data quality and market knowledge`,
+
+        self_reflection: `VALIDATION REVIEW:
+✓ Numerical consistency: Price/m² calculations verified (€7,868/m²)
+✓ Market appropriateness: Analysis fits Dutch market context
+✓ Logical coherence: Investment metrics align with Amsterdam market
+⚠ Data limitations: Some assumptions made for older property (1960)
+✓ Confidence calibration: 78% confidence appropriate for sample data
+
+REFINEMENT NOTES:
+- Analysis could benefit from energy efficiency assessment
+- Building maintenance costs should be factored for 1960 construction
+- Local area development plans could impact future value
+- Consider renovation potential for older properties`,
+
+        financial_metrics: {
+          roi_5_year: {
+            value: 18.0,
+            confidence: 82
+          },
+          yearly_yield: {
+            value: 3.5,
+            confidence: 75
+          },
+          investment_score: {
+            value: 75,
+            confidence: 78
+          },
+          monthly_rental: {
+            value: 1500,
+            confidence: 70
+          }
+        },
+
+        analysis_context: {
+          market_type: 'dutch',
+          data_quality_score: 78,
+          complexity_level: 'moderate',
+          confidence_threshold: 75
+        },
+
+        validation: {
+          quality_score: 82,
+          validation_notes: [
+            'Price analysis shows consistency with Amsterdam market data',
+            'Rental yield calculations verified against Dutch standards',
+            'Location scoring reflects good neighborhood characteristics',
+            'Age of property appropriately factored into risk assessment'
+          ],
+          confidence_calibration: 78
+        },
+
+        metadata: {
+          analysis_type: 'enhanced_sample',
+          market_specialization: 'dutch_residential',
+          timestamp: new Date().toISOString(),
+          agentic_patterns: ['chain_of_thought', 'self_reflection', 'confidence_scoring', 'quality_validation']
+        }
       },
     });
   };
@@ -401,6 +547,31 @@ export default function PropertyAnalysisPage() {
                 {/* Results Section - Render only when not loading */}
                 {!loading && analysisResult && (
                   <div className="mt-8 animate-fadeIn">
+                    {/* Enhanced Analysis Notice */}
+                    {isEnhancedAnalysis(analysisResult) && (
+                      <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4 mb-6">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                              🚀 Enhanced Agentic AI Analysis Available
+                            </h3>
+                            <div className="mt-2 text-sm text-purple-700 dark:text-purple-300">
+                              <p>
+                                This analysis includes advanced AI features with transparent reasoning, 
+                                self-reflection, and confidence scoring. Look for the purple section below 
+                                for detailed insights into the AI's decision-making process.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
                     {analysisResult.error ? (
                       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center">
                         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 mb-4">
@@ -512,6 +683,15 @@ export default function PropertyAnalysisPage() {
                         size={parseInt(analysisResult.scraped_data?.living_area?.replace(/[^\d]/g, '') || '0') || undefined}
                         // Property image
                         propertyImage={analysisResult.scraped_data?.property_image}
+                        // Enhanced Agentic Features
+                        isEnhancedAnalysis={isEnhancedAnalysis(analysisResult)}
+                        agenticFeatures={getAgenticFeatures(analysisResult)}
+                        reasoningProcess={analysisResult.agent_analysis?.reasoning_process || ""}
+                        selfReflection={analysisResult.agent_analysis?.self_reflection || ""}
+                        confidenceScores={extractConfidenceScores(analysisResult)}
+                        analysisContext={analysisResult.agent_analysis?.analysis_context}
+                        validation={analysisResult.agent_analysis?.validation}
+                        metadata={analysisResult.agent_analysis?.metadata}
                       />
                     )}
                   </div>
