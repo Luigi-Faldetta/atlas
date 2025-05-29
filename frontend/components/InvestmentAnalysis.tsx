@@ -42,7 +42,9 @@ import {
   LightBulbIcon,
   ShieldCheckIcon,
   PaperClipIcon,
-  TagIcon
+  TagIcon,
+  ChatBubbleLeftRightIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline';
 import {
   SunIcon,
@@ -65,6 +67,7 @@ import mcpApiClient from '../lib/api/mcpClient';
 import { useAirQualityData, useLocalNews } from '../lib/api/useMcpData';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import DataQualityIndicator from './DataQualityIndicator';
 
 
 // Register ScrollTrigger plugin
@@ -935,6 +938,31 @@ const InvestmentAnalysis = ({
           <span className="sm:hidden ml-1">Feedback</span>
         </button>
       </div>
+
+      {/* Data Quality Indicator - Right below action buttons */}
+      <DataQualityIndicator 
+        data={{
+          price: numericPrice,
+          pricePerSqm,
+          roi: roi5Years,
+          capRate: scoreBreakdown?.capRate,
+          cashOnCashReturn: cashOnCashReturn,
+          buildingAge: yearBuilt ? new Date().getFullYear() - yearBuilt : undefined,
+          totalSquareMeters: size,
+          occupancyRate: vacancyRate ? 100 - vacancyRate : undefined,
+          marketValue: assessedPropertyValue,
+          rentalYield: yearlyYield,
+          energyEfficiencyRating: energyLabel,
+          walkScore: 75, // Default since we don't have this data source yet
+          transitScore: publicTransitAccess ? 85 : 45,
+          source: 'Atlas MCP Enhanced Analysis',
+          lastUpdated: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        }}
+        comparableData={[]} // TODO: Add comparable properties data
+        className="mb-6"
+        showDetails={true}
+      />
 
       {/* Enhanced AI Analysis Features Section */}
       {isEnhancedAnalysis && (
