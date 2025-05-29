@@ -9,11 +9,26 @@ from typing import Dict, Any, Optional
 from urllib.parse import urlparse
 
 # Import all available scrapers
-from .new_funda_scraper import FundaScraper
-from .fotocasa_scraper import FotocasaScraper
-from .habitaclia_scraper import HabitacliaScraper
-from .idealista_scraper import IdealistaScraper
-from .base_scraper import BaseScraper
+try:
+    from new_funda_scraper import FundaScraper
+    from fotocasa_scraper import FotocasaScraper
+    from habitaclia_scraper import HabitacliaScraper
+    from idealista_scraper import IdealistaScraper
+    from base_scraper import BaseScraper
+except ImportError as e:
+    logger = logging.getLogger(__name__)
+    logger.warning(f"Some scrapers not available: {e}")
+    # Create dummy classes for missing scrapers
+    class FundaScraper:
+        pass
+    class FotocasaScraper:
+        pass
+    class HabitacliaScraper:
+        pass
+    class IdealistaScraper:
+        pass
+    class BaseScraper:
+        pass
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

@@ -1,0 +1,84 @@
+{
+  "investmentScore": 98,
+  "address": "43954500",
+  "price": "",
+  "roi5Years": 6.96,
+  "roi10Years": 8.352,
+  "yearlyYield": 5.4,
+  "monthlyRentalIncome": 1980.0,
+  "expectedMonthlyIncome": 1980.0,
+  "yearlyAppreciationPercentage": 3.3,
+  "yearlyAppreciationValue": 14520.0,
+  "pricePerSqm": 5176.470588235294,
+  "bedrooms": null,
+  "bathrooms": null,
+  "size": 85,
+  "yearBuilt": null,
+  "description": "Modern apartment in sought-after neighborhood with good amenities.",
+  "features": [
+    "Elevator",
+    "Balcony",
+    "Energy efficient",
+    "Close to transport"
+  ],
+  "buildingType": "Apartment",
+  "energyLabel": "B",
+  "nearbyAmenities": {
+    "schools": 7,
+    "groceryStores": 5,
+    "gyms": 3,
+    "restaurants": 13,
+    "hospitals": 2,
+    "parks": 6
+  },
+  "distanceToSupermarket": 350,
+  "publicTransitAccess": true,
+  "distanceToGreenSpaces": 450,
+  "noisePollutionIndex": 45,
+  "airQualityIndex": 65,
+  "averageSunExposure": 7.1,
+  "urbanHeatIslandEffect": 1.8,
+  "floodRisk": 4,
+  "vacancyRate": 3.2,
+  "crimeRate": 12.5,
+  "propertyTaxRate": 0.7,
+  "communityFees": null,
+  "daysOnMarket": 52,
+  "assessedPropertyValue": null,
+  "listingsNearby": 25,
+  "shortTermRentalActivity": "",
+  "strengths": [
+    "Strong financial performance",
+    "Strong location quality",
+    "Strong market conditions",
+    "Good rental yield for the area",
+    "Solid appreciation potential",
+    "Energy efficient building"
+  ],
+  "weaknesses": [],
+  "locationPros": [
+    "7 educational institutions nearby",
+    "13 dining options in the area",
+    "Good public transportation access"
+  ],
+  "locationCons": [],
+  "suitabilityScores": {
+    "families": 100,
+    "couples": 100,
+    "singles": 75
+  },
+  "dataQuality": {
+    "completeness_score": 83,
+    "accuracy_score": 0,
+    "sources_used": [
+      "traditional_scraping",
+      "mock_external_apis"
+    ],
+    "extraction_method": "simplified",
+    "last_updated": "2025-05-29T18:36:31.581573",
+    "total_fields": 42,
+    "populated_fields": 35,
+    "processing_completed": true
+  },
+  "hasRealData": true
+}

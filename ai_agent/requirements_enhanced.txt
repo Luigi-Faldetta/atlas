@@ -1,0 +1,54 @@
+# Enhanced Visual Scraping Dependencies
+# Core scraping and automation
+playwright==1.41.2
+playwright-stealth==1.0.6
+selenium==4.16.0
+
+# AI and vision processing
+openai==1.6.1
+anthropic==0.8.1
+
+# Image processing
+Pillow==10.2.0
+opencv-python==4.9.0.80
+
+# Data processing and analysis
+pandas==2.1.4
+numpy==1.24.3
+scipy==1.11.4
+
+# Web requests and parsing
+requests==2.31.0
+aiohttp==3.9.1
+beautifulsoup4==4.12.2
+lxml==4.9.4
+
+# Environment and configuration
+python-dotenv==1.0.0
+pydantic==2.5.2
+
+# Async utilities
+asyncio==3.4.3
+aiofiles==23.2.1
+
+# Logging and monitoring
+structlog==23.2.0
+rich==13.7.0
+
+# Data export and serialization
+orjson==3.9.10
+msgpack==1.0.7
+
+# Optional: Enhanced browser automation
+undetected-chromedriver==3.5.4
+selenium-wire==5.1.0
+
+# Optional: Advanced image analysis
+pytesseract==0.3.10
+easyocr==1.7.0
+
+# Development and testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.12.1
+flake8==6.1.0 

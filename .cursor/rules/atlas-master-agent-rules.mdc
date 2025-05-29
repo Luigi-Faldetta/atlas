@@ -1,0 +1,418 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Atlas Master Agent Rules - Comprehensive Development Guidelines
+
+## 🎯 **Atlas Project Context & Vision**
+Transform real estate investment analysis through advanced agentic AI with sophisticated, context-aware property evaluations featuring chain-of-thought reasoning and self-reflection capabilities. Focus on Dutch, Spanish, and international markets with agile development methodology for rapid iteration and user validation.
+
+**Development Philosophy**: Agile development with user-centric iteration cycles, prioritizing core agentic patterns and iterative improvement based on real-world feedback.
+
+---
+
+## 🧠 **I. AGENTIC AI DEVELOPMENT PATTERNS**
+
+### Core Agentic Principles
+- **Chain-of-Thought Implementation**: Structure all AI agent prompts with explicit reasoning steps
+- **Self-Reflection Mechanisms**: Implement validation and iterative improvement in agent responses  
+- **Multi-Step Decomposition**: Break complex AI tasks into discrete, manageable components
+- **Context-Aware Adaptation**: Design prompts that adapt based on data quality, market type, and user expertise
+- **Confidence Scoring**: Include reliability metrics for all analysis components
+
+### Agent Architecture Standards
+```python
+# Example: Enhanced agent implementation following agentic patterns
+async def analyze_property_enhanced(self, property_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Enhanced property analysis with chain-of-thought reasoning and self-reflection
+    Following atlas.mdc agentic patterns
+    """
+    try:
+        # STEP 1: Validate and assess input data quality
+        if not self.validate_input_data(property_data):
+            raise ValueError("Invalid property data provided")
+        
+        # STEP 2: Create adaptive context based on market and data quality
+        context = self.create_agent_context(property_data)
+        
+        # STEP 3: Execute analysis with chain-of-thought reasoning
+        result = await self.execute_analysis_with_reasoning(context, property_data)
+        
+        # STEP 4: Self-reflection and quality validation
+        validated_result = self.validate_and_assess_quality(result, context)
+        
+        return validated_result
+        
+    except Exception as e:
+        self.logger.error(f"Analysis failed: {str(e)}")
+        return await self.fallback_analysis(property_data)
+```
+
+### Real Estate Domain Intelligence
+- **Dutch Market**: WOZ tax calculations, energy labels, rental point system
+- **Spanish Market**: Golden Visa eligibility, regional taxes, tourism potential  
+- **Financial Metrics**: ROI (5/10 year), DSCR, IRR, Cash-on-Cash return, monthly yield
+- **Comparative Analysis**: Benchmark against similar properties and market averages
+
+---
+
+## 💻 **II. NEXT.JS FULL-STACK DEVELOPMENT**
+
+### Technology Stack Expertise
+**Frontend**: Next.js 14 App Router, React, TypeScript, Vite, Shadcn UI, Radix UI, Tailwind Aria
+**Backend**: FastAPI with async/await, Python integration
+**Blockchain**: Solidity, Viem v2, Wagmi v2
+**State Management**: Zustand, TanStack React Query
+**Validation**: Zod schemas, next-safe-action
+
+### Code Style & Structure Principles
+- **Functional Programming**: Use function declarations, avoid classes, embrace declarative patterns
+- **TypeScript Standards**: Prefer interfaces over types, avoid enums (use maps), omit semicolons
+- **Naming Conventions**: 
+  - Descriptive variables with auxiliary verbs (`isLoading`, `hasError`)
+  - Lowercase with dashes for directories (`components/auth-wizard`)
+  - Named exports for components
+  - RORO pattern (Receive an Object, Return an Object)
+
+### File Structure Pattern
+```typescript
+// File organization: Exported component, subcomponents, helpers, static content, types
+export default function PropertyAnalysis({ property }: PropertyAnalysisProps) {
+  // Component logic with early returns for error conditions
+  if (!property) return <ErrorFallback message="Property data unavailable" />
+  
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {/* Component JSX */}
+    </div>
+  )
+}
+
+// Subcomponents
+function AnalysisCard({ analysis }: AnalysisCardProps) {
+  // Component implementation
+}
+
+// Helper functions
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(amount)
+}
+
+// Static content
+const ANALYSIS_LABELS = {
+  roi: 'Return on Investment',
+  yield: 'Annual Yield'
+} as const
+
+// Types
+interface PropertyAnalysisProps {
+  property: Property
+}
+```
+
+### Error Handling & Validation Standards
+- **Early Returns**: Handle errors and edge cases at function beginning
+- **Guard Clauses**: Use for preconditions and invalid states
+- **Custom Error Types**: Implement consistent error handling across application
+- **Server Actions**: Use `next-safe-action` with Zod schemas, return `ActionResponse` type
+- **Client Components**: Wrap in Suspense with fallback, minimize 'use client' usage
+
+### React/Next.js Best Practices
+- **Server Components First**: Favor RSC and Next.js SSR, minimize client-side state
+- **Performance Optimization**: 
+  - Dynamic imports for code splitting
+  - WebP images with size data and lazy loading
+  - Mobile-first responsive design
+- **Form Handling**: Use `useActionState` with `react-hook-form` and Zod validation
+- **Error Boundaries**: Implement using `error.tsx` and `global-error.tsx`
+
+---
+
+## 🕷️ **III. MODERN WEB SCRAPING**
+
+### Python Scraping Framework
+**Core Libraries**: requests, BeautifulSoup, selenium, pandas
+**Advanced Tools**: Jina (AI-driven pipelines), Firecrawl (deep web content), AgentQL (complex workflows), MultiOn (exploratory tasks)
+
+### Scraping Strategy by Use Case
+```python
+# Static content scraping
+import requests
+from bs4 import BeautifulSoup
+
+def scrape_static_property(url: str) -> Dict[str, Any]:
+    """Basic scraping for static property listings"""
+    headers = {'User-Agent': 'Mozilla/5.0 (Atlas Real Estate Analyzer)'}
+    response = requests.get(url, headers=headers, timeout=30)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    return extract_property_data(soup)
+
+# Dynamic content with Selenium
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+
+async def scrape_dynamic_property(url: str) -> Dict[str, Any]:
+    """JavaScript-heavy sites requiring browser automation"""
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
+    driver = webdriver.Chrome(options=options)
+    
+    try:
+        driver.get(url)
+        # Wait for dynamic content to load
+        wait = WebDriverWait(driver, 10)
+        elements = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "property-details")))
+        return extract_dynamic_data(driver)
+    finally:
+        driver.quit()
+
+# AI-driven text extraction with Jina
+def extract_with_jina(content: str) -> Dict[str, Any]:
+    """Structured data extraction using AI pipelines"""
+    # Implement Jina pipeline for property data structuring
+    pass
+
+# Complex workflow automation with AgentQL
+def automate_complex_process(login_data: Dict) -> Dict[str, Any]:
+    """Handle login forms, CAPTCHAs, multi-step processes"""
+    # Implement AgentQL workflow automation
+    pass
+```
+
+### Performance & Ethics Standards
+- **Rate Limiting**: Implement delays between requests, respect robots.txt
+- **Error Handling**: Robust retry logic with exponential backoff
+- **Data Validation**: Validate formats and types before processing
+- **Storage**: Use appropriate formats (CSV, JSON, SQLite) based on scale
+- **Concurrency**: Utilize asyncio/concurrent.futures for performance
+- **Caching**: Implement request caching with libraries like requests-cache
+
+---
+
+## 🎨 **IV. UI/UX DESIGN BEST PRACTICES**
+
+### Visual Design Standards
+- **Visual Hierarchy**: Clear information prioritization for property analysis
+- **Color System**: Cohesive palette reflecting real estate professionalism
+- **Typography**: Readable fonts with proper contrast (WCAG 2.1 AA standard)
+- **Consistency**: Unified design system across all components
+
+### Interaction Design Patterns
+- **Navigation**: Intuitive property browsing and analysis flows
+- **Familiar Components**: Use established UI patterns to reduce cognitive load
+- **Clear CTAs**: Guide users through analysis and decision-making process
+- **Responsive Design**: Mobile-first approach with touch-friendly interfaces
+- **Purposeful Animation**: Enhance UX without distracting from content
+
+### Accessibility Implementation
+- **Semantic HTML**: Enhance screen reader compatibility for property data
+- **Keyboard Navigation**: All interactive elements accessible via keyboard
+- **Alternative Text**: Descriptive alt text for property images and charts
+- **WCAG Compliance**: Follow accessibility guidelines for inclusive design
+
+### Real Estate UX Specialization
+- **Information Architecture**: Logical organization of property data and analysis
+- **Search Functionality**: Efficient property filtering and discovery
+- **Data Visualization**: Clear charts for ROI, yield, and market comparisons
+- **Mobile Experience**: Optimized for property viewing on mobile devices
+- **Performance**: Fast loading for property images and analysis results
+
+---
+
+## 🔍 **V. RESPONSE QUALITY EVALUATION**
+
+### Quality Assessment Framework
+**Evaluation Criteria**:
+1. **Accuracy**: Correctly addresses the question/task with factual information
+2. **Completeness**: Covers all aspects of real estate analysis requirements  
+3. **Clarity**: Easy to understand for real estate professionals
+4. **Conciseness**: Appropriately detailed without unnecessary complexity
+5. **Relevance**: Stays focused on property investment analysis
+
+### Quality Metrics Structure
+```python
+class ResponseQuality:
+    def __init__(self):
+        self.reflections: str = ""  # Critique on response quality
+        self.score: int = 0         # 0-10 quality score
+        self.found_solution: bool = False  # Task completion status
+    
+    def evaluate_property_analysis(self, analysis: Dict) -> 'ResponseQuality':
+        """Evaluate quality of property analysis response"""
+        # Check for required metrics
+        required_metrics = ["investment_score", "roi_5_year", "monthly_rental"]
+        completeness = all(metric in analysis for metric in required_metrics)
+        
+        # Assess confidence scoring
+        has_confidence = "confidence_scores" in analysis
+        
+        # Evaluate reasoning quality
+        has_reasoning = "chain_of_thought" in analysis
+        
+        score = self.calculate_score(completeness, has_confidence, has_reasoning)
+        return ResponseQuality(score, completeness and has_confidence, 
+                             self.generate_reflections(analysis))
+```
+
+---
+
+## 🚀 **VI. AGILE DEVELOPMENT METHODOLOGY**
+
+### Rapid Development Principles
+- **MVP Focus**: Implement core agentic patterns first, iterate based on feedback
+- **Quick Wins**: Prioritize features providing immediate user value  
+- **Short Iteration Cycles**: Build → Test → Learn → Iterate in 2-3 day sprints
+- **User-Centric Design**: Continuous validation with real estate professionals
+
+### Production Requirements
+**Functional Standards**:
+- Agent analyzes 95% of submitted property URLs successfully
+- All analyses include chain-of-thought reasoning and self-reflection
+- Context adaptation based on data quality and market type
+- Graceful fallback with clear user communication
+
+**Performance Targets**:
+- Response time: <30 seconds for 90% of analyses
+- Token efficiency: <5000 tokens per comprehensive analysis  
+- User satisfaction: >80% with analysis quality and relevance
+- Error rate: <5% with successful fallback recovery
+
+### Development Workflow
+```python
+# Example: Production-ready implementation with comprehensive validation
+async def analyze_property_production(self, url: str) -> Dict[str, Any]:
+    """Production implementation with full agentic patterns and validation"""
+    try:
+        # Comprehensive data extraction
+        data = await self.scrape_property_with_validation(url)
+        
+        # Advanced AI analysis with agentic patterns
+        analysis = await self.enhanced_ai_analysis_with_reasoning(data)
+        
+        # Multi-layer validation
+        validated = await self.comprehensive_validate(analysis)
+        
+        return {"status": "success", "analysis": validated}
+    except Exception as e:
+        return await self.production_fallback_with_logging(str(e))
+```
+
+### User Testing Integration
+- **Continuous Feedback**: Regular user insights integration
+- **A/B Testing**: Test prompt variations and UI improvements
+- **Usage Analytics**: Track behavior patterns for optimization
+- **Professional Focus**: Real estate experts validating analysis quality
+
+---
+
+## 📊 **VII. DEVELOPMENT WORKFLOW & STANDARDS**
+
+### Code Organization Requirements
+```
+atlas/
+├── ai_agent/
+│   ├── prompts/
+│   │   ├── enhanced_agent_prompts.py    # Agentic prompt templates
+│   │   ├── market_specific_prompts.py   # Domain-specific prompts
+│   │   └── validation_prompts.py        # Self-reflection patterns
+│   ├── agents/
+│   │   ├── enhanced_atlas_agent.py      # Main agent implementation
+│   │   ├── context_manager.py           # Adaptive context handling
+│   │   └── quality_assessor.py          # Analysis quality validation
+│   └── scrapers/
+│       ├── base_scraper.py              # Abstract scraper interface
+│       └── market_scrapers/             # Market-specific implementations
+├── frontend/
+│   ├── components/
+│   │   ├── property-analysis/           # Analysis display components
+│   │   ├── dashboard/                   # User dashboard
+│   │   └── ui/                          # Shadcn UI components
+│   └── app/                             # Next.js 14 app router
+└── backend/
+    ├── api/                             # FastAPI endpoints
+    ├── services/                        # Business logic
+    └── models/                          # Data models
+```
+
+### Naming Conventions
+- **Agent Classes**: `Enhanced[Purpose]Agent` (e.g., `EnhancedAtlasAgent`)
+- **Components**: PascalCase with descriptive names (`PropertyAnalysisDashboard`)
+- **Functions**: camelCase with auxiliary verbs (`validatePropertyData`)
+- **Constants**: UPPER_SNAKE_CASE (`REQUIRED_METRICS`)
+
+### Git Workflow Standards
+```bash
+# Commit message format
+feat(agent): implement chain-of-thought reasoning for property analysis
+
+- Add structured prompt templates following atlas.mdc patterns
+- Implement self-reflection mechanisms for quality validation  
+- Include confidence scoring for all analysis components
+- Add fallback strategies for incomplete data scenarios
+
+Refs: atlas.mdc agentic patterns, enhanced_agent_prompts.py
+```
+
+### Code Review Checklist
+- [ ] Follows atlas.mdc agentic patterns (chain-of-thought, self-reflection)
+- [ ] Implements proper error handling and fallback mechanisms
+- [ ] Includes confidence scoring and quality assessment
+- [ ] Has test coverage for core functionality
+- [ ] Documents prompt structure and expected outputs
+- [ ] Validates numerical consistency and logical coherence
+- [ ] Implements market-specific intelligence where applicable
+- [ ] Follows Next.js and TypeScript best practices
+- [ ] Optimized for production deployment and user experience
+
+---
+
+## 🎯 **VIII. ATLAS PROJECT SUCCESS METRICS**
+
+### Technical Performance Indicators
+- **Analysis Quality**: >85% accuracy in investment score predictions
+- **Response Time**: <30 seconds for comprehensive property analysis  
+- **User Satisfaction**: >4.5/5 rating from real estate professionals
+- **Token Efficiency**: <5000 tokens per analysis average
+- **System Reliability**: >95% uptime during production periods
+
+### Agentic AI Effectiveness Metrics
+- **Chain-of-Thought Clarity**: User comprehension of reasoning steps
+- **Self-Reflection Accuracy**: Validation mechanism effectiveness
+- **Confidence Calibration**: Alignment between confidence scores and actual accuracy
+- **Context Adaptation**: Appropriate behavior changes based on data quality/market type
+
+### User Experience Metrics
+- **Engagement**: >5 minute session duration indicates value
+- **Completion Rate**: >80% successful analysis completion
+- **Return Usage**: >30% users return within a week
+- **Feedback Participation**: >50% users provide structured feedback
+
+---
+
+## ⚡ **IX. SYSTEMATIC DEVELOPMENT METHODOLOGY**
+
+### System 2 Thinking Process
+1. **Deep Dive Analysis**: Thoroughly analyze task requirements and constraints
+2. **Planning**: Outline architectural structure and flow using systematic approach
+3. **Implementation**: Step-by-step execution adhering to all best practices
+4. **Review and Optimize**: Identify improvements, edge cases, and optimizations
+5. **Finalization**: Ensure security, performance, and requirement compliance
+
+### Tree of Thoughts Approach
+- **Evaluate Multiple Solutions**: Consider different implementation paths
+- **Consequence Analysis**: Assess impacts of each approach
+- **Optimal Path Selection**: Choose best solution based on criteria
+- **Iterative Refinement**: Continuously improve based on feedback and performance
+
+### Development Priorities
+1. **Core Agentic Features**: Chain-of-thought reasoning and self-reflection implementation
+2. **User Experience**: Intuitive interface for property analysis workflow  
+3. **Performance**: Meet response time and accuracy targets
+4. **Feedback Loop**: Continuous iteration based on user testing
+5. **Quality Assurance**: Robust error handling and comprehensive validation
+
+---
+
+This master rule consolidates all Atlas development guidelines into a single comprehensive framework for creating sophisticated, user-centered real estate AI agents with agile development methodology and advanced agentic patterns.
