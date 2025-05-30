@@ -62,7 +62,7 @@ class VisualPropertyScraper:
         self.context = None
         self.page = None
         
-        # Proxy configuration from environment
+        # Proxy configuration from environment - Web Unlocker optimized
         self.proxy_enabled = os.getenv('PROXY_ENABLED', 'false').lower() == 'true'
         self.proxy_config = None
         
@@ -70,6 +70,7 @@ class VisualPropertyScraper:
             proxy_server = os.getenv('PROXY_SERVER')
             proxy_username = os.getenv('PROXY_USERNAME')
             proxy_password = os.getenv('PROXY_PASSWORD')
+            proxy_type = os.getenv('PROXY_TYPE', 'datacenter')
             
             if proxy_server and proxy_username and proxy_password:
                 self.proxy_config = {
@@ -77,10 +78,20 @@ class VisualPropertyScraper:
                     "username": proxy_username,
                     "password": proxy_password
                 }
-                print(f"🌐 Datacenter proxy configured: {proxy_server}")
+                print(f"🌐 {proxy_type.title()} proxy configured: {proxy_server}")
+                
+                # Web Unlocker specific optimizations
+                if proxy_type == 'web_unlocker':
+                    print("🔓 Web Unlocker active - automatic site optimization enabled")
+                    self.web_unlocker_active = True
+                else:
+                    self.web_unlocker_active = False
             else:
                 print("⚠️ Proxy enabled but credentials incomplete")
                 self.proxy_enabled = False
+                self.web_unlocker_active = False
+        else:
+            self.web_unlocker_active = False
         
     async def start(self, headless: bool = True):
         """Initialize browser with enhanced visual capabilities and proxy support"""
@@ -102,7 +113,10 @@ class VisualPropertyScraper:
         
         if self.proxy_config:
             browser_options["proxy"] = self.proxy_config
-            print("🔒 Browser launched with datacenter proxy for fotocasa bypass")
+            if self.web_unlocker_active:
+                print("🔓 Browser launched with Web Unlocker for protected site bypass")
+            else:
+                print("🔒 Browser launched with datacenter proxy for fotocasa bypass")
         
         self.browser = await self.playwright.chromium.launch(**browser_options)
         
@@ -111,7 +125,9 @@ class VisualPropertyScraper:
             'viewport': {'width': 1920, 'height': 1080},
             'device_scale_factor': 2,  # High DPI for crisp screenshots
             'ignore_https_errors': True,
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'accept_downloads': False,
+            'bypass_csp': True
         }
         
         self.context = await self.browser.new_context(**context_options)

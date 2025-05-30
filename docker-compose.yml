@@ -50,12 +50,13 @@ services:
     build: .
     container_name: atlas-ai-agent
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      SCRAPINGBEE_API_KEY: ${SCRAPINGBEE_API_KEY}
-      PROXY_SERVER: ${PROXY_SERVER}
-      PROXY_USERNAME: ${PROXY_USERNAME}
-      PROXY_PASSWORD: ${PROXY_PASSWORD}
-      PORT: 8000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PROXY_ENABLED=${PROXY_ENABLED}
+      - PROXY_SERVER=${PROXY_SERVER}
+      - PROXY_USERNAME=${PROXY_USERNAME}
+      - PROXY_PASSWORD=${PROXY_PASSWORD}
+      - PROXY_TYPE=${PROXY_TYPE}
+      - PORT=8000
     ports:
       - "8000:8000"
     networks:

@@ -79,24 +79,31 @@ class PropertyData:
         }
 
 def get_proxy_config():
-    """Get proxy configuration from environment variables"""
-    proxy_enabled = os.getenv('PROXY_ENABLED', 'false').lower() == 'true'
-    
-    if not proxy_enabled:
+    """Get Web Unlocker proxy configuration"""
+    if os.getenv('PROXY_ENABLED', 'false').lower() != 'true':
         return None
     
+    proxy_type = os.getenv('PROXY_TYPE', 'datacenter')
     proxy_server = os.getenv('PROXY_SERVER')
-    proxy_username = os.getenv('PROXY_USERNAME') 
+    proxy_username = os.getenv('PROXY_USERNAME')
     proxy_password = os.getenv('PROXY_PASSWORD')
     
-    if proxy_server and proxy_username and proxy_password:
-        proxy_url = f"http://{proxy_username}:{proxy_password}@{proxy_server}"
-        return {
-            'http': proxy_url,
-            'https': proxy_url
-        }
+    if not all([proxy_server, proxy_username, proxy_password]):
+        print("⚠️ Proxy credentials incomplete")
+        return None
     
-    return None
+    if proxy_type == 'web_unlocker':
+        print(f"🔓 Web Unlocker proxy configured for enhanced access: {proxy_server}")
+        return {
+            "http": f"http://{proxy_username}:{proxy_password}@{proxy_server}",
+            "https": f"http://{proxy_username}:{proxy_password}@{proxy_server}"
+        }
+    else:
+        print(f"🔒 Datacenter proxy configured: {proxy_server}")
+        return {
+            "http": f"http://{proxy_username}:{proxy_password}@{proxy_server}",
+            "https": f"http://{proxy_username}:{proxy_password}@{proxy_server}"
+        }
 
 def get_scraper_for_url(url: str) -> Optional[BaseScraper]:
     """

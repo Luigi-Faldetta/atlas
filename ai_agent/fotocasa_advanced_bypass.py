@@ -36,19 +36,32 @@ class FotocasaAdvancedBypass:
         ]
         
     def _get_proxy_config(self):
-        """Get proxy configuration with enhanced session management"""
+        """Get Web Unlocker proxy configuration with enhanced session management"""
         if os.getenv('PROXY_ENABLED', 'false').lower() != 'true':
             return None
             
-        # Use session-based proxy for consistent IP
-        session_id = f"atlas_{int(time.time())}"
-        proxy_username = f"{os.getenv('PROXY_USERNAME')}-session-{session_id}"
+        proxy_type = os.getenv('PROXY_TYPE', 'datacenter')
         
-        return {
-            "server": f"http://{os.getenv('PROXY_SERVER')}",
-            "username": proxy_username,
-            "password": os.getenv('PROXY_PASSWORD')
-        }
+        if proxy_type == 'web_unlocker':
+            # Web Unlocker with automatic site optimization
+            session_id = f"atlas_{int(time.time())}"
+            proxy_username = f"{os.getenv('PROXY_USERNAME')}-session-{session_id}"
+            
+            return {
+                "server": f"http://{os.getenv('PROXY_SERVER')}",
+                "username": proxy_username,
+                "password": os.getenv('PROXY_PASSWORD')
+            }
+        else:
+            # Standard datacenter proxy
+            session_id = f"atlas_{int(time.time())}"
+            proxy_username = f"{os.getenv('PROXY_USERNAME')}-session-{session_id}"
+            
+            return {
+                "server": f"http://{os.getenv('PROXY_SERVER')}",
+                "username": proxy_username,
+                "password": os.getenv('PROXY_PASSWORD')
+            }
     
     async def start_browser_stealth(self):
         """Initialize browser with maximum stealth capabilities"""
@@ -82,7 +95,11 @@ class FotocasaAdvancedBypass:
         
         if self.proxy_config:
             launch_options["proxy"] = self.proxy_config
-            logger.info(f"🔒 Using session-based Spanish proxy: {self.proxy_config['username']}")
+            proxy_type = os.getenv('PROXY_TYPE', 'datacenter')
+            if proxy_type == 'web_unlocker':
+                logger.info(f"🔓 Using Web Unlocker proxy for advanced bypass: {self.proxy_config['username']}")
+            else:
+                logger.info(f"🔒 Using session-based Spanish proxy: {self.proxy_config['username']}")
         
         self.browser = await self.playwright.chromium.launch(**launch_options)
         
@@ -112,6 +129,9 @@ class FotocasaAdvancedBypass:
             'is_mobile': False,
             'has_touch': False,
             'color_scheme': 'light',
+            'ignore_https_errors': True,
+            'accept_downloads': False,
+            'bypass_csp': True,
             'extra_http_headers': {
                 'Accept-Language': 'es-ES,es;q=0.9,en-US;q=0.8,en;q=0.7',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
