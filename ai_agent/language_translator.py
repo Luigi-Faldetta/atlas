@@ -1,455 +1,392 @@
+#!/usr/bin/env python3
 """
-Real Estate Language Translation and Data Standardization Module
-Handles multilingual property data and ensures accuracy for Dutch and Spanish markets
+Enhanced Language Translator for Atlas Real Estate Analysis
+Following Atlas Master Agent Rules for context-aware translation
+
+Features:
+- Chain-of-thought reasoning for translation quality
+- Self-reflection mechanisms for accuracy validation
+- Context preservation for technical real estate terms
+- Market-specific adaptations for Dutch and Spanish properties
 """
 
+import openai
 import os
-import re
-import json
-import logging
-from typing import Dict, List, Optional, Tuple, Any
-from openai import OpenAI
+import asyncio
+import time
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
-from enum import Enum
+from dotenv import load_dotenv
+import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+load_dotenv()
 logger = logging.getLogger(__name__)
-
-class Market(Enum):
-    """Supported real estate markets"""
-    DUTCH = "nl"
-    SPANISH = "es"
-    ENGLISH = "en"
 
 @dataclass
 class TranslationResult:
-    """Result of translation operation"""
-    original_text: str
+    """Enhanced translation result with quality metrics"""
     translated_text: str
     source_language: str
     target_language: str
-    confidence: float
-    field_type: str
+    confidence_score: float
+    technical_terms_preserved: List[str]
+    market_context_applied: str
+    processing_time: float
+    quality_assessment: Dict[str, float]
+    translation_notes: List[str]
 
-@dataclass
-class PropertyDataStandardized:
-    """Standardized property data structure"""
-    price: float
-    currency: str
-    currency_symbol: str
-    description: str
-    features: List[str]
-    location: str
-    property_type: str
-    energy_rating: str
-    size_sqm: float
-    bedrooms: int
-    bathrooms: int
+class EnhancedLanguageTranslator:
+    """
+    Enhanced translator implementing Atlas Master Agent Rules
     
-class RealEstateTranslator:
-    """Advanced translation system specifically designed for real estate data"""
+    Agentic Patterns:
+    - Chain-of-thought reasoning for translation decisions
+    - Self-reflection for quality validation
+    - Context-aware adaptation for real estate terminology
+    - Confidence scoring for translation accuracy
+    """
     
-    def __init__(self):
-        self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    def __init__(self, openai_api_key: Optional[str] = None):
+        self.openai_client = openai.OpenAI(
+            api_key=openai_api_key or os.getenv('OPENAI_API_KEY')
+        )
         
-        # Real estate terminology mappings
-        self.market_terminology = {
-            Market.DUTCH: {
-                "property_types": {
-                    "woning": "house",
-                    "appartement": "apartment", 
-                    "studio": "studio",
-                    "villa": "villa",
-                    "herenhuis": "townhouse",
-                    "penthouse": "penthouse",
-                    "grachtenpand": "canal house"
-                },
-                "features": {
-                    "badkamer": "bathroom",
-                    "slaapkamer": "bedroom", 
-                    "tuin": "garden",
-                    "balkon": "balcony",
-                    "parkeerplaats": "parking space",
-                    "kelder": "basement",
-                    "zolder": "attic",
-                    "lift": "elevator",
-                    "airconditioning": "air conditioning",
-                    "vloerverwarming": "underfloor heating"
-                },
-                "energy_labels": {
-                    "A+++": "A+++",
-                    "A++": "A++", 
-                    "A+": "A+",
-                    "A": "A",
-                    "B": "B",
-                    "C": "C",
-                    "D": "D",
-                    "E": "E",
-                    "F": "F",
-                    "G": "G"
-                },
-                "currency": "EUR",
-                "currency_symbol": "€"
-            },
-            Market.SPANISH: {
-                "property_types": {
-                    "piso": "apartment",
-                    "casa": "house",
-                    "chalet": "villa",
-                    "estudio": "studio", 
-                    "ático": "penthouse",
-                    "duplex": "duplex",
-                    "local": "commercial space"
-                },
-                "features": {
-                    "baño": "bathroom",
-                    "dormitorio": "bedroom",
-                    "jardín": "garden", 
-                    "balcón": "balcony",
-                    "plaza de garaje": "parking space",
-                    "trastero": "storage room",
-                    "terraza": "terrace",
-                    "ascensor": "elevator",
-                    "aire acondicionado": "air conditioning",
-                    "calefacción": "heating"
-                },
-                "energy_labels": {
-                    "A": "A",
-                    "B": "B",
-                    "C": "C", 
-                    "D": "D",
-                    "E": "E",
-                    "F": "F",
-                    "G": "G"
-                },
-                "currency": "EUR",
-                "currency_symbol": "€"
-            }
+        # Real estate terminology dictionaries
+        self.dutch_real_estate_terms = {
+            'koopprijs': 'purchase_price',
+            'vraagprijs': 'asking_price',
+            'woonoppervlakte': 'living_area',
+            'perceeloppervlakte': 'plot_area',
+            'energielabel': 'energy_label',
+            'WOZ-waarde': 'woz_value',
+            'servicekosten': 'service_costs',
+            'erfpacht': 'leasehold',
+            'eigen_grond': 'freehold',
+            'badkamers': 'bathrooms',
+            'slaapkamers': 'bedrooms',
+            'balkon': 'balcony',
+            'tuin': 'garden',
+            'garage': 'garage',
+            'parkeerplaats': 'parking_space',
+            'lift': 'elevator',
+            'airco': 'air_conditioning'
         }
         
-        # Regional patterns for data extraction
-        self.regional_patterns = {
-            Market.DUTCH: {
-                "price_patterns": [
-                    r"€\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)",
-                    r"(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*euro",
-                    r"(\d{1,3}(?:\.\d{3})*)\s*k\.k\.",
-                ],
-                "size_patterns": [
-                    r"(\d+)\s*m²",
-                    r"(\d+)\s*vierkante meter",
-                ],
-                "room_patterns": [
-                    r"(\d+)\s*slaapkamers?",
-                    r"(\d+)\s*kamers?",
-                ]
-            },
-            Market.SPANISH: {
-                "price_patterns": [
-                    r"(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*€",
-                    r"€\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)",
-                    r"(\d{1,3}(?:\.\d{3})*)\s*euros?",
-                ],
-                "size_patterns": [
-                    r"(\d+)\s*m²",
-                    r"(\d+)\s*metros cuadrados",
-                ],
-                "room_patterns": [
-                    r"(\d+)\s*habitaciones?",
-                    r"(\d+)\s*dormitorios?",
-                ]
-            }
+        self.spanish_real_estate_terms = {
+            'precio': 'price',
+            'superficie': 'surface_area',
+            'habitaciones': 'bedrooms',
+            'dormitorios': 'bedrooms',
+            'baños': 'bathrooms',
+            'metros_cuadrados': 'square_meters',
+            'ascensor': 'elevator',
+            'garaje': 'garage',
+            'terraza': 'terrace',
+            'balcón': 'balcony',
+            'jardín': 'garden',
+            'piscina': 'pool',
+            'aire_acondicionado': 'air_conditioning',
+            'calefacción': 'heating',
+            'amueblado': 'furnished',
+            'sin_amueblar': 'unfurnished',
+            'gastos_comunidad': 'community_fees',
+            'certificado_energético': 'energy_certificate'
         }
-
-    def detect_language(self, text: str) -> str:
-        """Detect the language of property data"""
-        dutch_indicators = ['woning', 'appartement', 'euro', 'slaapkamer', 'badkamer', 'tuin', 'balkon']
-        spanish_indicators = ['piso', 'casa', 'dormitorio', 'baño', 'jardín', 'balcón', 'euros']
         
-        text_lower = text.lower()
+        logger.info("🌍 Enhanced Language Translator initialized")
+    
+    async def translate_with_context(
+        self,
+        text: str,
+        source_language: str,
+        target_language: str = 'en',
+        market_context: str = '',
+        preserve_technical_terms: bool = True
+    ) -> TranslationResult:
+        """
+        Translate text with enhanced context preservation following agentic patterns
         
-        dutch_score = sum(1 for word in dutch_indicators if word in text_lower)
-        spanish_score = sum(1 for word in spanish_indicators if word in text_lower)
+        Chain-of-thought reasoning:
+        1. Analyze source text for technical terms and context
+        2. Apply market-specific knowledge for accurate translation
+        3. Execute translation with context preservation
+        4. Validate translation quality through self-reflection
+        5. Provide confidence scoring and improvement suggestions
+        """
+        start_time = time.time()
         
-        if dutch_score > spanish_score:
-            return Market.DUTCH.value
-        elif spanish_score > dutch_score:
-            return Market.SPANISH.value
-        else:
-            # Use AI for ambiguous cases
-            return self._ai_language_detection(text)
-
-    def _ai_language_detection(self, text: str) -> str:
-        """Use AI to detect language when heuristics are insufficient"""
         try:
-            prompt = f"""
-            Detect the language of this real estate text. 
-            Respond with only: 'nl' for Dutch, 'es' for Spanish, or 'en' for English.
+            # STEP 1: Analyze source text and identify technical terms
+            technical_terms = await self._identify_technical_terms(text, source_language)
             
-            Text: {text[:500]}
-            """
-            
-            response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=5,
-                temperature=0
+            # STEP 2: Create context-aware translation prompt
+            translation_prompt = await self._create_translation_prompt(
+                text, source_language, target_language, market_context, technical_terms
             )
             
-            result = response.choices[0].message.content.strip().lower()
-            return result if result in ['nl', 'es', 'en'] else 'en'
+            # STEP 3: Execute translation with OpenAI
+            translation_response = await self._execute_translation(translation_prompt)
             
-        except Exception as e:
-            logger.error(f"AI language detection failed: {e}")
-            return 'en'
-
-    def standardize_price_format(self, price_str: str, source_market: Market) -> Tuple[float, str, str]:
-        """Extract and standardize price from various formats"""
-        patterns = self.regional_patterns[source_market]["price_patterns"]
-        
-        for pattern in patterns:
-            match = re.search(pattern, price_str, re.IGNORECASE)
-            if match:
-                price_text = match.group(1)
-                # Handle European number format (dots as thousands separator, comma as decimal)
-                if ',' in price_text:
-                    price_value = float(price_text.replace('.', '').replace(',', '.'))
-                else:
-                    price_value = float(price_text.replace('.', ''))
-                
-                # Handle k.k. (kosten koper) notation
-                if 'k.k.' in price_str.lower():
-                    price_value *= 1000
-                
-                currency_info = self.market_terminology[source_market]
-                return price_value, currency_info["currency"], currency_info["currency_symbol"]
-        
-        return 0.0, "EUR", "€"
-
-    def translate_property_features(self, features: List[str], source_market: Market) -> List[str]:
-        """Translate property features using market-specific terminology"""
-        if source_market not in self.market_terminology:
-            return features
+            # STEP 4: Validate and assess translation quality
+            quality_assessment = await self._assess_translation_quality(
+                text, translation_response, technical_terms
+            )
             
-        feature_map = self.market_terminology[source_market]["features"]
-        translated_features = []
-        
-        for feature in features:
-            feature_lower = feature.lower().strip()
+            # STEP 5: Apply self-reflection for confidence scoring
+            confidence_score, translation_notes = await self._apply_self_reflection(
+                text, translation_response, quality_assessment
+            )
             
-            # Direct translation lookup
-            if feature_lower in feature_map:
-                translated_features.append(feature_map[feature_lower])
-            else:
-                # Partial matching for compound features
-                translated = feature
-                for original, translation in feature_map.items():
-                    if original in feature_lower:
-                        translated = feature_lower.replace(original, translation)
-                        break
-                
-                # If no match found, use AI translation
-                if translated == feature:
-                    translated = self._ai_translate_text(feature, source_market.value, "en", "property_feature")
-                
-                translated_features.append(translated.title())
-        
-        return translated_features
-
-    def translate_property_description(self, description: str, source_language: str, 
-                                     target_language: str = "en") -> TranslationResult:
-        """Translate property description with real estate context"""
-        if source_language == target_language:
-            return TranslationResult(
-                original_text=description,
-                translated_text=description,
+            processing_time = time.time() - start_time
+            
+            result = TranslationResult(
+                translated_text=translation_response,
                 source_language=source_language,
                 target_language=target_language,
-                confidence=1.0,
-                field_type="description"
+                confidence_score=confidence_score,
+                technical_terms_preserved=technical_terms,
+                market_context_applied=market_context,
+                processing_time=processing_time,
+                quality_assessment=quality_assessment,
+                translation_notes=translation_notes
             )
+            
+            logger.info(f"✅ Translation completed - Confidence: {confidence_score:.2%}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Translation failed: {str(e)}")
+            return TranslationResult(
+                translated_text=f"Translation failed: {str(e)}",
+                source_language=source_language,
+                target_language=target_language,
+                confidence_score=0.0,
+                technical_terms_preserved=[],
+                market_context_applied=market_context,
+                processing_time=time.time() - start_time,
+                quality_assessment={},
+                translation_notes=[f"Translation error: {str(e)}"]
+            )
+    
+    async def _identify_technical_terms(self, text: str, source_language: str) -> List[str]:
+        """Identify technical real estate terms in source text"""
+        identified_terms = []
+        text_lower = text.lower()
         
-        translated_text = self._ai_translate_text(description, source_language, target_language, "description")
+        if source_language == 'nl':
+            for dutch_term, english_term in self.dutch_real_estate_terms.items():
+                if dutch_term in text_lower:
+                    identified_terms.append(f"{dutch_term} -> {english_term}")
+        elif source_language == 'es':
+            for spanish_term, english_term in self.spanish_real_estate_terms.items():
+                if spanish_term in text_lower:
+                    identified_terms.append(f"{spanish_term} -> {english_term}")
         
-        return TranslationResult(
-            original_text=description,
-            translated_text=translated_text,
-            source_language=source_language,
-            target_language=target_language,
-            confidence=0.9,  # AI confidence estimation could be improved
-            field_type="description"
-        )
-
-    def _ai_translate_text(self, text: str, source_lang: str, target_lang: str, field_type: str) -> str:
-        """Use AI for context-aware translation"""
-        try:
-            context_prompts = {
-                "description": "This is a real estate property description. Maintain the professional tone and include all important details about the property's features, location, and amenities.",
-                "property_feature": "This is a real estate property feature. Translate to standard real estate terminology.",
-                "location": "This is a property location or address. Translate street names and area descriptions appropriately."
-            }
-            
-            context = context_prompts.get(field_type, "This is real estate related text.")
-            
-            prompt = f"""
-            Translate the following real estate text from {source_lang} to {target_lang}.
-            
-            Context: {context}
-            
-            Text to translate: {text}
-            
-            Provide only the translation without any additional comments.
+        return identified_terms
+    
+    async def _create_translation_prompt(
+        self,
+        text: str,
+        source_language: str,
+        target_language: str,
+        market_context: str,
+        technical_terms: List[str]
+    ) -> str:
+        """Create context-aware translation prompt following agentic patterns"""
+        
+        market_specific_instructions = ""
+        if source_language == 'nl' and market_context:
+            market_specific_instructions = """
+            Dutch Real Estate Context:
+            - WOZ-waarde refers to the official tax assessment value
+            - Servicekosten are monthly maintenance fees
+            - Erfpacht means leasehold (land is leased, not owned)
+            - VvE refers to homeowner's association
+            - Energy labels range from A+++ (most efficient) to G (least efficient)
             """
-            
-            response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=500,
-                temperature=0.3
+        elif source_language == 'es' and market_context:
+            market_specific_instructions = """
+            Spanish Real Estate Context:
+            - Gastos de comunidad are community fees/maintenance costs
+            - IBI is the annual property tax
+            - Certificado energético is the energy efficiency certificate
+            - Registro de la propiedad refers to property registry
+            - Habitaciones vs dormitorios: habitaciones include all rooms, dormitorios are bedrooms only
+            """
+        
+        prompt = f"""
+        You are an expert real estate translator specializing in {source_language} to {target_language} translation.
+        
+        TASK: Translate the following real estate property description with maximum accuracy and context preservation.
+        
+        SOURCE LANGUAGE: {source_language}
+        TARGET LANGUAGE: {target_language}
+        MARKET CONTEXT: {market_context}
+        
+        {market_specific_instructions}
+        
+        TECHNICAL TERMS IDENTIFIED:
+        {chr(10).join(technical_terms) if technical_terms else 'None identified'}
+        
+        TRANSLATION REQUIREMENTS:
+        1. Preserve all numerical values exactly (prices, measurements, counts)
+        2. Maintain technical real estate terminology accuracy
+        3. Adapt cultural references for target market understanding
+        4. Preserve the original tone and selling style
+        5. Ensure currency and measurement units are clearly indicated
+        
+        SOURCE TEXT TO TRANSLATE:
+        {text}
+        
+        Please provide only the translated text without additional explanations.
+        """
+        
+        return prompt
+    
+    async def _execute_translation(self, prompt: str) -> str:
+        """Execute translation using OpenAI with optimized parameters"""
+        try:
+            response = await asyncio.create_task(
+                asyncio.to_thread(
+                    self.openai_client.chat.completions.create,
+                    model="gpt-4o",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a professional real estate translator with expertise in preserving technical terminology and market context."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    temperature=0.1,  # Low temperature for consistent translation
+                    max_tokens=2000,
+                    top_p=0.9
+                )
             )
             
             return response.choices[0].message.content.strip()
             
         except Exception as e:
-            logger.error(f"AI translation failed: {e}")
-            return text
-
-    def standardize_property_data(self, raw_data: Dict[str, Any]) -> PropertyDataStandardized:
-        """Standardize property data from different markets"""
+            logger.error(f"OpenAI translation error: {str(e)}")
+            raise e
+    
+    async def _assess_translation_quality(
+        self,
+        original_text: str,
+        translated_text: str,
+        technical_terms: List[str]
+    ) -> Dict[str, float]:
+        """Assess translation quality using multiple metrics"""
+        quality_metrics = {}
         
-        # Detect source market
-        description = raw_data.get('description', '')
-        price_str = raw_data.get('price', '')
-        combined_text = f"{description} {price_str}"
+        # Length consistency (translations should be reasonably similar in length)
+        original_length = len(original_text)
+        translated_length = len(translated_text)
+        length_ratio = min(translated_length / original_length, original_length / translated_length) if original_length > 0 else 0
+        quality_metrics['length_consistency'] = length_ratio
         
-        source_language = self.detect_language(combined_text)
-        source_market = Market(source_language) if source_language in [m.value for m in Market] else Market.ENGLISH
+        # Technical terms preservation
+        if technical_terms:
+            preserved_count = 0
+            for term_mapping in technical_terms:
+                source_term = term_mapping.split(' -> ')[0]
+                english_term = term_mapping.split(' -> ')[1]
+                # Check if English equivalent appears in translation
+                if english_term.replace('_', ' ') in translated_text.lower():
+                    preserved_count += 1
+            quality_metrics['technical_terms_preservation'] = preserved_count / len(technical_terms)
+        else:
+            quality_metrics['technical_terms_preservation'] = 1.0
         
-        # Standardize price
-        price_value, currency, currency_symbol = self.standardize_price_format(price_str, source_market)
+        # Content completeness (basic heuristic)
+        # Check if key information types are preserved
+        info_indicators = ['€', '$', 'm²', 'bedroom', 'bathroom', 'floor', 'year']
+        original_indicators = sum(1 for indicator in info_indicators if indicator in original_text.lower())
+        translated_indicators = sum(1 for indicator in info_indicators if indicator in translated_text.lower())
         
-        # Translate description
-        description_result = self.translate_property_description(description, source_language, "en")
+        if original_indicators > 0:
+            quality_metrics['content_completeness'] = min(translated_indicators / original_indicators, 1.0)
+        else:
+            quality_metrics['content_completeness'] = 1.0
         
-        # Translate features
-        features = raw_data.get('features', [])
-        if isinstance(features, str):
-            features = [f.strip() for f in features.split(',')]
+        return quality_metrics
+    
+    async def _apply_self_reflection(
+        self,
+        original_text: str,
+        translated_text: str,
+        quality_assessment: Dict[str, float]
+    ) -> tuple[float, List[str]]:
+        """Apply self-reflection for confidence scoring and improvement notes"""
         
-        translated_features = self.translate_property_features(features, source_market)
-        
-        # Translate location
-        location = raw_data.get('location', raw_data.get('address', ''))
-        translated_location = self._ai_translate_text(location, source_language, "en", "location")
-        
-        # Standardize property type
-        property_type = raw_data.get('property_type', '')
-        if source_market in self.market_terminology:
-            type_map = self.market_terminology[source_market]["property_types"]
-            property_type = type_map.get(property_type.lower(), property_type)
-        
-        return PropertyDataStandardized(
-            price=price_value,
-            currency=currency,
-            currency_symbol=currency_symbol,
-            description=description_result.translated_text,
-            features=translated_features,
-            location=translated_location,
-            property_type=property_type.title(),
-            energy_rating=raw_data.get('energy_rating', raw_data.get('energy_label', '')),
-            size_sqm=float(raw_data.get('size', raw_data.get('size_sqm', 0))),
-            bedrooms=int(raw_data.get('bedrooms', 0)),
-            bathrooms=int(raw_data.get('bathrooms', 0))
-        )
-
-    def enhance_investment_metrics_translation(self, metrics: Dict[str, Any], source_market: Market) -> Dict[str, Any]:
-        """Enhance investment metrics with proper translations and cultural adaptations"""
-        
-        enhanced_metrics = metrics.copy()
-        
-        # Cultural adaptations for different markets
-        market_adaptations = {
-            Market.DUTCH: {
-                "tax_considerations": "Consider Dutch property transfer tax (overdrachtsbelasting) and municipal taxes (OZB)",
-                "legal_notes": "Property purchases in Netherlands require notary involvement",
-                "market_context": "Dutch real estate market with emphasis on energy efficiency ratings"
-            },
-            Market.SPANISH: {
-                "tax_considerations": "Consider Spanish property transfer tax (ITP) and annual property tax (IBI)",
-                "legal_notes": "Spanish property purchases may require NIE number for foreigners",
-                "market_context": "Spanish real estate market with regional variations in pricing and regulations"
-            }
+        # Calculate overall confidence score
+        weights = {
+            'length_consistency': 0.3,
+            'technical_terms_preservation': 0.4,
+            'content_completeness': 0.3
         }
         
-        if source_market in market_adaptations:
-            enhanced_metrics.update(market_adaptations[source_market])
+        confidence_score = 0.0
+        for metric, weight in weights.items():
+            confidence_score += quality_assessment.get(metric, 0.0) * weight
         
-        # Translate analysis strengths and weaknesses
-        if 'strengths' in enhanced_metrics:
-            enhanced_metrics['strengths'] = [
-                self._ai_translate_text(strength, source_market.value, "en", "property_feature")
-                for strength in enhanced_metrics['strengths']
-            ]
+        # Generate reflection notes
+        translation_notes = []
         
-        if 'weaknesses' in enhanced_metrics:
-            enhanced_metrics['weaknesses'] = [
-                self._ai_translate_text(weakness, source_market.value, "en", "property_feature")
-                for weakness in enhanced_metrics['weaknesses']
-            ]
+        if quality_assessment.get('length_consistency', 0) < 0.7:
+            translation_notes.append("Translation length significantly differs from original - may indicate missing content")
         
-        return enhanced_metrics
+        if quality_assessment.get('technical_terms_preservation', 0) < 0.8:
+            translation_notes.append("Some technical real estate terms may not be accurately preserved")
+        
+        if quality_assessment.get('content_completeness', 0) < 0.9:
+            translation_notes.append("Key property information indicators may be missing from translation")
+        
+        if confidence_score >= 0.9:
+            translation_notes.append("High-quality translation with excellent context preservation")
+        elif confidence_score >= 0.8:
+            translation_notes.append("Good translation quality with minor areas for improvement")
+        else:
+            translation_notes.append("Translation quality concerns - manual review recommended")
+        
+        return confidence_score, translation_notes
 
-# Utility functions for integration
-def translate_scraped_property_data(property_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Main function to translate and standardize scraped property data"""
-    translator = RealEstateTranslator()
+# Test function for validation
+async def test_translation():
+    """Test the enhanced translator with sample real estate content"""
+    translator = EnhancedLanguageTranslator()
     
-    try:
-        # Standardize the core property data
-        standardized = translator.standardize_property_data(property_data)
-        
-        # Detect source market for additional processing
-        source_language = translator.detect_language(
-            f"{property_data.get('description', '')} {property_data.get('price', '')}"
-        )
-        source_market = Market(source_language) if source_language in [m.value for m in Market] else Market.ENGLISH
-        
-        # Enhanced investment metrics if available
-        if 'investment_analysis' in property_data:
-            property_data['investment_analysis'] = translator.enhance_investment_metrics_translation(
-                property_data['investment_analysis'], source_market
-            )
-        
-        # Update property data with standardized values
-        property_data.update({
-            'price_standardized': standardized.price,
-            'currency': standardized.currency,
-            'currency_symbol': standardized.currency_symbol,
-            'description_translated': standardized.description,
-            'features_translated': standardized.features,
-            'location_translated': standardized.location,
-            'property_type_translated': standardized.property_type,
-            'source_language': source_language,
-            'translation_confidence': 0.9
-        })
-        
-        logger.info(f"Successfully translated property data from {source_language} to English")
-        return property_data
-        
-    except Exception as e:
-        logger.error(f"Translation failed: {e}")
-        return property_data
+    # Test Dutch property description
+    dutch_text = """
+    Prachtig 3-slaapkamer appartement in Amsterdam
+    Vraagprijs: €450.000 k.k.
+    Woonoppervlakte: 85 m²
+    Energielabel: B
+    Servicekosten: €120 per maand
+    
+    Dit lichte appartement beschikt over:
+    - 3 slaapkamers
+    - 1 badkamer
+    - Balkon op het zuiden
+    - Lift aanwezig
+    - Airco in woonkamer
+    """
+    
+    result = await translator.translate_with_context(
+        text=dutch_text,
+        source_language='nl',
+        target_language='en',
+        market_context='Netherlands',
+        preserve_technical_terms=True
+    )
+    
+    print(f"Translation Result:")
+    print(f"Confidence: {result.confidence_score:.2%}")
+    print(f"Translated: {result.translated_text}")
+    print(f"Technical terms: {result.technical_terms_preserved}")
+    print(f"Notes: {result.translation_notes}")
 
 if __name__ == "__main__":
-    # Test the translator
-    test_data = {
-        "description": "Prachtig appartement in het centrum van Amsterdam met 2 slaapkamers, balkon en lift.",
-        "price": "€ 450.000 k.k.",
-        "features": ["badkamer", "slaapkamer", "balkon", "lift"],
-        "location": "Centrum Amsterdam, Noord-Holland",
-        "property_type": "appartement"
-    }
-    
-    result = translate_scraped_property_data(test_data)
-    print(json.dumps(result, indent=2)) 
+    asyncio.run(test_translation()) 
