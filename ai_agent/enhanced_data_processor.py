@@ -18,6 +18,14 @@ from dotenv import load_dotenv
 # Load environment variables including proxy settings
 load_dotenv()
 
+# Import advanced bypass strategy for fotocasa
+try:
+    from fotocasa_advanced_bypass import FotocasaAdvancedBypass
+    ADVANCED_BYPASS_AVAILABLE = True
+except ImportError:
+    ADVANCED_BYPASS_AVAILABLE = False
+    logger.warning("Advanced fotocasa bypass not available")
+
 # Import visual scraper with proxy support
 from visual_scraper import VisualPropertyScraper, VisualScrapingResult
 from webscraper_requests import scrape_property_data
@@ -220,17 +228,66 @@ class EnhancedDataProcessor:
             return result
     
     async def _get_visual_data(self, property_url: str) -> VisualScrapingResult:
-        """Get comprehensive data using visual scraping"""
+        """Get comprehensive data using visual scraping with advanced bypass for protected sites"""
         try:
+            # Check if this is a fotocasa URL that might need special handling
+            if 'fotocasa.es' in property_url and ADVANCED_BYPASS_AVAILABLE:
+                logger.info("🛡️ Fotocasa URL detected - using advanced bypass strategy")
+                return await self._get_fotocasa_data_with_bypass(property_url)
+            
+            # Standard visual scraping for other sites
             if not self.visual_scraper.browser:
                 await self.visual_scraper.start()
             
             visual_result = await self.visual_scraper.scrape_property_comprehensive(property_url)
             self.data_sources_used.append("visual_scraping")
             return visual_result
+            
         except Exception as e:
             logger.error(f"Visual scraping failed: {e}")
+            # Check if it's a 403 error and try bypass
+            if "403" in str(e) or "forbidden" in str(e).lower():
+                logger.warning("403 Forbidden detected - attempting advanced bypass")
+                if 'fotocasa.es' in property_url and ADVANCED_BYPASS_AVAILABLE:
+                    return await self._get_fotocasa_data_with_bypass(property_url)
+            
             return VisualScrapingResult()
+    
+    async def _get_fotocasa_data_with_bypass(self, property_url: str) -> VisualScrapingResult:
+        """Use advanced bypass strategy specifically for fotocasa properties"""
+        try:
+            bypass = FotocasaAdvancedBypass()
+            await bypass.start_browser_stealth()
+            
+            result = await bypass.access_property_stealth(property_url)
+            
+            if result.get('success'):
+                logger.info("✅ Advanced fotocasa bypass successful")
+                
+                # Convert bypass result to VisualScrapingResult
+                visual_result = VisualScrapingResult()
+                property_data = result.get('property_data', {})
+                
+                visual_result.address = property_data.get('address')
+                visual_result.price = property_data.get('price')
+                visual_result.features = property_data.get('features', [])
+                visual_result.data_completeness_score = 75  # High confidence for bypass
+                
+                self.data_sources_used.append("advanced_bypass")
+                return visual_result
+            else:
+                logger.warning(f"❌ Advanced bypass failed: {result.get('error')}")
+                return VisualScrapingResult()
+                
+        except Exception as e:
+            logger.error(f"Advanced bypass error: {e}")
+            return VisualScrapingResult()
+        
+        finally:
+            try:
+                await bypass.close()
+            except:
+                pass
     
     async def _get_traditional_scraping_data(self, property_url: str) -> Dict[str, Any]:
         """Get data using traditional scraping methods"""

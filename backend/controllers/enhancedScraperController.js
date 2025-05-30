@@ -209,6 +209,25 @@ async function performEnhancedVisualAnalysis(analysisId, propertyUrl, address, u
         } else {
           console.error(`Enhanced visual analysis ${analysisId} failed:`, errorOutput);
           
+          // Handle specific error cases
+          if (errorOutput.includes('403') || errorOutput.includes('Forbidden')) {
+            return res.status(200).json({
+              error: 'Property access restricted by site protection',
+              code: 'SITE_PROTECTION',
+              message: 'This property is currently protected by anti-bot measures. We are working on enhanced access strategies.',
+              suggestion: 'Try accessing a different property or check back later',
+              fallback_data: {
+                investmentScore: 50,
+                hasRealData: false,
+                dataQuality: {
+                  completeness_score: 25,
+                  sources_used: ['fallback'],
+                  processing_error: '403 Forbidden - Site Protection Active'
+                }
+              }
+            });
+          }
+          
           // Fallback to traditional analysis
           console.log(`Falling back to traditional analysis for ${analysisId}`);
           const fallbackResults = await performFallbackAnalysis(propertyUrl, address);
@@ -460,8 +479,23 @@ async function performFallbackAnalysis(propertyUrl, address) {
   };
 }
 
+// Health check endpoint
+const health = (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    capabilities: {
+      visual_scraping: true,
+      ai_vision: true,
+      proxy_enabled: process.env.PROXY_ENABLED === 'true',
+      advanced_bypass: true
+    }
+  });
+};
+
 module.exports = {
   analyzePropertyEnhanced: exports.analyzePropertyEnhanced,
   getEnhancedAnalysisResults: exports.getEnhancedAnalysisResults,
-  getSystemMetrics: exports.getSystemMetrics
+  getSystemMetrics: exports.getSystemMetrics,
+  health
 }; 
