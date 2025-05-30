@@ -474,33 +474,25 @@ const InvestmentAnalysis = ({
   const actualBuildingType = buildingType;
   const actualEnergyLabel = energyLabel;
 
-  // 🔍 ENHANCED DEBUGGING - Data Flow Analysis
-  console.log('🏠 PROPERTY DETAILS DATA FLOW ANALYSIS:', {
-    address,
-    dataSource: 'props_from_tools_page',
-    scrapedDataUsage: {
-      bathrooms: {
-        prop: bathrooms,
-        actual: actualBathrooms,
-        source: 'scraped_data_via_props'
-      },
-      yearBuilt: {
-        prop: yearBuilt,
-        actual: actualYearBuilt,
-        source: 'scraped_data_via_props'
-      },
-      description: {
-        prop: `${description.substring(0, 50)}...`,
-        actual: `${actualDescription.substring(0, 50)}...`,
-        source: 'scraped_data_via_props'
-      },
-      features: {
-        prop: features.length,
-        actual: actualFeatures.length,
-        source: 'scraped_data_via_props'
-      }
-    }
-  });
+  // 🔍 ENHANCED DEBUGGING - Property Info Display
+  console.log('📐 SIZE DISPLAY:', { actualSize, size, using: actualSize ? `${actualSize} m²` : 'Not available' });
+  console.log('🛏️ BEDROOMS DISPLAY:', { actualBedrooms, bedrooms, using: actualBedrooms || 'Not available' });
+  console.log('🚿 BATHROOMS DISPLAY:', { actualBathrooms, bathrooms, using: actualBathrooms || 'Not available' });
+  console.log('📅 YEAR BUILT DISPLAY:', { actualYearBuilt, yearBuilt, using: actualYearBuilt || 'Not available' });
+  console.log('🏠 BUILDING TYPE DISPLAY:', { actualBuildingType, buildingType, using: actualBuildingType || 'Not available' });
+  console.log('⚡ ENERGY LABEL DISPLAY:', { actualEnergyLabel, energyLabel, using: actualEnergyLabel || 'Not available' });
+
+  // 🔧 Data Quality Monitoring
+  const dataQualityCheck = {
+    hasSize: !!actualSize,
+    hasBedrooms: !!actualBedrooms,
+    hasBathrooms: !!actualBathrooms,
+    hasYearBuilt: !!actualYearBuilt,
+    hasValidDescription: actualDescription && actualDescription !== "Beautiful and bright apartment located in a prime area. Recently renovated with high-quality materials. Open-concept living room and kitchen.",
+    completeness: 0
+  };
+  dataQualityCheck.completeness = Object.values(dataQualityCheck).filter(v => v === true).length / 5 * 100;
+  console.log('🔍 PROPERTY DATA QUALITY CHECK:', dataQualityCheck);
 
   // GSAP Refs for animation targets
   const mainContainerRef = useRef<HTMLDivElement>(null); // Ref for GSAP context
@@ -560,9 +552,25 @@ const InvestmentAnalysis = ({
 
   // --- GSAP Animations ---
   useLayoutEffect(() => {
+    // Prevent GSAP animations if critical data is missing or static
+    const hasValidData = actualDescription && actualDescription !== "Beautiful and bright apartment located in a prime area. Recently renovated with high-quality materials. Open-concept living room and kitchen.";
+    const hasScrapedData = actualBedrooms && actualBathrooms && actualYearBuilt;
+    
+    if (!hasValidData || !hasScrapedData) {
+      console.log('🚫 GSAP animations disabled: Missing or static data detected');
+      console.log('Data validation:', {
+        hasValidDescription: hasValidData,
+        hasScrapedData: hasScrapedData,
+        actualDescription: actualDescription?.substring(0, 50) + '...',
+        actualBedrooms,
+        actualBathrooms,
+        actualYearBuilt
+      });
+      return;
+    }
+
     const hoverListenerCleanups: Array<() => void> = [];
-    const blurOverlayRef = mainContainerRef; // Using mainContainerRef for the overlay for now, can be a dedicated ref.
-                                          // Ideally, a dedicated ref for a specific overlay div.
+    const blurOverlayRef = mainContainerRef;
 
     // NEW: Function for focus hover effect with background blur
     const applyHoverFocusEffect = (element: HTMLElement, pageOverlay: HTMLElement | null) => {
@@ -577,7 +585,6 @@ const InvestmentAnalysis = ({
           overlayEl.className = "fixed inset-0 bg-black/10 backdrop-blur-sm pointer-events-none opacity-0 z-[49]"; // z-index just below cards
           pageOverlay.ownerDocument.body.appendChild(overlayEl); // Append to body to ensure it's behind everything
       }
-
 
       const onMouseEnter = () => {
         console.log('[GSAP Hover] MouseEnter on:', element.className.split(' ').slice(0,3).join('.'), element);
@@ -633,7 +640,6 @@ const InvestmentAnalysis = ({
       };
     };
 
-
     const ctx = gsap.context(() => {
       const animateCard = (element: HTMLDivElement | null, delay: number = 0) => {
         if (!element) return;
@@ -678,7 +684,7 @@ const InvestmentAnalysis = ({
         lifestyleMetricsCardRef.current,
         socioEconomicCardRef.current,
         marketTrendsCardRef.current
-      ].filter(ref => ref !== null); // Filter out any null refs just in case
+      ].filter(ref => ref !== null);
 
       // Apply NEW hover focus effects to cards, excluding specified ones
       cardsToAnimate.forEach(cardConfig => {
@@ -690,10 +696,29 @@ const InvestmentAnalysis = ({
         }
       });
 
-      // Helper function for number counting
+      // Helper function for number counting - FIXED to preserve React data
       const animateCountUp = (element: HTMLElement | null, endValue: number, formattingOptions: { isCurrency?: boolean, isPercentage?: boolean, decimals?: number } = {}) => {
         if (!element || endValue === null || endValue === undefined) return;
+        
+        // Check if the element already contains the target value (React has already rendered it)
+        const currentText = element.innerText;
         const { isCurrency = false, isPercentage = false, decimals = 0 } = formattingOptions;
+        
+        // Format the target value to check if it matches current content
+        let targetText: string;
+        if (isCurrency) {
+          targetText = formatCurrency(endValue, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }, translationMetadata);
+        } else if (isPercentage) {
+          targetText = formatPercentage(endValue * 100);
+        } else {
+          targetText = endValue.toLocaleString('nl-NL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        }
+        
+        // If React has already rendered the correct value, don't animate
+        if (currentText.includes(targetText) || currentText.includes(endValue.toString())) {
+          console.log(`🚫 Skipping GSAP animation for ${element.tagName} - React data already rendered:`, currentText);
+          return;
+        }
         
         let startValue = 0;
         // Attempt to parse starting value from element to avoid jump, if it's a simple number
@@ -725,20 +750,19 @@ const InvestmentAnalysis = ({
         );
       };
 
-      // Animate key numerical values
-      if (investmentScoreDisplayRef.current) {
+      // Only animate if we have valid numerical data that's not default values
+      if (investmentScoreDisplayRef.current && investmentScore && investmentScore !== 75) {
         animateCountUp(investmentScoreDisplayRef.current, investmentScore, { decimals: 0 });
       }
-      if (yearlyYieldDisplayRef.current && yearlyYield !== null) {
-        // GSAP animates the raw number; formatter handles the display (formatPercentage expects 5.5 for 5.5%)
+      if (yearlyYieldDisplayRef.current && yearlyYield !== null && yearlyYield !== 3.5) {
         animateCountUp(yearlyYieldDisplayRef.current, yearlyYield, { isPercentage: true, decimals: 1 });
       }
-      if (roi5YearsDisplayRef.current && roi5Years !== null) {
+      if (roi5YearsDisplayRef.current && roi5Years !== null && roi5Years !== 18) {
         animateCountUp(roi5YearsDisplayRef.current, roi5Years, { isPercentage: true, decimals: 1 });
       }
 
-      // Animate key progress bar
-      if (investmentScoreBarRef.current && investmentScore) {
+      // Animate key progress bar - only if not default value
+      if (investmentScoreBarRef.current && investmentScore && investmentScore !== 75) {
         gsap.to(investmentScoreBarRef.current, {
           width: `${investmentScore}%`,
           duration: 1.5,
@@ -777,7 +801,7 @@ const InvestmentAnalysis = ({
       ctx.revert(); // Cleanup GSAP animations and ScrollTriggers
       hoverListenerCleanups.forEach(cleanup => cleanup()); // Cleanup hover event listeners
     };
-  }, [investmentScore, yearlyYield, roi5Years]); // Add dependencies that, if changed, should re-run animations
+  }, [investmentScore, yearlyYield, roi5Years, actualDescription, actualBedrooms, actualBathrooms, actualYearBuilt]);
   // --- End GSAP Animations ---
 
   // --- useEffect Debug Logs ---
@@ -1515,19 +1539,39 @@ const InvestmentAnalysis = ({
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Size</span>
-                <span className="font-medium text-gray-800 dark:text-white">{actualSize} m²</span>
+                <span className="font-medium text-gray-800 dark:text-white">
+                  {actualSize ? `${actualSize} m²` : 'Not available'}
+                </span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Bedrooms</span>
-                <span className="font-medium text-gray-800 dark:text-white">{actualBedrooms}</span>
+                <span className="font-medium text-gray-800 dark:text-white">
+                  {actualBedrooms || 'Not available'}
+                </span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Bathrooms</span>
-                <span className="font-medium text-gray-800 dark:text-white">{actualBathrooms}</span>
+                <span className="font-medium text-gray-800 dark:text-white">
+                  {actualBathrooms || 'Not available'}
+                </span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Year Built</span>
-                <span className="font-medium text-gray-800 dark:text-white">{actualYearBuilt}</span>
+                <span className="font-medium text-gray-800 dark:text-white">
+                  {actualYearBuilt || 'Not available'}
+                </span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Building Type</span>
+                <span className="font-medium text-gray-800 dark:text-white">
+                  {actualBuildingType || 'Not available'}
+                </span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-400">Energy Label</span>
+                <span className="font-medium text-gray-800 dark:text-white">
+                  {actualEnergyLabel || 'Not available'}
+                </span>
               </div>
             </div>
             
