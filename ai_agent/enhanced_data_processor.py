@@ -8,10 +8,17 @@ import asyncio
 import json
 import logging
 import re
+import os
+import sys
 from dataclasses import dataclass, asdict
 from typing import Dict, List, Optional, Any, Union
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 
+# Load environment variables including proxy settings
+load_dotenv()
+
+# Import visual scraper with proxy support
 from visual_scraper import VisualPropertyScraper, VisualScrapingResult
 from webscraper_requests import scrape_property_data
 from investment_analyzer import InvestmentAnalyzer

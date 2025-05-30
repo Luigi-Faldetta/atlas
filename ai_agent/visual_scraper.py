@@ -62,29 +62,59 @@ class VisualPropertyScraper:
         self.context = None
         self.page = None
         
+        # Proxy configuration from environment
+        self.proxy_enabled = os.getenv('PROXY_ENABLED', 'false').lower() == 'true'
+        self.proxy_config = None
+        
+        if self.proxy_enabled:
+            proxy_server = os.getenv('PROXY_SERVER')
+            proxy_username = os.getenv('PROXY_USERNAME')
+            proxy_password = os.getenv('PROXY_PASSWORD')
+            
+            if proxy_server and proxy_username and proxy_password:
+                self.proxy_config = {
+                    "server": f"http://{proxy_server}",
+                    "username": proxy_username,
+                    "password": proxy_password
+                }
+                print(f"🌐 Datacenter proxy configured: {proxy_server}")
+            else:
+                print("⚠️ Proxy enabled but credentials incomplete")
+                self.proxy_enabled = False
+        
     async def start(self, headless: bool = True):
-        """Initialize browser with enhanced visual capabilities"""
+        """Initialize browser with enhanced visual capabilities and proxy support"""
         self.playwright = await async_playwright().start()
         
-        # Launch with high resolution for better visual extraction
-        self.browser = await self.playwright.chromium.launch(
-            headless=headless,
-            args=[
-                '--no-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-web-security',
-                '--window-size=1920,1080'
-            ]
-        )
+        # Browser launch arguments with proxy support
+        launch_args = [
+            '--no-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-web-security',
+            '--window-size=1920,1080'
+        ]
+        
+        # Launch browser with or without proxy
+        browser_options = {
+            "headless": headless,
+            "args": launch_args
+        }
+        
+        if self.proxy_config:
+            browser_options["proxy"] = self.proxy_config
+            print("🔒 Browser launched with datacenter proxy for fotocasa bypass")
+        
+        self.browser = await self.playwright.chromium.launch(**browser_options)
         
         # High-resolution context for detailed screenshots
-        self.context = await self.browser.new_context(
-            viewport={'width': 1920, 'height': 1080},
-            device_scale_factor=2,  # High DPI for crisp screenshots
-            ignore_https_errors=True,
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        )
+        context_options = {
+            'viewport': {'width': 1920, 'height': 1080},
+            'device_scale_factor': 2,  # High DPI for crisp screenshots
+            'ignore_https_errors': True,
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
         
+        self.context = await self.browser.new_context(**context_options)
         self.page = await self.context.new_page()
         
     async def capture_enhanced_screenshots(self, url: str) -> Dict[str, str]:

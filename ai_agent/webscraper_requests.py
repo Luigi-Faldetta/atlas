@@ -5,8 +5,15 @@ Supports multiple real estate platforms across different markets.
 
 import asyncio
 import logging
-from typing import Dict, Any, Optional
-from urllib.parse import urlparse
+from typing import Dict, Any, Optional, List
+from urllib.parse import urlparse, urljoin
+import requests
+import time
+import json
+import os
+from bs4 import BeautifulSoup
+from dataclasses import dataclass
+from dotenv import load_dotenv
 
 # Import all available scrapers
 try:
@@ -44,6 +51,53 @@ SCRAPER_MAPPING = {
     'idealista.it': IdealistaScraper,
 }
 
+@dataclass
+class PropertyData:
+    address: str = ""
+    price: str = ""
+    bedrooms: int = 0
+    bathrooms: int = 0
+    size: int = 0
+    description: str = ""
+    features: List[str] = None
+    images: List[str] = None
+    property_type: str = ""
+    year_built: int = 0
+    
+    def to_dict(self):
+        return {
+            'address': self.address,
+            'price': self.price,
+            'bedrooms': self.bedrooms,
+            'bathrooms': self.bathrooms,
+            'size': self.size,
+            'description': self.description,
+            'features': self.features or [],
+            'images': self.images or [],
+            'property_type': self.property_type,
+            'year_built': self.year_built
+        }
+
+def get_proxy_config():
+    """Get proxy configuration from environment variables"""
+    proxy_enabled = os.getenv('PROXY_ENABLED', 'false').lower() == 'true'
+    
+    if not proxy_enabled:
+        return None
+    
+    proxy_server = os.getenv('PROXY_SERVER')
+    proxy_username = os.getenv('PROXY_USERNAME') 
+    proxy_password = os.getenv('PROXY_PASSWORD')
+    
+    if proxy_server and proxy_username and proxy_password:
+        proxy_url = f"http://{proxy_username}:{proxy_password}@{proxy_server}"
+        return {
+            'http': proxy_url,
+            'https': proxy_url
+        }
+    
+    return None
+
 def get_scraper_for_url(url: str) -> Optional[BaseScraper]:
     """
     Determine which scraper to use based on the URL domain.
@@ -76,7 +130,7 @@ def get_scraper_for_url(url: str) -> Optional[BaseScraper]:
 
 async def scrape_property_data(url: str) -> Dict[str, Any]:
     """
-    Unified function to scrape property data from any supported platform.
+    Unified function to scrape property data from any supported platform with proxy support.
     
     Args:
         url: The property URL to scrape
@@ -96,12 +150,19 @@ async def scrape_property_data(url: str) -> Dict[str, Any]:
                 "supported_domains": list(SCRAPER_MAPPING.keys())
             }
         
+        # Add proxy support to scraper if available
+        if hasattr(scraper, 'set_proxy_config'):
+            proxy_config = get_proxy_config()
+            if proxy_config:
+                scraper.set_proxy_config(proxy_config)
+                logger.info(f"🌐 Proxy configured for {urlparse(url).netloc}")
+        
         # Scrape the property data
         property_data = await scraper.scrape_property(url)
         
         if property_data:
             logger.info(f"Successfully scraped property data: {property_data.get('address', 'Unknown address')}")
-            
+        
             # Add metadata
             property_data.update({
                 "scraped_url": url,
@@ -117,12 +178,13 @@ async def scrape_property_data(url: str) -> Dict[str, Any]:
                 "url": url,
                 "scraper_used": scraper.__class__.__name__
             }
-            
+        
     except Exception as e:
-        logger.error(f"Error during scraping: {e}")
+        logger.error(f"Error scraping property data: {str(e)}")
         return {
-            "error": f"Scraping failed: {str(e)}",
-            "url": url
+            "error": str(e),
+            "url": url,
+            "error_type": type(e).__name__
         }
 
 # Additional utility functions for testing and validation
