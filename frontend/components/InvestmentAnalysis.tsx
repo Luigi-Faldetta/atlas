@@ -64,7 +64,7 @@ import ScoreBreakdownChart from './ScoreBreakdownChart';
 import InfoModal from './InfoModal';
 import { useEffect, useState, useRef, useLayoutEffect } from 'react'; // Added useRef AND useLayoutEffect
 import mcpApiClient from '../lib/api/mcpClient';
-import { useAirQualityData, useLocalNews, useEnhancedPropertyData } from '../lib/api/useMcpData';
+import { useAirQualityData, useLocalNews } from '../lib/api/useMcpData';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import DataQualityIndicator from './DataQualityIndicator';
@@ -464,24 +464,43 @@ const InvestmentAnalysis = ({
 }: InvestmentAnalysisProps) => {
   console.log('%%% RUNNING InvestmentAnalysis Component - VERSION CHECK %%%');
 
-  // BEER TEST MVP: Fetch real property data to replace mock description and features
-  const propertyIdentifier = encodeURIComponent(address);
-  const {
-    data: enhancedData,
-    isLoading: isLoadingEnhanced,
-    error: enhancedError,
-    hasRealData
-  } = useEnhancedPropertyData(propertyIdentifier);
+  // Use the props directly - scraped data is already processed and passed from tools page
+  const actualDescription = description;
+  const actualFeatures = features;
+  const actualBedrooms = bedrooms;
+  const actualBathrooms = bathrooms;
+  const actualSize = size;
+  const actualYearBuilt = yearBuilt;
+  const actualBuildingType = buildingType;
+  const actualEnergyLabel = energyLabel;
 
-  // Use real data if available, fallback to props/defaults
-  const actualDescription = enhancedData?.description || description;
-  const actualFeatures = enhancedData?.features || features;
-  const actualBedrooms = enhancedData?.bedrooms || bedrooms;
-  const actualBathrooms = enhancedData?.bathrooms || bathrooms;
-  const actualSize = enhancedData?.size || size;
-  const actualYearBuilt = enhancedData?.yearBuilt || yearBuilt;
-  const actualBuildingType = enhancedData?.buildingType || buildingType;
-  const actualEnergyLabel = enhancedData?.energyLabel || energyLabel;
+  // 🔍 ENHANCED DEBUGGING - Data Flow Analysis
+  console.log('🏠 PROPERTY DETAILS DATA FLOW ANALYSIS:', {
+    address,
+    dataSource: 'props_from_tools_page',
+    scrapedDataUsage: {
+      bathrooms: {
+        prop: bathrooms,
+        actual: actualBathrooms,
+        source: 'scraped_data_via_props'
+      },
+      yearBuilt: {
+        prop: yearBuilt,
+        actual: actualYearBuilt,
+        source: 'scraped_data_via_props'
+      },
+      description: {
+        prop: `${description.substring(0, 50)}...`,
+        actual: `${actualDescription.substring(0, 50)}...`,
+        source: 'scraped_data_via_props'
+      },
+      features: {
+        prop: features.length,
+        actual: actualFeatures.length,
+        source: 'scraped_data_via_props'
+      }
+    }
+  });
 
   // GSAP Refs for animation targets
   const mainContainerRef = useRef<HTMLDivElement>(null); // Ref for GSAP context
@@ -1504,25 +1523,25 @@ const InvestmentAnalysis = ({
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Bathrooms</span>
-                <span className="font-medium text-gray-800 dark:text-white">{bathrooms}</span>
+                <span className="font-medium text-gray-800 dark:text-white">{actualBathrooms}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Year Built</span>
-                <span className="font-medium text-gray-800 dark:text-white">{yearBuilt}</span>
+                <span className="font-medium text-gray-800 dark:text-white">{actualYearBuilt}</span>
               </div>
             </div>
             
             {/* Description */}
             <div className="mt-6">
               <h4 className="font-medium text-gray-800 dark:text-white mb-2">Description</h4>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">{description}</p>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">{actualDescription}</p>
             </div>
             
             {/* Features */}
             <div className="mt-6">
               <h4 className="font-medium text-gray-800 dark:text-white mb-2">Features</h4>
               <ul className="list-disc pl-5 text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                {features.map((feature, index) => (
+                {actualFeatures.map((feature: string, index: number) => (
                   <li key={index}>{feature}</li>
                 ))}
               </ul>
