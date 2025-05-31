@@ -20,7 +20,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://clerk.*.dev https://*.clerk.accounts.dev",
               "font-src 'self' https://fonts.gstatic.com https://clerk.*.dev https://*.clerk.accounts.dev",
               "img-src 'self' data: https: https://images.unsplash.com https://img.clerk.com https://*.clerk.dev",
-              "connect-src 'self' https://api.clerk.dev https://clerk.*.dev https://*.clerk.accounts.dev https://challenges.cloudflare.com wss://*.clerk.accounts.dev",
+              "connect-src 'self' https://api.clerk.dev https://clerk.*.dev https://*.clerk.accounts.dev https://challenges.cloudflare.com wss://*.clerk.accounts.dev https://*.ngrok-free.app https://*.ngrok.io https://*.loca.lt http://localhost:* https://localhost:*",
               "frame-src 'self' https://challenges.cloudflare.com https://clerk.*.dev https://*.clerk.accounts.dev",
               "worker-src 'self' blob:",
               "form-action 'self'",

@@ -47,6 +47,26 @@ export function getPublicEnvVar(key: SafeEnvVar): string | undefined {
   return process.env[key];
 }
 
+// Check if a URL is a development tunnel (ngrok, loca.lt, etc.)
+export function isDevelopmentTunnel(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    const tunnelDomains = [
+      'ngrok-free.app',
+      'ngrok.io',
+      'loca.lt',
+      'localhost.run',
+      'serveo.net'
+    ];
+    
+    return tunnelDomains.some(domain => 
+      urlObj.hostname.endsWith(domain) || urlObj.hostname.includes(domain)
+    );
+  } catch {
+    return false;
+  }
+}
+
 // Runtime security check to ensure no sensitive data is in client bundle
 export function validateEnvironmentSecurity() {
   if (typeof window !== 'undefined') {
@@ -69,6 +89,18 @@ export function validateEnvironmentSecurity() {
         console.error('CRITICAL SECURITY BREACH: Sensitive data exposed to client');
       }
     }
+    
+    // Log development tunnel usage for awareness
+    const apiUrl = getPublicEnvVar('NEXT_PUBLIC_API_URL');
+    const mcpUrl = getPublicEnvVar('NEXT_PUBLIC_MCP_API_URL');
+    
+    if (apiUrl && isDevelopmentTunnel(apiUrl)) {
+      console.info('🔧 Development mode: Using tunnel for API URL:', apiUrl);
+    }
+    
+    if (mcpUrl && isDevelopmentTunnel(mcpUrl)) {
+      console.info('🔧 Development mode: Using tunnel for MCP URL:', mcpUrl);
+    }
   }
 }
 
@@ -80,6 +112,12 @@ export const clientConfig = {
   clerkDomain: getPublicEnvVar('NEXT_PUBLIC_CLERK_DOMAIN'),
   isDevelopment: process.env.NODE_ENV === 'development',
   isProduction: process.env.NODE_ENV === 'production',
+  // Helper to check if we're using development tunnels
+  isUsingTunnel: (() => {
+    const apiUrl = getPublicEnvVar('NEXT_PUBLIC_API_URL');
+    const mcpUrl = getPublicEnvVar('NEXT_PUBLIC_MCP_API_URL');
+    return (apiUrl && isDevelopmentTunnel(apiUrl)) || (mcpUrl && isDevelopmentTunnel(mcpUrl));
+  })(),
 } as const;
 
 // Initialize security validation

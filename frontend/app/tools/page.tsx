@@ -6,6 +6,9 @@ import ROICalculator from '@/components/ROICalculator';
 import AnalysisProgressIndicator from '@/components/AnalysisProgressIndicator'; // Import the new component
 import { useEnhancedPropertyData } from '@/lib/api/useMcpData'; // Import the enhanced data hook
 import { Calculator, Search, ArrowRight } from 'lucide-react';
+import { useSecureApi } from '@/lib/api/secureApiClient';
+import { clientConfig } from '@/lib/security/environment';
+import { secureFetch } from '@/lib/security/validation';
 
 // Define the type for the analysis result, including potential errors
 type AnalysisResult = {
@@ -97,10 +100,10 @@ const ANALYSIS_STAGES = [
 export default function PropertyAnalysisPage() {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult>(null);
-  const [currentStageIndex, setCurrentStageIndex] = useState(0); // State for current stage index
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+  const secureApi = useSecureApi();
 
   // BEER TEST MVP: Enhanced property data hook for real description and features
   const {
@@ -123,7 +126,7 @@ export default function PropertyAnalysisPage() {
     setAnalysisResult(null); // Reset result/error
     setCurrentStageIndex(0); // Start from the first stage
 
-    if (!API_BASE) {
+    if (!clientConfig.apiUrl) {
       console.error(
         'Error: NEXT_PUBLIC_API_URL environment variable is not set.'
       );
@@ -135,15 +138,27 @@ export default function PropertyAnalysisPage() {
       return;
     }
 
+    // Log tunnel usage for development awareness
+    if (clientConfig.isUsingTunnel) {
+      console.info('🔧 Development mode: Using tunnel for API communication');
+      console.info('🌍 API URL:', clientConfig.apiUrl);
+    }
+
     try {
       // Stage 0: Fetching
       setCurrentStageIndex(0);
-      console.log(`Attempting to fetch analysis from ${API_BASE}/analyze...`);
-      const response = await fetch(`${API_BASE}/analyze`, {
+      console.log(`Attempting to fetch analysis from ${clientConfig.apiUrl}/analyze...`);
+      
+      // Use secure fetch function that handles ngrok domains
+      const response = await secureFetch(`${clientConfig.apiUrl}/analyze`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
         body: JSON.stringify({ url }),
       });
+      
       console.log('Fetch response status:', response.status);
 
       if (!response.ok) {
@@ -199,8 +214,23 @@ export default function PropertyAnalysisPage() {
       setCurrentStageIndex(ANALYSIS_STAGES.length); // Mark as completed
     } catch (error: any) {
       console.error('Error during analysis fetch:', error);
+      
+      let errorMessage = error.message || 'Failed to analyze the property.';
+      
+      // Handle specific security-related errors
+      if (error.message?.includes('unauthorized domain')) {
+        errorMessage = 'Security error: API endpoint not authorized. Please check your configuration.';
+        console.error('🔒 Security: Blocked request to unauthorized domain');
+      } else if (error.message?.includes('Rate limit')) {
+        errorMessage = 'Too many requests. Please wait a moment before trying again.';
+        console.warn('⚠️ Rate limit exceeded');
+      } else if (error.message?.includes('NetworkError')) {
+        errorMessage = 'Network error: Unable to connect to the analysis service. Please check your connection.';
+        console.error('🌐 Network error occurred');
+      }
+      
       setAnalysisResult({
-        error: error.message || 'Failed to analyze the property.',
+        error: errorMessage,
       });
     } finally {
       setLoading(false); // Stop loading indicator only after everything (success or error)

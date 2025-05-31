@@ -62,7 +62,13 @@ app.use(helmet({
         "https://clerk.*.dev",
         "https://*.clerk.accounts.dev",
         "https://challenges.cloudflare.com",
-        "wss://*.clerk.accounts.dev"
+        "wss://*.clerk.accounts.dev",
+        // Allow ngrok domains for Docker container communication
+        "https://*.ngrok-free.app",
+        "https://*.ngrok.io",
+        "https://*.loca.lt",
+        "http://localhost:*",
+        "https://localhost:*"
       ],
       frameSrc: [
         "'self'",

@@ -152,23 +152,61 @@ export async function secureFetch(
   try {
     const urlObj = new URL(url, window.location.origin);
     
+    // Get configured API URLs from environment
+    const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const configuredMcpUrl = process.env.NEXT_PUBLIC_MCP_API_URL;
+    
     // Only allow requests to same origin or approved domains
     const allowedDomains = [
       window.location.hostname,
       'localhost',
+      '127.0.0.1',
       'api.clerk.dev',
-      'clerk.*.dev'
+      'clerk.*.dev',
+      '*.clerk.accounts.dev',
+      // Allow ngrok domains for Docker container communication
+      '*.ngrok-free.app',
+      '*.ngrok.io',
+      '*.loca.lt',
     ];
     
-    const isAllowed = allowedDomains.some(domain => 
-      urlObj.hostname === domain || 
-      (domain.includes('*') && urlObj.hostname.match(domain.replace('*', '.*')))
-    );
+    // Add configured API domains to allowed list
+    if (configuredApiUrl) {
+      try {
+        const apiUrlObj = new URL(configuredApiUrl);
+        allowedDomains.push(apiUrlObj.hostname);
+      } catch (e) {
+        console.warn('Invalid NEXT_PUBLIC_API_URL:', configuredApiUrl);
+      }
+    }
+    
+    if (configuredMcpUrl) {
+      try {
+        const mcpUrlObj = new URL(configuredMcpUrl);
+        allowedDomains.push(mcpUrlObj.hostname);
+      } catch (e) {
+        console.warn('Invalid NEXT_PUBLIC_MCP_API_URL:', configuredMcpUrl);
+      }
+    }
+    
+    const isAllowed = allowedDomains.some(domain => {
+      if (domain.includes('*')) {
+        // Handle wildcard domains
+        const pattern = domain.replace(/\*/g, '.*');
+        return new RegExp(`^${pattern}$`).test(urlObj.hostname);
+      }
+      return urlObj.hostname === domain;
+    });
     
     if (!isAllowed) {
+      console.warn('Blocked request to unauthorized domain:', urlObj.hostname);
+      console.warn('Allowed domains:', allowedDomains);
       throw new Error('Request to unauthorized domain blocked');
     }
   } catch (error) {
+    if (error instanceof Error && error.message.includes('unauthorized domain')) {
+      throw error;
+    }
     throw new Error('Invalid URL provided');
   }
 
