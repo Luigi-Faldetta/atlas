@@ -49,6 +49,12 @@ Content-Security-Policy: The page's settings blocked the loading of a resource (
 - Added tunnel usage logging for development awareness
 - Enhanced error handling for security-related issues
 
+### 6. CORS Configuration Fix (`express-server/express-server.js`)
+
+- Added `X-Requested-With` header to CORS `allowedHeaders` array
+- Fixed CORS preflight errors for secure fetch requests
+- Maintained existing permissive CORS policy for development
+
 ## Security Considerations
 
 ### ✅ What's Secure
@@ -132,6 +138,13 @@ NEXT_PUBLIC_MCP_API_URL=https://your-production-mcp.com/api/v1
 2. **Test Direct Access**: Try accessing the ngrok URL directly in browser
 3. **Check Network**: Ensure no firewall blocking the connection
 
+### CORS Errors?
+
+1. **Check Allowed Headers**: Ensure `X-Requested-With` is in CORS `allowedHeaders`
+2. **Verify Origin**: Check that your frontend origin is allowed in CORS config
+3. **Preflight Requests**: Look for OPTIONS requests in browser dev tools
+4. **Server Logs**: Check Express server logs for CORS-related messages
+
 ### Security Warnings?
 
 1. **Expected in Development**: Tunnel usage warnings are normal
@@ -145,6 +158,7 @@ NEXT_PUBLIC_MCP_API_URL=https://your-production-mcp.com/api/v1
 - `frontend/lib/security/environment.ts` - Environment validation
 - `frontend/server/index.js` - Server-side CSP
 - `frontend/app/tools/page.tsx` - Component updates
+- `express-server/express-server.js` - CORS headers configuration
 
 ## Next Steps
 
