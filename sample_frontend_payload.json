@@ -1,0 +1,63 @@
+{
+  "investmentScore": 85,
+  "roi5Years": 15.2,
+  "roi10Years": 28.7,
+  "yearlyYield": 4.8,
+  "monthlyRentalIncome": 2800,
+  "expectedMonthlyIncome": 2800,
+  "yearlyAppreciationPercentage": 3.2,
+  "yearlyAppreciationValue": 19872,
+  "strengths": [
+    "Excellent location in Bemmel",
+    "Recent renovation with modern amenities",
+    "Strong rental demand in area",
+    "Good property condition"
+  ],
+  "weaknesses": [
+    "Higher than average community fees",
+    "Limited parking availability",
+    "Potential for seasonal tourist fluctuations"
+  ],
+  "address": "Vossenhol 16",
+  "price": "€ 621,500",
+  "pricePerSqm": 2850.92,
+  "bedrooms": 3,
+  "bathrooms": 1,
+  "size": 218,
+  "yearBuilt": 2020,
+  "buildingType": "farm",
+  "energyLabel": null,
+  "description": "Deze geheel gerestaureerde boerderij en schuur, met volledig nieuwe rieten kappen, voorzien van alle benodigde duurzame techniek van deze tijd, is echt super uniek, waar vind je dat in Nederland…. In Bemmel.\n\nEnsemble Wonen in een boerderij, stal en kapschuur.",
+  "propertyImage": "https://cloud.funda.nl/valentina_media/207/254/510_1440x960.jpg",
+  "features": [
+    "Renovated",
+    "Garden",
+    "Parking"
+  ],
+  "characteristics": [
+    "Well-maintained",
+    "Good location",
+    "Modern amenities"
+  ],
+  "riskScore": 6.8,
+  "yieldScore": 7.2,
+  "growthScore": 8.4,
+  "locationScore": 8.8,
+  "conditionScore": 9.1,
+  "isEnhancedAnalysis": true,
+  "agenticFeatures": {
+    "chainOfThought": true,
+    "selfReflection": true,
+    "confidenceScoring": true,
+    "qualityValidation": true
+  },
+  "reasoningProcess": "Enhanced Funda extraction using JSON-LD structured data provided high-quality property information.",
+  "validation": {
+    "quality_score": 96.0,
+    "validation_notes": [
+      "JSON-LD data source",
+      "High extraction confidence",
+      "Complete property details"
+    ]
+  }
+}

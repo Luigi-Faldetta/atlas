@@ -1,0 +1,27 @@
+{
+  "url": "https://www.funda.nl/detail/koop/bemmel/huis-vossenhol-16/89281255/",
+  "extraction_method": "enhanced_json_and_html",
+  "extracted_at": 1748735743.042075,
+  "address": "Vossenhol 16",
+  "full_address": "Vossenhol 16, Bemmel, Gelderland",
+  "price": "€ 621,500",
+  "price_currency": "EUR",
+  "property_type": "house",
+  "canonical_url": "https://www.funda.nl/detail/koop/bemmel/huis-vossenhol-16/89281255/",
+  "description": "Deze geheel gerestaureerde boerderij en schuur, met volledig nieuwe rieten kappen, voorzien van alle benodigde duurzame techniek van deze tijd, is echt super uniek, waar vind je dat in Nederland…. In Bemmel.\n\nEnsemble Wonen in een boerderij, stal en kapschuur.",
+  "property_images": [
+    "https://cloud.funda.nl/valentina_media/207/254/510_1440x960.jpg",
+    "https://cloud.funda.nl/valentina_media/207/254/501_1440x960.jpg",
+    "https://cloud.funda.nl/valentina_media/205/738/353_1440x960.jpg",
+    "https://cloud.funda.nl/valentina_media/205/738/348_1440x960.jpg",
+    "https://cloud.funda.nl/valentina_media/207/348/318_1440x960.jpg",
+    "https://cloud.funda.nl/valentina_media/205/738/349_1440x960.jpg"
+  ],
+  "main_image": "https://cloud.funda.nl/valentina_media/207/254/510_1440x960.jpg",
+  "size": 218,
+  "bedrooms": 3,
+  "bathrooms": 1,
+  "year_built": 2020,
+  "building_type": "farm",
+  "price_per_sqm": 2850.92
+}

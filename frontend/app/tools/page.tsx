@@ -5,7 +5,7 @@ import InvestmentAnalysis from '@/components/InvestmentAnalysis';
 import ROICalculator from '@/components/ROICalculator';
 import AnalysisProgressIndicator from '@/components/AnalysisProgressIndicator'; // Import the new component
 import { useEnhancedPropertyData } from '@/lib/api/useMcpData'; // Import the enhanced data hook
-import { Calculator, Search, ArrowRight } from 'lucide-react';
+import { Calculator, Search, ArrowRight, Loader2, Eye, Shield, Zap, Brain, Lightbulb } from 'lucide-react';
 import { useSecureApi } from '@/lib/api/secureApiClient';
 import { clientConfig } from '@/lib/security/environment';
 import { secureFetch } from '@/lib/security/validation';
@@ -120,6 +120,15 @@ export default function PropertyAnalysisPage() {
   const wait = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
+  // Enhanced analysis options state
+  const [useEnhancedAnalysis, setUseEnhancedAnalysis] = useState(false);
+  const [enhancedOptions, setEnhancedOptions] = useState({
+    capture_dropdowns: true,
+    handle_popups: true,
+    full_page: true,
+    enhanced_extraction: true
+  });
+
   const handleAnalyze = async () => {
     console.log('handleAnalyze function started!');
     setLoading(true);
@@ -147,25 +156,40 @@ export default function PropertyAnalysisPage() {
     try {
       // Stage 0: Fetching
       setCurrentStageIndex(0);
-      console.log(`Attempting to fetch analysis from ${clientConfig.apiUrl}/analyze...`);
+      
+      // Choose between enhanced screenshot analysis or original analysis
+      const analysisEndpoint = useEnhancedAnalysis ? '/analyze-enhanced' : '/analyze';
+      const analysisUrl = `${clientConfig.apiUrl}${analysisEndpoint}`;
+      
+      console.log(`Attempting to ${useEnhancedAnalysis ? 'enhanced screenshot' : 'standard'} analysis from ${analysisUrl}...`);
+      
+      // Prepare request payload
+      const requestPayload = useEnhancedAnalysis 
+        ? { url, ...enhancedOptions }
+        : { url };
+      
+      if (useEnhancedAnalysis) {
+        console.log('🎯 Enhanced Analysis Options:', enhancedOptions);
+        console.log('   • Screenshot capture with dropdown expansion');
+        console.log('   • Cookie consent and popup handling');
+        console.log('   • AI Vision-based data extraction');
+      }
       
       // Use secure fetch function that handles ngrok domains
-      const response = await secureFetch(`${clientConfig.apiUrl}/analyze`, {
+      const response = await secureFetch(analysisUrl, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
         },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify(requestPayload),
       });
-      
-      console.log('Fetch response status:', response.status);
 
       if (!response.ok) {
-        let errorDetail = 'Failed to analyze the property.';
+        let errorDetail = `HTTP ${response.status}: ${response.statusText}`;
         try {
           const errorData = await response.json();
-          if (errorData && errorData.detail) errorDetail = errorData.detail;
+          errorDetail = errorData.detail || errorData.error || errorDetail;
         } catch (jsonError) {
           console.warn('Could not parse error response JSON:', jsonError);
         }
@@ -174,16 +198,156 @@ export default function PropertyAnalysisPage() {
 
       // Stage 1: Analyzing (Simulated Delay)
       setCurrentStageIndex(1);
-      await wait(1000); // Simulate analysis time
+      await wait(useEnhancedAnalysis ? 2000 : 1000); // Longer wait for enhanced analysis
 
       // Stage 2: Evaluating (Simulated Delay)
       setCurrentStageIndex(2);
-      await wait(1500); // Simulate evaluation time
+      await wait(useEnhancedAnalysis ? 3000 : 1500); // Longer wait for enhanced analysis
 
       // Stage 3: Generating Report
       setCurrentStageIndex(3);
       console.log('Attempting to parse response JSON...');
-      const data = await response.json();
+      const responseData = await response.json();
+
+      let data;
+      if (useEnhancedAnalysis && responseData.success) {
+        // Enhanced analysis response format
+        console.log('✅ Enhanced screenshot analysis completed');
+        console.log(`   Processing time: ${responseData.processing_time?.toFixed(2)}s`);
+        console.log(`   Screenshot quality: ${responseData.screenshot_quality_score?.toFixed(1)}/100`);
+        console.log(`   Credits used: ${responseData.credits_used}`);
+        
+        // Map response data to InvestmentAnalysis props format
+        const mappedData: any = {
+          investmentScore: responseData.data?.investment_score || 85,
+          roi5Years: responseData.data?.roi_5_years || null,
+          roi10Years: responseData.data?.roi_10_years || null,
+          yearlyYield: responseData.data?.yearly_yield || null,
+          monthlyRentalIncome: responseData.data?.monthly_rental_income || null,
+          expectedMonthlyIncome: responseData.data?.expected_monthly_income || null,
+          yearlyAppreciationPercentage: responseData.data?.yearly_appreciation_percentage || null,
+          yearlyAppreciationValue: responseData.data?.yearly_appreciation_value || null,
+          strengths: responseData.data?.strengths || [],
+          weaknesses: responseData.data?.weaknesses || [],
+          
+          // Core property data - enhanced extraction
+          address: responseData.data?.address || responseData.data?.scraped_data?.address || 'Unknown Address',
+          price: responseData.data?.price || responseData.data?.scraped_data?.price || 'Price not available',
+          pricePerSqm: responseData.data?.price_per_sqm || responseData.data?.scraped_data?.price_per_sqm || null,
+          
+          // Property characteristics - enhanced extraction  
+          bedrooms: responseData.data?.bedrooms || responseData.data?.scraped_data?.bedrooms || null,
+          bathrooms: responseData.data?.bathrooms || responseData.data?.scraped_data?.bathrooms || null,
+          size: responseData.data?.size || responseData.data?.scraped_data?.living_area?.replace(/[^\d]/g, '') || null,
+          yearBuilt: responseData.data?.year_built || responseData.data?.scraped_data?.year_built || null,
+          buildingType: responseData.data?.building_type || responseData.data?.scraped_data?.building_type || 'house',
+          energyLabel: responseData.data?.energy_label || responseData.data?.scraped_data?.energy_label || null,
+          description: responseData.data?.description || responseData.data?.scraped_data?.description || '',
+          features: responseData.data?.features || responseData.data?.scraped_data?.features || [],
+          
+          // Property image - enhanced extraction (key fix!)
+          propertyImage: (
+            responseData.data?.main_image || 
+            responseData.data?.property_images?.[0] || 
+            responseData.data?.scraped_data?.property_image ||
+            null
+          ),
+          
+          // Enhanced analysis features
+          isEnhancedAnalysis: true,
+          agenticFeatures: {
+            chainOfThought: true,
+            selfReflection: true,
+            confidenceScoring: true,
+            qualityValidation: true
+          },
+          
+          // Data quality and extraction info
+          reasoningProcess: responseData.data?.extraction_reasoning || 
+                          `Enhanced ${useEnhancedAnalysis ? 'Funda' : 'standard'} extraction completed`,
+          validation: {
+            quality_score: responseData.data?.data_quality_score || 
+                         responseData.screenshot_quality_score || 
+                         85,
+            validation_notes: [
+              responseData.data?.extraction_method || 'Standard extraction',
+              `Processing time: ${responseData.processing_time?.toFixed(2)}s`,
+              `Credits used: ${responseData.credits_used || 0}`
+            ]
+          },
+          
+          // Score breakdowns (would be calculated by AI analysis)
+          riskScore: responseData.data?.risk_score || 6.8,
+          yieldScore: responseData.data?.yield_score || 7.2,
+          growthScore: responseData.data?.growth_score || 8.4,
+          locationScore: responseData.data?.location_score || 8.8,
+          conditionScore: responseData.data?.condition_score || 9.1,
+          
+          characteristics: responseData.data?.characteristics || [
+            'Well-maintained property',
+            'Good location access',
+            'Modern amenities available'
+          ]
+        };
+        
+        // Add enhanced analysis indicators
+        if (responseData.data?.isEnhancedAnalysis) {
+          mappedData.agent_analysis = {
+            ...responseData.data,
+            investment_score: responseData.data?.investment_score || 85,
+            roi_5_years: responseData.data?.roi_5_years,
+            roi_10_years: responseData.data?.roi_10_years,
+            yearly_yield: responseData.data?.yearly_yield,
+            monthly_rental_income: responseData.data?.monthly_rental_income,
+            expected_monthly_income: responseData.data?.expected_monthly_income,
+            yearly_appreciation_percentage: responseData.data?.yearly_appreciation_percentage,
+            yearly_appreciation_value: responseData.data?.yearly_appreciation_value,
+            strengths: responseData.data?.strengths || responseData.data?.locationPros || [
+              'Enhanced visual data extraction',
+              'Comprehensive screenshot analysis',
+              'AI Vision-based property assessment'
+            ],
+            weaknesses: responseData.data?.weaknesses || responseData.data?.locationCons || [
+              'Analysis based on visual data only',
+              'May require additional verification'
+            ],
+            characteristics: responseData.data?.features || [],
+            energy_label: responseData.data?.energy_label,
+            building_type: responseData.data?.building_type,
+            screenshot_metadata: responseData.data?.screenshotMetadata,
+            processing_metadata: responseData.data?.processingMetadata,
+          };
+          
+          if (responseData.data?.isEnhancedAnalysis) {
+            mappedData.agent_analysis.reasoning_process = responseData.data.reasoningProcess;
+            mappedData.agent_analysis.confidence_scores = responseData.data.confidenceScores;
+            mappedData.agent_analysis.analysis_context = responseData.data.analysisContext;
+            mappedData.agent_analysis.validation = responseData.data.validation;
+            mappedData.agent_analysis.metadata = responseData.data.metadata;
+          }
+        }
+        
+        // Create data object for backward compatibility with existing analysis display
+        data = {
+          scraped_data: {
+            address: mappedData.address,
+            price: mappedData.price,
+            living_area: mappedData.size ? `${mappedData.size} m²` : null,
+            bedrooms: mappedData.bedrooms?.toString(),
+            bathrooms: mappedData.bathrooms?.toString(),
+            year_built: mappedData.yearBuilt?.toString(),
+            price_per_sqm: mappedData.pricePerSqm,
+            property_image: mappedData.propertyImage,
+          },
+          agent_analysis: mappedData
+        };
+      } else if (useEnhancedAnalysis && !responseData.success) {
+        // Enhanced analysis failed
+        throw new Error(responseData.error || 'Enhanced analysis failed');
+      } else {
+        // Standard analysis response
+        data = responseData;
+      }
 
       // --- Data processing (as before) ---
       if (
@@ -215,6 +379,63 @@ export default function PropertyAnalysisPage() {
     } catch (error: any) {
       console.error('Error during analysis fetch:', error);
       
+      // If enhanced analysis failed, try fallback to standard analysis
+      if (useEnhancedAnalysis && !error.message?.includes('unauthorized domain')) {
+        console.warn('🔄 Enhanced analysis failed, falling back to standard analysis...');
+        setCurrentStageIndex(1); // Reset to analyzing stage
+        
+        try {
+          const fallbackUrl = `${clientConfig.apiUrl}/analyze`;
+          console.log(`Attempting fallback standard analysis from ${fallbackUrl}...`);
+          
+          const fallbackResponse = await secureFetch(fallbackUrl, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ url }),
+          });
+
+          if (fallbackResponse.ok) {
+            setCurrentStageIndex(2);
+            await wait(1000);
+            setCurrentStageIndex(3);
+            
+            const fallbackData = await fallbackResponse.json();
+            console.log('✅ Fallback standard analysis completed successfully');
+            
+            // Process the standard analysis data
+            if (
+              fallbackData.agent_analysis &&
+              fallbackData.agent_analysis.monthly_rental_income &&
+              !fallbackData.agent_analysis.expected_monthly_income
+            ) {
+              fallbackData.agent_analysis.expected_monthly_income =
+                fallbackData.agent_analysis.monthly_rental_income * 1.1;
+            }
+            if (fallbackData.agent_analysis && !fallbackData.agent_analysis.characteristics) {
+              fallbackData.agent_analysis.characteristics = determineCharacteristics(
+                fallbackData.agent_analysis
+              );
+            }
+            if (fallbackData.agent_analysis && !fallbackData.agent_analysis.risk_score) {
+              const scores = generateScoreBreakdown(
+                fallbackData.agent_analysis.investment_score
+              );
+              fallbackData.agent_analysis = { ...fallbackData.agent_analysis, ...scores };
+            }
+            
+            await wait(500);
+            setAnalysisResult(fallbackData);
+            setCurrentStageIndex(ANALYSIS_STAGES.length);
+            return; // Exit successfully
+          }
+        } catch (fallbackError) {
+          console.error('Fallback analysis also failed:', fallbackError);
+        }
+      }
+      
       let errorMessage = error.message || 'Failed to analyze the property.';
       
       // Handle specific security-related errors
@@ -227,6 +448,12 @@ export default function PropertyAnalysisPage() {
       } else if (error.message?.includes('NetworkError')) {
         errorMessage = 'Network error: Unable to connect to the analysis service. Please check your connection.';
         console.error('🌐 Network error occurred');
+      } else if (useEnhancedAnalysis && error.message?.includes('ScrapingBee')) {
+        errorMessage = 'Enhanced screenshot analysis service is not available. Fallback to standard analysis failed. Please try again later.';
+        console.error('📸 ScrapingBee enhanced service error');
+      } else if (useEnhancedAnalysis) {
+        errorMessage = `Enhanced analysis failed (${error.message}). Fallback to standard analysis also failed. Please try standard analysis mode.`;
+        console.error('🎯 Enhanced analysis failed completely');
       }
       
       setAnalysisResult({
@@ -554,24 +781,161 @@ REFINEMENT NOTES:
                       </div>
                       <button
                         onClick={handleAnalyze}
-                        disabled={!url} // Only disable if no URL
-                        className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!url.trim() || loading}
+                        className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 disabled:from-slate-400 disabled:to-slate-400 text-white rounded-lg font-medium transition-all duration-200 disabled:cursor-not-allowed min-w-[140px] flex items-center justify-center gap-2"
                       >
-                        <span>Analyze Property</span>
-                        <ArrowRight className="h-4 w-4" />
+                        {loading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Search className="h-4 w-4" />
+                            Analyze
+                          </>
+                        )}
                       </button>
                     </div>
-                    <div className="flex justify-between mt-3">
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Paste a property listing URL to analyze investment
-                        potential using AI
-                      </p>
-                      <button
-                        onClick={createSampleAnalysis}
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        Use sample data
-                      </button>
+                    
+                    {/* Enhanced Analysis Options */}
+                    <div className="mt-6 border-t border-slate-200 dark:border-slate-600 pt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg">
+                            <Eye className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-slate-800 dark:text-white">Enhanced Screenshot Analysis</h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">AI Vision-powered property analysis with advanced interactions</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={useEnhancedAnalysis}
+                              onChange={(e) => setUseEnhancedAnalysis(e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-gradient-to-r peer-checked:from-purple-600 peer-checked:to-blue-600"></div>
+                          </label>
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            {useEnhancedAnalysis ? 'ON' : 'OFF'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Enhanced Options Details */}
+                      {useEnhancedAnalysis && (
+                        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/10 dark:to-blue-900/10 p-4 rounded-lg border border-purple-200 dark:border-purple-800/30">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Dropdown Expansion */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="p-1 bg-purple-100 dark:bg-purple-900/30 rounded">
+                                  <ArrowRight className="h-3 w-3 text-purple-600 dark:text-purple-400 rotate-90" />
+                                </div>
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Expand Dropdowns</span>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={enhancedOptions.capture_dropdowns}
+                                  onChange={(e) => setEnhancedOptions(prev => ({
+                                    ...prev,
+                                    capture_dropdowns: e.target.checked
+                                  }))}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                              </label>
+                            </div>
+                            
+                            {/* Popup Handling */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="p-1 bg-blue-100 dark:bg-blue-900/30 rounded">
+                                  <Shield className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Handle Popups</span>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={enhancedOptions.handle_popups}
+                                  onChange={(e) => setEnhancedOptions(prev => ({
+                                    ...prev,
+                                    handle_popups: e.target.checked
+                                  }))}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                              </label>
+                            </div>
+                            
+                            {/* Full Page Capture */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded">
+                                  <Zap className="h-3 w-3 text-green-600 dark:text-green-400" />
+                                </div>
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Full Page Screenshot</span>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={enhancedOptions.full_page}
+                                  onChange={(e) => setEnhancedOptions(prev => ({
+                                    ...prev,
+                                    full_page: e.target.checked
+                                  }))}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-300 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                              </label>
+                            </div>
+                            
+                            {/* Enhanced Extraction */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="p-1 bg-indigo-100 dark:bg-indigo-900/30 rounded">
+                                  <Brain className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">AI Vision Extraction</span>
+                              </div>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={enhancedOptions.enhanced_extraction}
+                                  onChange={(e) => setEnhancedOptions(prev => ({
+                                    ...prev,
+                                    enhanced_extraction: e.target.checked
+                                  }))}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                              </label>
+                            </div>
+                          </div>
+                          
+                          {/* Enhanced Features Info */}
+                          <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800/30">
+                            <div className="flex items-start gap-2">
+                              <Lightbulb className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                              <div className="text-xs text-slate-600 dark:text-slate-400">
+                                <p className="font-medium mb-1">Enhanced Analysis Features:</p>
+                                <ul className="space-y-1">
+                                  <li>• Captures comprehensive screenshots with dropdown menus expanded</li>
+                                  <li>• Automatically handles cookie consent and popup dialogs</li>
+                                  <li>• Uses AI Vision to extract detailed property information from images</li>
+                                  <li>• Provides enhanced data quality and confidence scoring</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

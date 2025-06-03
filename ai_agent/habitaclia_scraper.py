@@ -108,8 +108,8 @@ class HabitacliaScraper(BaseScraper):
             # Navigate to the property page
             await self.page.goto(url, wait_until="domcontentloaded", timeout=60000)
             
-            # Wait for main content
-            await self.page.wait_for_selector("h1", timeout=30000)
+            # Wait for main content to load
+            await self.page.wait_for_selector("main, body", timeout=30000)
             
             # Handle cookie banner if present
             try:
@@ -135,170 +135,226 @@ class HabitacliaScraper(BaseScraper):
                 "Site": self.get_site_name()
             }
             
-            # Try to extract JSON-LD structured data first
-            json_ld_scripts = soup.find_all('script', type='application/ld+json')
-            property_json = None
+            # Extract price - targeting the specific structure from the HTML
+            price_elem = (
+                soup.select_one('span[itemprop="price"]') or
+                soup.select_one('span.font-2[itemtype*="Offer"]') or
+                soup.select_one('span.price') or
+                soup.select_one('.price-down strong') or
+                soup.select_one('strong:contains("€")')
+            )
             
-            for script in json_ld_scripts:
-                try:
-                    data = json.loads(script.string)
-                    if isinstance(data, dict) and data.get('@type') in ['Residence', 'Apartment', 'House', 'SingleFamilyResidence']:
-                        property_json = data
+            if price_elem:
+                price_text = price_elem.get_text(strip=True)
+                # Clean and extract price
+                price_match = re.search(r'([\d,.]+)\s*€', price_text)
+                if price_match:
+                    property_data["Price"] = price_match.group(0)
+                else:
+                    property_data["Price"] = price_text
+            else:
+                property_data["Price"] = "Not found"
+            
+            # Extract title/address from h1 or main heading
+            title_selectors = [
+                'h1',
+                'h1.hidden',
+                '.title',
+                '[data-gtmtrace="title"]'
+            ]
+            
+            for selector in title_selectors:
+                title_elem = soup.select_one(selector)
+                if title_elem:
+                    title_text = title_elem.get_text(strip=True)
+                    if title_text and title_text != "":
+                        property_data["Title"] = title_text
+                        property_data["Address"] = title_text  # Use title as address fallback
                         break
-                    elif isinstance(data, list):
-                        for item in data:
-                            if isinstance(item, dict) and item.get('@type') in ['Residence', 'Apartment', 'House', 'SingleFamilyResidence']:
-                                property_json = item
-                                break
-                except:
-                    continue
             
-            # Extract from JSON-LD if available
-            if property_json:
-                # Address
-                address = property_json.get('address', {})
-                if isinstance(address, dict):
-                    street = address.get('streetAddress', '')
-                    locality = address.get('addressLocality', '')
-                    postal = address.get('postalCode', '')
-                    property_data["Address"] = f"{street}, {postal} {locality}".strip(', ')
-                    
-                # Price
-                offers = property_json.get('offers', {})
-                if isinstance(offers, dict):
-                    price = offers.get('price')
-                    if price:
-                        property_data["Price"] = f"{price} €"
-                        
-                # Property type
-                property_data["Property Type"] = property_json.get('@type', 'Not found')
+            # Extract location from breadcrumb or location elements
+            location_selectors = [
+                'nav.breadcrumb a',
+                '.breadcrumb a',
+                '[data-gtmtrace*="location"]',
+                '.location'
+            ]
+            
+            location_parts = []
+            for selector in location_selectors:
+                location_elems = soup.select(selector)
+                if location_elems:
+                    for elem in location_elems:
+                        text = elem.get_text(strip=True)
+                        if text and text not in location_parts and len(text) > 1:
+                            location_parts.append(text)
+            
+            if location_parts and len(location_parts) > 1:
+                # Skip first breadcrumb (usually "Home") and join the rest
+                property_data["Address"] = ", ".join(location_parts[1:])
+            
+            # Extract property features from li elements
+            feature_selectors = [
+                'li.feature',
+                'ul.feature-list li',
+                '.features li',
+                'ol.feature-container li'
+            ]
+            
+            features = []
+            for selector in feature_selectors:
+                feature_elems = soup.select(selector)
+                for feature in feature_elems:
+                    feature_text = feature.get_text(strip=True)
+                    if feature_text:
+                        features.append(feature_text)
+            
+            # Process features to extract specific property details
+            for feature_text in features:
+                text_lower = feature_text.lower()
                 
-            # Extract from HTML (fallback or complement)
-            
-            # Title/Address
-            title_elem = soup.find('h1')
-            if title_elem and "Address" not in property_data:
-                property_data["Title"] = title_elem.text.strip()
-                property_data["Address"] = title_elem.text.strip()
-            
-            # Location breadcrumb
-            breadcrumb = soup.select('nav.breadcrumb li')
-            if breadcrumb and len(breadcrumb) > 2:
-                location_parts = [li.text.strip() for li in breadcrumb[2:] if li.text.strip()]
-                if location_parts and property_data.get("Address") == "Not found":
-                    property_data["Address"] = ", ".join(location_parts)
-                    
-            # Price
-            if "Price" not in property_data or property_data.get("Price") == "Not found":
-                price_elem = soup.select_one('span.h1') or soup.select_one('div.price span')
-                if price_elem:
-                    price_text = price_elem.text.strip()
-                    # Clean price
-                    price_text = re.sub(r'[^\d,.]', '', price_text)
-                    if price_text:
-                        property_data["Price"] = f"{price_text} €"
-                        
-            # Features section
-            features_section = soup.select('div.features li') or soup.select('ul.feature-list li')
-            
-            for feature in features_section:
-                text = feature.text.strip().lower()
-                
-                # Surface area
-                if ("m²" in text or "m2" in text) and "superficie" in text:
-                    match = re.search(r'(\d+(?:\.\d+)?)\s*m[²2]', text)
+                # Living Area / Surface
+                if ("m²" in feature_text or "m2" in feature_text) and not property_data.get("Living Area"):
+                    match = re.search(r'(\d+(?:[.,]\d+)?)\s*m[²2]', feature_text)
                     if match:
-                        property_data["Living Area"] = self.standardize_area(f"{match.group(1)} m²")
-                        
+                        area_value = match.group(1).replace(',', '.')
+                        property_data["Living Area"] = self.standardize_area(f"{area_value} m²")
+                
                 # Bedrooms
-                elif "habitaci" in text or "dormitori" in text:
-                    match = re.search(r'(\d+)', text)
+                elif ("hab" in text_lower or "dormitori" in text_lower or "bedroom" in text_lower) and not property_data.get("Bedrooms"):
+                    match = re.search(r'(\d+)', feature_text)
                     if match:
                         property_data["Bedrooms"] = match.group(1)
-                        
+                
                 # Bathrooms
-                elif "baño" in text or "aseo" in text or "lavabo" in text:
-                    match = re.search(r'(\d+)', text)
+                elif ("baño" in text_lower or "bathroom" in text_lower or "aseo" in text_lower) and not property_data.get("Bathrooms"):
+                    match = re.search(r'(\d+)', feature_text)
                     if match:
                         property_data["Bathrooms"] = match.group(1)
-                        
-                # Year built
-                elif "año" in text and "construc" in text:
-                    match = re.search(r'(\d{4})', text)
-                    if match:
-                        property_data["Year Built"] = match.group(1)
-                        
-                # Plot size
-                elif "parcela" in text or "solar" in text:
-                    match = re.search(r'(\d+(?:\.\d+)?)\s*m[²2]', text)
-                    if match:
-                        property_data["Plot Size"] = self.standardize_area(f"{match.group(1)} m²")
-                        
-            # Property characteristics grid
-            char_grid = soup.select('div.characteristics-grid div.item') or soup.select('dl.details dt, dl.details dd')
             
-            i = 0
-            while i < len(char_grid):
-                if hasattr(char_grid[i], 'name') and char_grid[i].name == 'dt':
-                    label = char_grid[i].text.strip().lower()
-                    value = char_grid[i + 1].text.strip() if i + 1 < len(char_grid) else ""
+            # Extract characteristics from data attributes and summary sections
+            summary_selectors = [
+                '.summary-left',
+                '.summary',
+                '.property-details',
+                '.characteristics'
+            ]
+            
+            for selector in summary_selectors:
+                summary_section = soup.select_one(selector)
+                if summary_section:
+                    # Look for specific patterns in the summary
+                    summary_text = summary_section.get_text()
                     
-                    if "superficie" in label and "Living Area" not in property_data:
-                        property_data["Living Area"] = self.standardize_area(value)
-                    elif "habitaci" in label and "Bedrooms" not in property_data:
-                        match = re.search(r'(\d+)', value)
-                        if match:
-                            property_data["Bedrooms"] = match.group(1)
-                    elif "baño" in label and "Bathrooms" not in property_data:
-                        match = re.search(r'(\d+)', value)
-                        if match:
-                            property_data["Bathrooms"] = match.group(1)
-                    elif "año" in label and "Year Built" not in property_data:
-                        match = re.search(r'(\d{4})', value)
-                        if match:
-                            property_data["Year Built"] = match.group(1)
-                            
-                    i += 2
+                    # Extract surface area if not found
+                    if not property_data.get("Living Area"):
+                        area_match = re.search(r'(\d+(?:[.,]\d+)?)\s*m[²2]', summary_text)
+                        if area_match:
+                            area_value = area_match.group(1).replace(',', '.')
+                            property_data["Living Area"] = self.standardize_area(f"{area_value} m²")
+                    
+                    # Extract year if available
+                    year_match = re.search(r'(19|20)\d{2}', summary_text)
+                    if year_match and not property_data.get("Year Built"):
+                        property_data["Year Built"] = year_match.group(0)
+            
+            # Extract property type from URL or context
+            if "piso" in url.lower() or "apartamento" in url.lower():
+                property_data["Property Type"] = "Piso"
+            elif "casa" in url.lower() or "chalet" in url.lower():
+                property_data["Property Type"] = "Casa"
+            elif "duplex" in url.lower():
+                property_data["Property Type"] = "Duplex"
+            else:
+                # Try to extract from page content
+                type_indicators = soup.select_one('[data-propertytype], .property-type, .type')
+                if type_indicators:
+                    property_data["Property Type"] = type_indicators.get_text(strip=True)
                 else:
-                    i += 1
+                    property_data["Property Type"] = "Not found"
+            
+            # Extract description from description sections
+            desc_selectors = [
+                '.description p',
+                '.property-description',
+                '[data-description]',
+                '.detail-description'
+            ]
+            
+            for selector in desc_selectors:
+                desc_elem = soup.select_one(selector)
+                if desc_elem:
+                    description = desc_elem.get_text(strip=True)
+                    if description and len(description) > 50:  # Ensure it's substantial content
+                        property_data["Description"] = description[:500] + ("..." if len(description) > 500 else "")
+                        break
+            
+            # Extract energy rating if available
+            energy_selectors = [
+                'div.rating-box:nth-child(1) div.rating:nth-child(2)',  # Specific selector from user
+                'div.rating-box div.rating',                            # More general rating box
+                '.energy-rating',
+                '[data-energy]',
+                '.efficiency',
+                'span:contains("Energía")'
+            ]
+            
+            for selector in energy_selectors:
+                energy_elem = soup.select_one(selector)
+                if energy_elem:
+                    # First try to extract from class name (e.g., "rating c-6" -> "C")
+                    class_list = energy_elem.get('class', [])
+                    for class_name in class_list:
+                        if class_name.startswith('c-') or class_name.startswith('e-'):
+                            # Extract energy rating from class name like "c-G" -> "G" or "c-6" -> "F"
+                            energy_match = re.search(r'[c|e]-([A-G\d]+)', class_name.upper())
+                            if energy_match:
+                                rating_letter = energy_match.group(1)
+                                # Convert number to letter if needed (e.g., "6" -> "F")
+                                if rating_letter.isdigit():
+                                    # Energy scale: A=1, B=2, C=3, D=4, E=5, F=6, G=7
+                                    rating_map = {'1': 'A', '2': 'B', '3': 'C', '4': 'D', '5': 'E', '6': 'F', '7': 'G'}
+                                    rating_letter = rating_map.get(rating_letter, rating_letter)
+                                property_data["Energy Label"] = rating_letter
+                                break
                     
-            # Property type
-            if "Property Type" not in property_data:
-                type_elem = soup.select_one('span.property-type') or soup.select_one('div.type')
-                if type_elem:
-                    property_data["Property Type"] = type_elem.text.strip()
-                else:
-                    # Infer from URL or title
-                    if "piso" in url.lower() or "apartamento" in property_data.get("Title", "").lower():
-                        property_data["Property Type"] = "Piso"
-                    elif "casa" in url.lower() or "chalet" in property_data.get("Title", "").lower():
-                        property_data["Property Type"] = "Casa"
-                    else:
-                        property_data["Property Type"] = "Not found"
-                        
-            # Description
-            desc_elem = soup.select_one('div.description p') or soup.select_one('section.description')
-            if desc_elem:
-                property_data["Description"] = desc_elem.text.strip()[:500] + "..."
-                
-            # Energy label
-            energy_elem = soup.select_one('div.energy-rating span.rating') or soup.select_one('span.energy-label')
-            if energy_elem:
-                match = re.search(r'[A-G](?:\+|-)?', energy_elem.text.upper())
-                if match:
-                    property_data["Energy Label"] = match.group(0)
+                    # If not found in class, try to extract from text content
+                    if "Energy Label" not in property_data or property_data["Energy Label"] == "Not found":
+                        energy_text = energy_elem.get_text()
+                        energy_match = re.search(r'[A-G](?:\+|-)?', energy_text.upper())
+                        if energy_match:
+                            property_data["Energy Label"] = energy_match.group(0)
                     
-            # Listing date
-            date_elem = soup.select_one('span.publication-date') or soup.select_one('time')
-            if date_elem:
-                property_data["Listing Date"] = date_elem.text.strip()
-                
-            # Set defaults for missing required fields
-            for field in ["Address", "Price", "Living Area", "Bedrooms", "Bathrooms", "Year Built"]:
+                    # Break if we found a valid energy label
+                    if property_data.get("Energy Label") and property_data["Energy Label"] != "Not found":
+                        break
+            
+            # Extract additional details from data attributes
+            main_element = soup.select_one('main, [data-gtmtrace]')
+            if main_element:
+                # Look for data attributes that might contain useful info
+                for attr_name, attr_value in main_element.attrs.items():
+                    if 'price' in attr_name.lower() and not property_data.get("Price", "").replace("Not found", ""):
+                        price_match = re.search(r'([\d,.]+)', str(attr_value))
+                        if price_match:
+                            property_data["Price"] = f"{price_match.group(1)} €"
+            
+            # Set defaults for missing fields
+            required_fields = ["Address", "Price", "Living Area", "Bedrooms", "Bathrooms", "Year Built"]
+            for field in required_fields:
                 if field not in property_data or not property_data.get(field):
                     property_data[field] = "Not found"
-                    
+            
+            # Clean up the data
+            if property_data.get("Address") == property_data.get("Title"):
+                # Try to get more specific address
+                if "," in property_data["Address"]:
+                    property_data["Address"] = property_data["Address"]
+                else:
+                    property_data["Address"] = "Not found"
+            
             self.request_count += 1
+            self.logger.info(f"Successfully scraped property: {property_data.get('Title', 'Unknown')}")
             return property_data
             
         except PlaywrightTimeoutError as e:

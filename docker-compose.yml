@@ -73,6 +73,27 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
     shm_size: 2gb  # Required for Playwright browsers
 
+  # ScrapingBee Enhanced API Service
+  scrapingbee-enhanced:
+    build: .
+    container_name: atlas-scrapingbee-enhanced
+    command: ["python", "-m", "scrapingbee_api_integration"]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SCRAPINGBEE_API_KEY=${SCRAPINGBEE_API_KEY}
+      - PORT=8001
+    ports:
+      - "8001:8001"
+    networks:
+      - atlas-network
+    restart: unless-stopped
+    volumes:
+      - ./ai_agent:/app
+      - /app/node_modules
+      - ./ai_agent/data:/app/data
+    depends_on:
+      - ai-agent
+
   # MCP Server
   mcp-server:
     build: ./mcp-server
@@ -92,6 +113,7 @@ services:
     container_name: atlas-express-proxy
     environment:
       AI_AGENT_URL: http://ai-agent:8000
+      SCRAPINGBEE_API_URL: http://scrapingbee-enhanced:8001
       NODE_ENV: production
       PORT: 5001
     ports:
@@ -101,6 +123,7 @@ services:
     restart: unless-stopped
     depends_on:
       - ai-agent
+      - scrapingbee-enhanced
 
   # Nginx Reverse Proxy (Optional - for production)
   nginx:
