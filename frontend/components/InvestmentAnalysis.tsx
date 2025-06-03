@@ -336,7 +336,7 @@ const InvestmentAnalysis = ({
   bathrooms = 1,
   size = 85,
   yearBuilt = 2010,
-  description = "Beautiful and bright apartment located in a prime area. Recently renovated with high-quality materials. Open-concept living room and kitchen. Close to public transportation, shops, and restaurants.",
+  description = "Beautiful and bright apartment located in a prime area. Recently renovated with high-quality materials. Open-concept living room and kitchen.",
   features = ["Elevator", "Air conditioning", "Parking", "Built-in wardrobes", "Security system", "Balcony"],
   
   nearbyAmenities = {
@@ -464,9 +464,10 @@ const InvestmentAnalysis = ({
 }: InvestmentAnalysisProps) => {
   console.log('%%% RUNNING InvestmentAnalysis Component - VERSION CHECK %%%');
 
-  // Use the props directly - scraped data is already processed and passed from tools page
-  const actualDescription = description;
-  const actualFeatures = features;
+  // COMPLETELY REWRITTEN: Accept real data without strict filtering
+  // The component should display whatever data is passed to it, not filter based on "defaults"
+  const actualDescription = description || "Property description not available";
+  const actualFeatures = features || [];
   const actualBedrooms = bedrooms;
   const actualBathrooms = bathrooms;
   const actualSize = size;
@@ -474,25 +475,34 @@ const InvestmentAnalysis = ({
   const actualBuildingType = buildingType;
   const actualEnergyLabel = energyLabel;
 
-  // 🔍 ENHANCED DEBUGGING - Property Info Display
-  console.log('📐 SIZE DISPLAY:', { actualSize, size, using: actualSize ? `${actualSize} m²` : 'Not available' });
-  console.log('🛏️ BEDROOMS DISPLAY:', { actualBedrooms, bedrooms, using: actualBedrooms || 'Not available' });
-  console.log('🚿 BATHROOMS DISPLAY:', { actualBathrooms, bathrooms, using: actualBathrooms || 'Not available' });
-  console.log('📅 YEAR BUILT DISPLAY:', { actualYearBuilt, yearBuilt, using: actualYearBuilt || 'Not available' });
-  console.log('🏠 BUILDING TYPE DISPLAY:', { actualBuildingType, buildingType, using: actualBuildingType || 'Not available' });
-  console.log('⚡ ENERGY LABEL DISPLAY:', { actualEnergyLabel, energyLabel, using: actualEnergyLabel || 'Not available' });
+  // 🔍 FIXED DEBUGGING - Show all received data
+  console.log('📊 RECEIVED PROPS DATA:', {
+    description: { provided: description, using: actualDescription },
+    features: { provided: features, count: features?.length || 0, using: actualFeatures },
+    bedrooms: { provided: bedrooms, using: actualBedrooms },
+    bathrooms: { provided: bathrooms, using: actualBathrooms },
+    size: { provided: size, using: actualSize },
+    yearBuilt: { provided: yearBuilt, using: actualYearBuilt },
+    buildingType: { provided: buildingType, using: actualBuildingType },
+    energyLabel: { provided: energyLabel, using: actualEnergyLabel },
+    address: { provided: address },
+    price: { provided: price }
+  });
 
-  // 🔧 Data Quality Monitoring
+  // 🔧 SIMPLIFIED Data Quality Monitoring - just informational
   const dataQualityCheck = {
-    hasSize: !!actualSize,
-    hasBedrooms: !!actualBedrooms,
-    hasBathrooms: !!actualBathrooms,
-    hasYearBuilt: !!actualYearBuilt,
-    hasValidDescription: actualDescription && actualDescription !== "Beautiful and bright apartment located in a prime area. Recently renovated with high-quality materials. Open-concept living room and kitchen.",
+    hasDescription: !!actualDescription && actualDescription !== "Property description not available",
+    hasFeatures: actualFeatures.length > 0,
+    hasBedrooms: actualBedrooms !== undefined && actualBedrooms !== null,
+    hasBathrooms: actualBathrooms !== undefined && actualBathrooms !== null,
+    hasSize: actualSize !== undefined && actualSize !== null,
+    hasYearBuilt: actualYearBuilt !== undefined && actualYearBuilt !== null,
+    hasBuildingType: !!actualBuildingType,
+    hasEnergyLabel: !!actualEnergyLabel,
     completeness: 0
   };
-  dataQualityCheck.completeness = Object.values(dataQualityCheck).filter(v => v === true).length / 5 * 100;
-  console.log('🔍 PROPERTY DATA QUALITY CHECK:', dataQualityCheck);
+  dataQualityCheck.completeness = Object.values(dataQualityCheck).filter(v => v === true).length / 8 * 100;
+  console.log('🔍 DATA QUALITY SUMMARY:', dataQualityCheck);
 
   // GSAP Refs for animation targets
   const mainContainerRef = useRef<HTMLDivElement>(null); // Ref for GSAP context
@@ -552,22 +562,23 @@ const InvestmentAnalysis = ({
 
   // --- GSAP Animations ---
   useLayoutEffect(() => {
-    // Prevent GSAP animations if critical data is missing or static
-    const hasValidData = actualDescription && actualDescription !== "Beautiful and bright apartment located in a prime area. Recently renovated with high-quality materials. Open-concept living room and kitchen.";
-    const hasScrapedData = actualBedrooms && actualBathrooms && actualYearBuilt;
+    // FIXED: Don't prevent GSAP animations based on data - let content show regardless
+    // const hasValidData = actualDescription && actualDescription !== "Beautiful and bright apartment located in a prime area. Recently renovated with high-quality materials. Open-concept living room and kitchen.";
+    // const hasScrapedData = actualBedrooms && actualBathrooms && actualYearBuilt;
     
-    if (!hasValidData || !hasScrapedData) {
-      console.log('🚫 GSAP animations disabled: Missing or static data detected');
-      console.log('Data validation:', {
-        hasValidDescription: hasValidData,
-        hasScrapedData: hasScrapedData,
-        actualDescription: actualDescription?.substring(0, 50) + '...',
-        actualBedrooms,
-        actualBathrooms,
-        actualYearBuilt
-      });
-      return;
-    }
+    // REMOVED: Animation blocking condition
+    // if (!hasValidData || !hasScrapedData) {
+    //   console.log('🚫 GSAP animations disabled: Missing or static data detected');
+    //   console.log('Data validation:', {
+    //     hasValidDescription: hasValidData,
+    //     hasScrapedData: hasScrapedData,
+    //     actualDescription: actualDescription?.substring(0, 50) + '...',
+    //     actualBedrooms,
+    //     actualBathrooms,
+    //     actualYearBuilt
+    //   });
+    //   return;
+    // }
 
     const hoverListenerCleanups: Array<() => void> = [];
     const blurOverlayRef = mainContainerRef;
@@ -1546,19 +1557,19 @@ const InvestmentAnalysis = ({
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Bedrooms</span>
                 <span className="font-medium text-gray-800 dark:text-white">
-                  {actualBedrooms || 'Not available'}
+                  {actualBedrooms !== undefined && actualBedrooms !== null ? actualBedrooms : 'Not available'}
                 </span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Bathrooms</span>
                 <span className="font-medium text-gray-800 dark:text-white">
-                  {actualBathrooms || 'Not available'}
+                  {actualBathrooms !== undefined && actualBathrooms !== null ? actualBathrooms : 'Not available'}
                 </span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Year Built</span>
                 <span className="font-medium text-gray-800 dark:text-white">
-                  {actualYearBuilt || 'Not available'}
+                  {actualYearBuilt !== undefined && actualYearBuilt !== null ? actualYearBuilt : 'Not available'}
                 </span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
@@ -1584,11 +1595,15 @@ const InvestmentAnalysis = ({
             {/* Features */}
             <div className="mt-6">
               <h4 className="font-medium text-gray-800 dark:text-white mb-2">Features</h4>
-              <ul className="list-disc pl-5 text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                {actualFeatures.map((feature: string, index: number) => (
-                  <li key={index}>{feature}</li>
-                ))}
-              </ul>
+              {actualFeatures.length > 0 ? (
+                <ul className="list-disc pl-5 text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                  {actualFeatures.map((feature: string, index: number) => (
+                    <li key={index}>{feature}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic">No specific features listed</p>
+              )}
             </div>
           </div>
         </div>
