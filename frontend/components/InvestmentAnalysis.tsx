@@ -74,6 +74,7 @@ import DataQualityIndicator from './DataQualityIndicator';
 gsap.registerPlugin(ScrollTrigger);
 
 type InvestmentAnalysisProps = {
+  useMockData?: boolean;
   investmentScore: number;
   roi5Years: number | null;
   roi10Years: number | null;
@@ -311,6 +312,7 @@ const getCharacteristicColor = (characteristic: string) => {
 };
 
 const InvestmentAnalysis = ({
+  useMockData = false,
   investmentScore,
   roi5Years,
   roi10Years,
@@ -464,27 +466,81 @@ const InvestmentAnalysis = ({
 }: InvestmentAnalysisProps) => {
   console.log('%%% RUNNING InvestmentAnalysis Component - VERSION CHECK %%%');
 
-  // COMPLETELY REWRITTEN: Accept real data without strict filtering
-  // The component should display whatever data is passed to it, not filter based on "defaults"
-  const actualDescription = description || "Property description not available";
-  const actualFeatures = features || [];
-  const actualBedrooms = bedrooms;
-  const actualBathrooms = bathrooms;
-  const actualSize = size;
-  const actualYearBuilt = yearBuilt;
-  const actualBuildingType = buildingType;
-  const actualEnergyLabel = energyLabel;
+  // 🎭 MOCK DATA DETECTION FEATURE - Restored!
+  // Detect if we should use mock data based on missing or default values OR explicit prop
+  const shouldUseMockData = useMockData || 
+    !address || 
+    address === '' || 
+    !price || 
+    price === '' ||
+    investmentScore === 0 ||
+    (!bedrooms && !bathrooms && !size);
 
-  // 🔍 FIXED DEBUGGING - Show all received data
+  console.log('🎭 MOCK DATA DETECTION:', {
+    shouldUseMockData,
+    address: address || 'missing',
+    price: price || 'missing',
+    investmentScore,
+    bedrooms,
+    bathrooms,
+    size
+  });
+
+  // Use mock data when real data is not available
+  const actualDescription = shouldUseMockData 
+    ? "Beautiful and bright apartment located in a prime area. Recently renovated with high-quality materials. Open-concept living room and kitchen."
+    : (description || "Property description not available");
+  
+  const actualFeatures = shouldUseMockData 
+    ? ["Elevator", "Air conditioning", "Parking", "Built-in wardrobes", "Security system", "Balcony"]
+    : (features || []);
+  
+  const actualBedrooms = shouldUseMockData ? 2 : bedrooms;
+  const actualBathrooms = shouldUseMockData ? 1 : bathrooms;
+  const actualSize = shouldUseMockData ? 85 : size;
+  const actualYearBuilt = shouldUseMockData ? 2010 : yearBuilt;
+  const actualBuildingType = shouldUseMockData ? "Apartment" : buildingType;
+  const actualEnergyLabel = shouldUseMockData ? "B" : energyLabel;
+
+  // Mock data for other key sections
+  const actualNearbyAmenities = shouldUseMockData ? {
+    schools: 7,
+    groceryStores: 5,
+    gyms: 3,
+    restaurants: 13,
+    hospitals: 2,
+    parks: 6
+  } : nearbyAmenities;
+
+  const actualLocationPros = shouldUseMockData ? [
+    "7 educational institutions nearby",
+    "Good access to 5 grocery stores", 
+    "15 dining options in the area",
+    "Air conditioning available",
+    "Established neighborhood"
+  ] : locationPros;
+
+  const actualLocationCons = shouldUseMockData ? [
+    "Hospital congestion may cause noise",
+    "Larger space may require more maintenance", 
+    "Tourist congestion during peak seasons",
+    "Shared elevator maintenance costs"
+  ] : locationCons;
+
+  const actualAddress = shouldUseMockData ? "Carrer de la Marina, 123, Barcelona, Spain" : address;
+  const actualPrice = shouldUseMockData ? "€ 320.000" : price;
+
+  // 🔍 ENHANCED DEBUGGING - Show all received data and mock data usage
   console.log('📊 RECEIVED PROPS DATA:', {
-    description: { provided: description, using: actualDescription },
-    features: { provided: features, count: features?.length || 0, using: actualFeatures },
-    bedrooms: { provided: bedrooms, using: actualBedrooms },
-    bathrooms: { provided: bathrooms, using: actualBathrooms },
-    size: { provided: size, using: actualSize },
-    yearBuilt: { provided: yearBuilt, using: actualYearBuilt },
-    buildingType: { provided: buildingType, using: actualBuildingType },
-    energyLabel: { provided: energyLabel, using: actualEnergyLabel },
+    mockDataMode: shouldUseMockData,
+    description: { provided: description, using: actualDescription, isMock: shouldUseMockData },
+    features: { provided: features, count: features?.length || 0, using: actualFeatures, isMock: shouldUseMockData },
+    bedrooms: { provided: bedrooms, using: actualBedrooms, isMock: shouldUseMockData },
+    bathrooms: { provided: bathrooms, using: actualBathrooms, isMock: shouldUseMockData },
+    size: { provided: size, using: actualSize, isMock: shouldUseMockData },
+    yearBuilt: { provided: yearBuilt, using: actualYearBuilt, isMock: shouldUseMockData },
+    buildingType: { provided: buildingType, using: actualBuildingType, isMock: shouldUseMockData },
+    energyLabel: { provided: energyLabel, using: actualEnergyLabel, isMock: shouldUseMockData },
     address: { provided: address },
     price: { provided: price }
   });
@@ -886,7 +942,7 @@ const InvestmentAnalysis = ({
   // --- End Helper ---
 
   // Parse the price prop to get a number
-  const numericPrice = parsePriceString(price);
+  const numericPrice = parsePriceString(actualPrice);
 
   // Format the numeric price for display in the header (no decimals)
   const formattedHeaderPrice =
@@ -895,7 +951,7 @@ const InvestmentAnalysis = ({
           minimumFractionDigits: 0,
           maximumFractionDigits: 0,
         }, translationMetadata)
-      : price; // Fallback to raw price string if parsing fails
+              : actualPrice; // Fallback to raw price string if parsing fails
 
   const scoreColor = getScoreColor(investmentScore);
   const weightedAverage = (investmentScore / 10).toFixed(1);
@@ -982,6 +1038,23 @@ const InvestmentAnalysis = ({
         And then get this element by ID or ref in the applyHoverFocusEffect function.
         The dynamic creation in applyHoverFocusEffect is a fallback.
       */}
+
+      {/* Mock Data Indicator */}
+      {shouldUseMockData && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4 mb-4">
+          <div className="flex items-center">
+            <ExclamationTriangleIcon className="h-5 w-5 text-amber-600 dark:text-amber-400 mr-2" />
+            <div>
+              <h3 className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                Demo Mode - Using Mock Data
+              </h3>
+              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                This analysis is using sample data for demonstration purposes. Real property data will be used when available.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Action Buttons - Top Right Floating */}
       <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mb-4">
@@ -1522,7 +1595,7 @@ const InvestmentAnalysis = ({
           </div>
           
           <div className="p-4">
-            <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">{address}</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">{actualAddress}</h3>
             
             {/* Property Image */}
             <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg mb-4 overflow-hidden">
@@ -1546,7 +1619,7 @@ const InvestmentAnalysis = ({
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Location</span>
-                <span className="font-medium text-gray-800 dark:text-white">{address.split(',').slice(-2).join(', ') || 'Barcelona, Spain'}</span>
+                <span className="font-medium text-gray-800 dark:text-white">{actualAddress.split(',').slice(-2).join(', ') || 'Barcelona, Spain'}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <span className="text-gray-600 dark:text-gray-400">Size</span>
@@ -1766,7 +1839,7 @@ const InvestmentAnalysis = ({
               <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-full">
                 <AcademicCapIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{nearbyAmenities.schools}</p>
+              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{actualNearbyAmenities.schools}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Schools</p>
             </div>
             
@@ -1774,7 +1847,7 @@ const InvestmentAnalysis = ({
               <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-full">
                 <ShoppingBagIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{nearbyAmenities.groceryStores}</p>
+              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{actualNearbyAmenities.groceryStores}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Grocery Stores</p>
             </div>
             
@@ -1782,7 +1855,7 @@ const InvestmentAnalysis = ({
               <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-full">
                 <UserGroupIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{nearbyAmenities.gyms}</p>
+              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{actualNearbyAmenities.gyms}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Gyms</p>
             </div>
             
@@ -1790,7 +1863,7 @@ const InvestmentAnalysis = ({
               <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-full">
                 <BuildingOfficeIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{nearbyAmenities.restaurants}</p>
+              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{actualNearbyAmenities.restaurants}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Restaurants</p>
             </div>
             
@@ -1798,7 +1871,7 @@ const InvestmentAnalysis = ({
               <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-full">
                 <HomeIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{nearbyAmenities.hospitals}</p>
+              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{actualNearbyAmenities.hospitals}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Hospitals</p>
             </div>
             
@@ -1806,7 +1879,7 @@ const InvestmentAnalysis = ({
               <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-full">
                 <HomeIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{nearbyAmenities.parks}</p>
+              <p className="text-2xl font-bold mt-2 text-gray-800 dark:text-white">{actualNearbyAmenities.parks}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Parks</p>
             </div>
           </div>
@@ -1831,7 +1904,7 @@ const InvestmentAnalysis = ({
                   Pros
                 </h3>
                 <ul className="space-y-2">
-                  {locationPros.map((pro, index) => (
+                  {actualLocationPros.map((pro, index) => (
                     <li key={index} className="flex items-start">
                       <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mr-2 flex-shrink-0 text-sm">+</span>
                       <span className="text-gray-700 dark:text-gray-300 text-sm">{pro}</span>
@@ -1846,7 +1919,7 @@ const InvestmentAnalysis = ({
                   Cons
                 </h3>
                 <ul className="space-y-2">
-                  {locationCons.map((con, index) => (
+                  {actualLocationCons.map((con, index) => (
                     <li key={index} className="flex items-start">
                       <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 mr-2 flex-shrink-0 text-sm">-</span>
                       <span className="text-gray-700 dark:text-gray-300 text-sm">{con}</span>
@@ -1962,7 +2035,7 @@ const InvestmentAnalysis = ({
             {/* Use the propertyIdentifier derived from address */}
             {(() => {
               // Generate a property identifier from the address for API calls
-              const propertyIdentifier = encodeURIComponent(address);
+              const propertyIdentifier = encodeURIComponent(actualAddress);
               const { data: airQualityData, isLoading, error, refetch } = useAirQualityData(propertyIdentifier);
               
               if (isLoading) {
@@ -2094,7 +2167,7 @@ const InvestmentAnalysis = ({
             {/* Use the propertyIdentifier derived from address */}
             {(() => {
               // Generate a property identifier from the address for API calls
-              const propertyIdentifier = encodeURIComponent(address);
+              const propertyIdentifier = encodeURIComponent(actualAddress);
               // Rename data to newsArticlesArray for clarity, assuming it's NewsArticle[] on success
               const { data: newsArticlesArray, isLoading, error: hookError, refetch } = useLocalNews(propertyIdentifier);
               
@@ -2169,7 +2242,7 @@ const InvestmentAnalysis = ({
                     ))}
                     
                     <button 
-                      onClick={() => window.open(`https://news.google.com/search?q=${encodeURIComponent(address)}`, '_blank')}
+                      onClick={() => window.open(`https://news.google.com/search?q=${encodeURIComponent(actualAddress)}`, '_blank')}
                       className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md text-sm transition-colors mt-4"
                     >
                       View More News
@@ -2890,7 +2963,7 @@ const InvestmentAnalysis = ({
             : price || 'Price not available'}
         </div>
         <p className="text-gray-600">
-          {address || 'Address not available'}
+          {actualAddress || 'Address not available'}
         </p>
         {pricePerSqm && (
           <p className="text-sm text-gray-500 mt-1">

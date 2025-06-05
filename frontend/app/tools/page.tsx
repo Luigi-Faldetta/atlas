@@ -129,11 +129,35 @@ export default function PropertyAnalysisPage() {
     enhanced_extraction: true
   });
 
+  // Mock data toggle state
+  const [useMockData, setUseMockData] = useState(false);
+
   const handleAnalyze = async () => {
     console.log('handleAnalyze function started!');
     setLoading(true);
     setAnalysisResult(null); // Reset result/error
     setCurrentStageIndex(0); // Start from the first stage
+
+    // 🎭 Mock Data Mode - Skip API call and use sample data
+    if (useMockData) {
+      console.log('🎭 Mock Data Mode: Using sample analysis data');
+      
+      // Simulate loading stages for realistic UX
+      setCurrentStageIndex(0);
+      await wait(800);
+      setCurrentStageIndex(1);
+      await wait(1200);
+      setCurrentStageIndex(2);
+      await wait(1000);
+      setCurrentStageIndex(3);
+      await wait(500);
+      
+      // Create mock analysis result
+      const mockResult = createSampleAnalysis();
+      setAnalysisResult(mockResult);
+      setLoading(false);
+      return;
+    }
 
     if (!clientConfig.apiUrl) {
       console.error(
@@ -583,11 +607,11 @@ export default function PropertyAnalysisPage() {
   };
 
   // For testing/debugging - create a sample analysis result
-  const createSampleAnalysis = () => {
+  const createSampleAnalysis = (): AnalysisResult => {
     const sampleScore = 75;
     const scores = generateScoreBreakdown(sampleScore);
 
-    setAnalysisResult({
+    return {
       scraped_data: {
         address: 'Aragohof 4-1, 1098 RR Amsterdam',
         price: '€ 535.000 k.k.',
@@ -708,7 +732,7 @@ REFINEMENT NOTES:
           agentic_patterns: ['chain_of_thought', 'self_reflection', 'confidence_scoring', 'quality_validation']
         }
       },
-    });
+    };
   };
 
   return (
@@ -764,7 +788,7 @@ REFINEMENT NOTES:
                       <div className="relative flex-grow">
                         <input
                           type="text"
-                          placeholder="Enter property URL (Funda, Idealista, Fotocasa, Habitaclia)"
+                          placeholder={useMockData ? "URL optional - Mock data enabled" : "Enter property URL (Funda, Idealista, Fotocasa, Habitaclia)"}
                           value={url}
                           onChange={(e) => setUrl(e.target.value)}
                           className="w-full p-3 pr-12 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -781,18 +805,18 @@ REFINEMENT NOTES:
                       </div>
                       <button
                         onClick={handleAnalyze}
-                        disabled={!url.trim() || loading}
+                        disabled={(!url.trim() && !useMockData) || loading}
                         className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 disabled:from-slate-400 disabled:to-slate-400 text-white rounded-lg font-medium transition-all duration-200 disabled:cursor-not-allowed min-w-[140px] flex items-center justify-center gap-2"
                       >
                         {loading ? (
                           <>
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            Analyzing...
+                            {useMockData ? 'Loading Demo...' : 'Analyzing...'}
                           </>
                         ) : (
                           <>
-                            <Search className="h-4 w-4" />
-                            Analyze
+                            {useMockData ? <Brain className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+                            {useMockData ? 'Demo Analysis' : 'Analyze'}
                           </>
                         )}
                       </button>
@@ -936,6 +960,53 @@ REFINEMENT NOTES:
                           </div>
                         </div>
                       )}
+                      
+                      {/* Mock Data Toggle */}
+                      <div className="mt-6 border-t border-slate-200 dark:border-slate-600 pt-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg">
+                              <Brain className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-slate-800 dark:text-white">Use Mock Data</h3>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">Skip API calls and use sample data for demonstration</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={useMockData}
+                                onChange={(e) => setUseMockData(e.target.checked)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-gradient-to-r peer-checked:from-amber-600 peer-checked:to-orange-600"></div>
+                            </label>
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                              {useMockData ? 'ON' : 'OFF'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Mock Data Info */}
+                        {useMockData && (
+                          <div className="mt-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 p-4 rounded-lg border border-amber-200 dark:border-amber-800/30">
+                            <div className="flex items-start gap-2">
+                              <Lightbulb className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                              <div className="text-xs text-slate-600 dark:text-slate-400">
+                                <p className="font-medium mb-1">Mock Data Features:</p>
+                                <ul className="space-y-1">
+                                  <li>• Demonstrates full analysis capabilities without API calls</li>
+                                  <li>• Shows sample property data from Amsterdam market</li>
+                                  <li>• Includes comprehensive financial metrics and AI insights</li>
+                                  <li>• Perfect for testing and demonstration purposes</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1062,6 +1133,7 @@ REFINEMENT NOTES:
                       </div>
                     ) : (
                       <InvestmentAnalysis
+                        useMockData={useMockData}
                         investmentScore={
                           analysisResult.agent_analysis?.investment_score || 0
                         }
