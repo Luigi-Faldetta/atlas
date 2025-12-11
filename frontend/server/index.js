@@ -21,7 +21,69 @@ const openai = process.env.OPENAI_API_KEY
   : null;
 
 // Apply security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "'unsafe-eval'",
+        "https://clerk.*.dev",
+        "https://*.clerk.accounts.dev",
+        "https://challenges.cloudflare.com",
+        "https://api.clerk.dev",
+        "https://*.clerk.dev"
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+        "https://clerk.*.dev",
+        "https://*.clerk.accounts.dev"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com",
+        "https://clerk.*.dev",
+        "https://*.clerk.accounts.dev"
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https:",
+        "https://images.unsplash.com",
+        "https://img.clerk.com",
+        "https://*.clerk.dev"
+      ],
+      connectSrc: [
+        "'self'",
+        "https://api.clerk.dev",
+        "https://clerk.*.dev",
+        "https://*.clerk.accounts.dev",
+        "https://challenges.cloudflare.com",
+        "wss://*.clerk.accounts.dev",
+        // Allow ngrok domains for Docker container communication
+        "https://*.ngrok-free.app",
+        "https://*.ngrok.io",
+        "https://*.loca.lt",
+        "http://localhost:*",
+        "https://localhost:*"
+      ],
+      frameSrc: [
+        "'self'",
+        "https://challenges.cloudflare.com",
+        "https://clerk.*.dev",
+        "https://*.clerk.accounts.dev"
+      ],
+      workerSrc: [
+        "'self'",
+        "blob:"
+      ]
+    }
+  },
+  crossOriginEmbedderPolicy: false
+}));
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
